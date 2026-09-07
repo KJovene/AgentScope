@@ -1,54 +1,66 @@
-"""Point de composition (composition root).
-
-C'est le SEUL endroit où les cas d'utilisation sont reliés à leurs implémentations
-concrètes. Aujourd'hui le conteneur ne câble que la configuration et la base ; les
-fabriques de repositories, d'unité de travail et de fournisseur IA sont des points
-d'extension explicites, remplis par les EPICs 1 à 3.
-"""
-
 from __future__ import annotations
 
-from agentscope.application.ports import (
-    MetricsQueryService,
-    ProvenanceRepository,
-    UnitOfWork,
-)
-from agentscope.domain import RetentionPolicy
-from agentscope.infrastructure.config.settings import Settings, get_settings
-from agentscope.infrastructure.persistence.database import Database
-from agentscope.infrastructure.persistence.queries import SqlMetricsQueryService
-from agentscope.infrastructure.persistence.repositories import SqlProvenanceRepository
-from agentscope.infrastructure.persistence.unit_of_work import SqlAlchemyUnitOfWork
+from contextlib import contextmanager
+from typing import Generator
+
+from sqlalchemy import create_engine
+from sqlalchemy.orm import Session, sessionmaker
+
+from agentscope.application.ports.llm_provider import LLMProvider
+from agentscope.application.use_cases.analyze_unknown_file import AnalyzeUnknownFileUseCase
+from agentscope.application.use_cases.import_file import ImportFileUseCase
+from agentscope.infrastructure.config.settings import Settings
+from agentscope.infrastructure.llm.factory import create_llm_provider
+from agentscope.infrastructure.persistence.repositories.import_repo import SQLAlchemyImportRepository
+from agentscope.infrastructure.persistence.repositories.model_call_repo import SQLAlchemyModelCallRepository
+from agentscope.infrastructure.persistence.repositories.session_repo import SQLAlchemySessionRepository
+from agentscope.infrastructure.persistence.repositories.tool_call_repo import SQLAlchemyToolCallRepository
+from agentscope.infrastructure.readers.jsonl_reader import JSONLSourceReader
+
+
+class Database:
+
+    def __init__(self, db_url: str) -> None:
+        self.engine = create_engine(db_url, pool_pre_ping=True)
+        self.session_factory = sessionmaker(bind=self.engine, autoflush=False, autocommit=False)
+
+    @contextmanager
+    def session(self) -> Generator[Session, None, None]:
+        session = self.session_factory()
+        try:
+            yield session
+            session.commit()
+        except Exception:
+            session.rollback()
+            raise
+        finally:
+            session.close()
 
 
 class Container:
-    def __init__(self, settings: Settings | None = None) -> None:
-        self.settings: Settings = settings or get_settings()
-        self.database: Database = Database(self.settings)
-        # Règle métier de rétention des enregistrements bruts (I1.7).
-        self.retention_policy = RetentionPolicy(mode=self.settings.raw_record_retention)
 
-    # --- Points d'extension (à implémenter par les workstreams concernés) ---
+    def __init__(self, settings: Settings) -> None:
+        self.settings = settings
+        self.database = Database(settings.db_url)
+        self.jsonl_reader = JSONLSourceReader()
+        self._llm_provider: LLMProvider | None = None
 
-    def build_unit_of_work(self) -> UnitOfWork:
-        """UoW transactionnelle enveloppant les repositories (port I1.4, impl I1.5)."""
-        return SqlAlchemyUnitOfWork(self.database)
+    @property
+    def llm_provider(self) -> LLMProvider:
+        if self._llm_provider is None:
+            self._llm_provider = create_llm_provider(self.settings)
+        return self._llm_provider
 
-    def build_provenance_repository(self) -> ProvenanceRepository:
-        """Lecture « remonter à l'origine » (I1.7). Session dédiée, lecture seule."""
-        return SqlProvenanceRepository(self.database.create_session())
+    # --- Fabriques de cas d'usage ---
 
-    def build_llm_provider(self) -> object:
-        """Adaptateur LLM choisi d'après `settings.llm_provider` (I3.2 / I3.5).
-
-        Le contrat `LLMProvider` et la fabrique pilotée par configuration vivent
-        dans l'infrastructure ; le conteneur se contente de les assembler.
-        """
-        raise NotImplementedError(
-            f"Aucun adaptateur pour le fournisseur '{self.settings.llm_provider}' "
-            "— voir issues I3.2 (fake), I3.3/I3.4 (réels), I3.5 (fabrique)."
+    def make_import_file_use_case(self, session: Session) -> ImportFileUseCase:
+        return ImportFileUseCase(
+            session_repo=SQLAlchemySessionRepository(session),
+            import_repo=SQLAlchemyImportRepository(session),
+            model_call_repo=SQLAlchemyModelCallRepository(session),
+            tool_call_repo=SQLAlchemyToolCallRepository(session),
+            reader=self.jsonl_reader,
         )
 
-    def build_metrics_query_service(self) -> MetricsQueryService:
-        """Service de lecture du dashboard (I1.9). Session dédiée, lecture seule."""
-        return SqlMetricsQueryService(self.database.create_session())
+    def make_analyze_file_use_case(self) -> AnalyzeUnknownFileUseCase:
+        return AnalyzeUnknownFileUseCase(llm_provider=self.llm_provider)

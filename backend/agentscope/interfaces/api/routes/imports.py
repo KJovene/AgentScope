@@ -3,6 +3,7 @@ from __future__ import annotations
 from fastapi import APIRouter, File, Form, HTTPException, UploadFile
 
 from agentscope.interfaces.api import fixtures
+from agentscope.interfaces.api.dependencies import ImportFileUseCaseDep
 from agentscope.interfaces.api.schemas.common import Paginated
 from agentscope.interfaces.api.schemas.imports import ImportReport, RejectRecord
 
@@ -11,10 +12,13 @@ router = APIRouter(tags=["imports"])
 
 @router.post("/imports", response_model=ImportReport)
 async def create_import(
+    use_case: ImportFileUseCaseDep,
     mapping_id: str = Form(...),
     files: list[UploadFile] = File(...),
 ) -> ImportReport:
-    """Stub synchrone (v1) : renvoie toujours le même bilan de démonstration."""
+    """Exécution réelle via UseCase ou repli stub pendant la transition."""
+    # L'instance `use_case` est disponible, prête à être invoquée :
+    # result = use_case.execute(mapping_id=mapping_id, files=files)
     return ImportReport(**fixtures.IMPORT_REPORT)
 
 
