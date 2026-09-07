@@ -8,6 +8,7 @@ d'extension explicites, remplis par les EPICs 1 à 3.
 
 from __future__ import annotations
 
+from agentscope.application.ports import UnitOfWork
 from agentscope.infrastructure.config.settings import Settings, get_settings
 from agentscope.infrastructure.persistence.database import Database
 
@@ -19,8 +20,8 @@ class Container:
 
     # --- Points d'extension (à implémenter par les workstreams concernés) ---
 
-    def build_unit_of_work(self) -> object:
-        """UoW transactionnelle enveloppant les repositories (I1.4 / I1.5)."""
+    def build_unit_of_work(self) -> UnitOfWork:
+        """UoW transactionnelle enveloppant les repositories (port I1.4, impl I1.5)."""
         raise NotImplementedError("Unité de travail non branchée — voir issue I1.5.")
 
     def build_llm_provider(self) -> object:
