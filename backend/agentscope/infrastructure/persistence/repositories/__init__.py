@@ -8,6 +8,9 @@ from agentscope.infrastructure.persistence.repositories.errors import (
     PersistenceError,
     UnknownReferenceError,
 )
+from agentscope.infrastructure.persistence.repositories.provenance import (
+    SqlProvenanceRepository,
+)
 from agentscope.infrastructure.persistence.repositories.sql import (
     SqlFieldProfileRepository,
     SqlImportRepository,
@@ -23,6 +26,7 @@ from agentscope.infrastructure.persistence.repositories.sql import (
 __all__ = [
     "PersistenceError",
     "UnknownReferenceError",
+    "SqlProvenanceRepository",
     "SqlReferenceRepository",
     "SqlMappingRepository",
     "SqlImportRepository",

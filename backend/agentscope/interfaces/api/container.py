@@ -8,9 +8,11 @@ d'extension explicites, remplis par les EPICs 1 à 3.
 
 from __future__ import annotations
 
-from agentscope.application.ports import UnitOfWork
+from agentscope.application.ports import ProvenanceRepository, UnitOfWork
+from agentscope.domain import RetentionPolicy
 from agentscope.infrastructure.config.settings import Settings, get_settings
 from agentscope.infrastructure.persistence.database import Database
+from agentscope.infrastructure.persistence.repositories import SqlProvenanceRepository
 from agentscope.infrastructure.persistence.unit_of_work import SqlAlchemyUnitOfWork
 
 
@@ -18,12 +20,18 @@ class Container:
     def __init__(self, settings: Settings | None = None) -> None:
         self.settings: Settings = settings or get_settings()
         self.database: Database = Database(self.settings)
+        # Règle métier de rétention des enregistrements bruts (I1.7).
+        self.retention_policy = RetentionPolicy(mode=self.settings.raw_record_retention)
 
     # --- Points d'extension (à implémenter par les workstreams concernés) ---
 
     def build_unit_of_work(self) -> UnitOfWork:
         """UoW transactionnelle enveloppant les repositories (port I1.4, impl I1.5)."""
         return SqlAlchemyUnitOfWork(self.database)
+
+    def build_provenance_repository(self) -> ProvenanceRepository:
+        """Lecture « remonter à l'origine » (I1.7). Session dédiée, lecture seule."""
+        return SqlProvenanceRepository(self.database.create_session())
 
     def build_llm_provider(self) -> object:
         """Adaptateur LLM choisi d'après `settings.llm_provider` (I3.2 / I3.5).

@@ -190,6 +190,14 @@ def raw_record_to_values(record: RawRecord, batch_id: int) -> dict[str, Any]:
     }
 
 
+def row_to_raw_record(row: Any) -> RawRecord:
+    return RawRecord(
+        index=row.record_index,
+        payload=dict(row.payload_json) if row.payload_json else {},
+        sha256=row.record_sha256,
+    )
+
+
 def session_to_values(
     session: Session,
     *,

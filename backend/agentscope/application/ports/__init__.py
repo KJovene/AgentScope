@@ -5,6 +5,7 @@ concrètes (SQLAlchemy) vivent dans ``agentscope.infrastructure`` et sont câbl�
 dans le conteneur de composition.
 """
 
+from agentscope.application.ports.provenance import ProvenanceRepository
 from agentscope.application.ports.repositories import (
     FieldProfileRepository,
     ImportRepository,
@@ -30,5 +31,6 @@ __all__ = [
     "ToolCallRepository",
     "RejectRepository",
     "FieldProfileRepository",
+    "ProvenanceRepository",
     "UnitOfWork",
 ]
