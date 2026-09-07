@@ -117,6 +117,7 @@ def import_batch_to_values(batch: ImportBatch, source_id: int, mapping_id: int) 
         "file_format": batch.file_format.value,
         "status": batch.status.value,
         "imported_at": batch.imported_at,
+        "record_count": batch.record_count,
         "imported_count": batch.imported_count,
         "duplicate_count": batch.duplicate_count,
         "rejected_count": batch.rejected_count,
@@ -127,6 +128,7 @@ def import_batch_to_values(batch: ImportBatch, source_id: int, mapping_id: int) 
 def import_batch_update_values(batch: ImportBatch) -> dict[str, Any]:
     return {
         "status": batch.status.value,
+        "record_count": batch.record_count,
         "imported_count": batch.imported_count,
         "duplicate_count": batch.duplicate_count,
         "rejected_count": batch.rejected_count,
@@ -145,6 +147,7 @@ def row_to_import_batch(row: Any, source_name: str, mapping_name: str | None) ->
         imported_at=imported_at,
         status=ImportStatus(row.status),
         mapping_name=mapping_name,
+        record_count=row.record_count,
         imported_count=row.imported_count,
         duplicate_count=row.duplicate_count,
         rejected_count=row.rejected_count,
