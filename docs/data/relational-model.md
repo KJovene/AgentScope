@@ -270,7 +270,7 @@ Clé naturelle : `(source_id, external_id)` **UNIQUE**.
 | `prompt_tokens` | INTEGER | oui | |
 | `completion_tokens` | INTEGER | oui | |
 | `cached_tokens` | INTEGER | oui | |
-| `total_tokens` | INTEGER | oui | **dérivé** = `prompt + completion` (voir §7 exception 2) |
+| `total_tokens` | INTEGER | oui | **dérivé** = `prompt + completion` (voir §7.3 E2) |
 | `cost_usd` | REAL | oui | unité : dollars US |
 | `started_at` / `ended_at` | TIMESTAMPTZ | oui | |
 | `status` | TEXT | non | `success`\|`error`\|`timeout`\|`cancelled`\|`unknown`, défaut `unknown` |
@@ -344,7 +344,7 @@ Ne remettent pas en cause la 3NF des tables de base ; recalculées à la volée.
 
 | Vue | Une ligne = | Colonnes principales |
 | --- | --- | --- |
-| `v_session_metrics` | une session | `session_id`, `source_name`, `agent_name`, `started_at`, `duration_ms` (calc.), `n_model_calls`, `n_tool_calls`, `total_tokens`, `prompt_tokens`, `completion_tokens`, `cached_tokens`, `cache_hit_ratio`, `total_cost_usd`, `n_errors`, `import_batch_id` |
+| `v_session_metrics` | une session | `session_id`, `source_name`, `agent_name`, `repository_name` (dépôt de code, SWE-chat), `started_at`, `duration_ms` (calc.), `n_model_calls`, `n_tool_calls`, `total_tokens`, `prompt_tokens`, `completion_tokens`, `cached_tokens`, `cache_hit_ratio`, `total_cost_usd`, `n_errors`, `import_batch_id` |
 | `v_daily_activity` | un couple (source, jour) | `n_sessions`, `n_model_calls`, `n_tool_calls`, `total_tokens` — jour = `date_trunc('day', session.started_at)` ; sessions sans `started_at` exclues (et comptées à part côté qualité) |
 | `v_tool_usage` | un couple (source, `tool_name`) | `n_calls`, `n_errors`, `error_rate`, `avg_duration_ms` |
 | `v_data_quality` | un `import_batch` | `source_name`, `record_count`, `imported_count`, `duplicate_count`, `rejected_count`, `missing_info_count`, `completeness_ratio` (= `imported_count / record_count`), `n_profiled_fields`, `avg_null_ratio` |
@@ -381,33 +381,130 @@ Reflètent exactement les énumérations du domaine (`domain/value_objects.py`).
 Effet net : importer deux fois le même fichier → compteurs identiques, zéro ligne créée.
 Couvert par le test **I7.1**.
 
-## 7. Troisième forme normale — conformité et exceptions assumées
+## 7. Normalisation — analyse, conformité et exceptions assumées
 
-**Conformité.** Chaque attribut non-clé dépend de la clé entière et seulement d'elle. Pas de
-groupe répétitif, pas de dépendance partielle (les clés naturelles composites sont adossées à
-la PK technique + `UNIQUE`). Les libellés (nom de source, de dépôt) sont sortis dans leur
-propre table et référencés par FK — aucune dépendance transitive via un libellé.
+### 7.1 Méthode
 
-**Exceptions, justifiées :**
+Chaque table de base est vérifiée en analysant les **dépendances fonctionnelles (DF)** de ses
+attributs vis-à-vis de la PK technique `id` **et** de la clé naturelle (souvent composite) qui
+porte le sens métier — c'est cette dernière qui rend l'analyse utile, la clé de substitution
+rendant 2NF/3NF triviales par construction.
 
-1. **Colonnes document / JSON** — `raw_record.payload_json`, `mapping.definition_json`,
-   `field_profile.sample_values_json`, `import_reject.payload_json`. Données semi-structurées
-   de provenance ou de configuration ; les décomposer en tables clé-valeur détruirait le sens
-   et l'utilité. Hors périmètre de la normalisation relationnelle.
-2. **`model_call.total_tokens`** — fonctionnellement dérivable de `prompt_tokens` +
-   `completion_tokens`. Stockée (donc non strictement 3NF) pour la performance des agrégats du
-   dashboard ; écrite une seule fois par l'importeur ; **cohérence vérifiée par test**.
-   `session.duration_ms` est volontairement **non** stockée (calculée en vue) pour garder
-   cette liste courte.
-3. **Compteurs de bilan de `import_batch`** (`imported_count`, `duplicate_count`, …) —
-   résumés des lignes `session` / `import_reject`. Conservés sur le batch pour que le bilan
-   d'import survive à la purge des données brutes (I1.7) et soit lisible sans parcourir les
-   tables filles. Écrits transactionnellement ; une requête de reconstruction existe pour
-   l'audit.
-4. **`import_batch_id` sur `session` / `model_call` / `tool_call`** — ce **n'est pas** une
-   dépendance transitive : `raw_record_id` est *nullable* (provenance ligne-à-ligne
-   best-effort sous politique de rétention), tandis que `import_batch_id` est la provenance
-   niveau import, *toujours* connue. Deux faits distincts, stockés délibérément.
+Pour chaque table :
+
+- **1NF** — valeurs atomiques, aucun groupe répétitif.
+- **2NF** — aucun attribut non-clé ne dépend d'une *partie* de la clé naturelle.
+- **3NF** — aucun attribut non-clé n'est déterminé par un autre attribut non-clé (transitivité).
+- **BCNF** — tout déterminant est une clé candidate.
+
+### 7.2 Résultat par table
+
+| Table | 1NF | 2NF | 3NF / BCNF | Écarts |
+| --- | --- | --- | --- | --- |
+| `source` | ✅ | ✅ | ✅ | — (clé candidate `name`) |
+| `repository` | ✅ | ✅ | ✅ | — |
+| `mapping` | E1 | ✅ | ✅ | `definition_json` |
+| `import_batch` | ✅ | ✅ | dénorm. | E3, E6 |
+| `raw_record` | E1 | ✅ | dénorm. | `payload_json`, E5 |
+| `session` | ✅ | ✅ | dénorm. | E4 |
+| `model_call` | ✅ | ✅ | dénorm. | E4, E2 |
+| `tool_call` | ✅ | ✅ | dénorm. | E4 |
+| `import_reject` | E1 | ✅ | ✅ | `payload_json` (pas de clé naturelle, index seul) |
+| `field_profile` | ✅ | ✅ | ✅ | — (`null_ratio`, `distinct_count` : faits mesurés, non redondants) |
+
+Aucune dépendance transitive **non intentionnelle**. Les écarts sont des dénormalisations
+décidées ; chacune est justifiée ci-dessous avec le coût évité et son garde-fou.
+
+### 7.3 Exceptions
+
+Format : **règle** → *pourquoi on s'en écarte* → *coût si on ne le faisait pas* → *garde-fou*.
+
+**E1 — Colonnes document (JSON)** · `raw_record.payload_json`, `mapping.definition_json`,
+`field_profile.sample_values_json`, `import_reject.payload_json`.
+
+- Règle (1NF) : une valeur doit être atomique.
+- Écart : documents semi-structurés — enregistrement source arbitraire, contrat de mapping
+  (§5.1), échantillon de valeurs.
+- Coût évité : une décomposition clé-valeur (EAV) détruirait la forme d'origine (donc la
+  provenance), imposerait un schéma à des données hétérogènes par nature, et rendrait toute
+  relecture coûteuse.
+- Garde-fou : jamais utilisées comme critère de jointure ou de filtre relationnel ; lues comme
+  un tout. `payload_json` peut valoir `NULL` (rétention I1.7) sans casser de contrainte.
+
+**E2 — `model_call.total_tokens` (colonne dérivée)**
+
+- Règle (3NF) : pas de DF d'un non-clé (`total_tokens`) vers d'autres non-clés
+  (`prompt_tokens`, `completion_tokens`).
+- Écart : `total_tokens = prompt_tokens + completion_tokens` (ou `NULL` si les deux sont
+  absents) est **stockée**.
+- Coût évité : sans elle, `v_session_metrics`, `v_daily_activity` et tout agrégat de tokens
+  recalculent la somme sur des millions de lignes à chaque requête du dashboard.
+- Garde-fou : écrite une seule fois, par l'importeur, depuis la valeur calculée par le domaine
+  (`TokenUsage.total_tokens`) ; un test d'intégration vérifie que la valeur stockée égale
+  `prompt + completion` après import. `session.duration_ms` n'est **pas** stockée (calculée en
+  vue) — on garde la liste courte.
+
+**E3 — Compteurs de bilan de `import_batch`** · `record_count`, `imported_count`,
+`duplicate_count`, `rejected_count`, `missing_info_count`.
+
+- Règle (3NF) : agrégats des tables filles (`session`, `import_reject`, `raw_record`).
+- Écart : matérialisés sur la ligne d'import.
+- Coût évité : le bilan doit rester lisible **après** une purge de rétention (les lignes
+  filles peuvent disparaître) et sans `COUNT(*)` sur les tables filles à chaque affichage de
+  l'historique.
+- Garde-fou : écrits dans la **même transaction** que l'import (UnitOfWork) ; une requête de
+  reconstruction (`SELECT count(*) … GROUP BY import_batch_id`) sert de contrôle d'audit.
+
+**E4 — `import_batch_id` sur `session` / `model_call` / `tool_call`**
+
+- Règle (3NF) : quand `raw_record_id` est renseigné, `raw_record.import_batch_id` détermine
+  `session.import_batch_id` → dépendance transitive.
+- Écart : **dénormalisation assumée** — `import_batch_id` est stocké directement sur chaque
+  fait normalisé.
+- Coût évité : (a) `raw_record_id` est **nullable** (best-effort sous rétention `minimal` ou
+  purge) — sans colonne dédiée, on perdrait le rattachement niveau import dès qu'un payload
+  est purgé, et `ON DELETE SET NULL` orphelinerait le fait ; (b) filtrer « les sessions de cet
+  import » (panneau qualité, drill-down) sans `JOIN raw_record` intermédiaire.
+- Garde-fou : invariant **`fait.import_batch_id = raw_record.import_batch_id` dès que
+  `raw_record_id IS NOT NULL`**, garanti par l'unique writer (les repositories résolvent les
+  deux FK depuis le même `ImportBatch`) et couvert par
+  `tests/integration/test_repositories.py::test_full_import_preserves_relations`.
+
+**E5 — `raw_record.record_sha256` (digest du payload)**
+
+- Règle (3NF) : quand `payload_json` est présent,
+  `record_sha256 = sha256(canonical(payload_json))` → dérivable.
+- Écart : le hash est stocké séparément.
+- Coût évité : c'est **le seul identifiant qui survit à la purge du payload** (rétention
+  `minimal`) ; il sert à la détection de doublons intra-fichier (`duplicate_in_file`) sans
+  réhacher, et à vérifier l'intégrité d'une récupération d'extrait.
+- Garde-fou : calculé à l'ingestion sur une forme canonicalisée ; quand les deux colonnes sont
+  présentes, l'égalité est un invariant d'écriture.
+
+**E6 — `import_batch.file_format` vs `mapping.source_format`**
+
+- Règle (3NF) : `import_batch.mapping_id → mapping.source_format`, et `file_format` devrait
+  valoir la même chose → redondance transitive.
+- Écart : `import_batch.file_format` enregistre le format **observé** du fichier téléversé,
+  indépendamment de ce que le mapping attend.
+- Coût évité : tracer ce qui a réellement été lu (provenance) ; afficher le format dans
+  l'historique sans joindre `mapping`.
+- Garde-fou : un écart `file_format ≠ mapping.source_format` est une **condition de rejet** de
+  l'import (`reason_code = schema_violation`, I2.13), pas un état permis en base.
+
+### 7.4 BCNF
+
+Toutes les tables de base sont en BCNF : le seul déterminant de chaque table est sa clé (PK
+technique et/ou clé naturelle `UNIQUE`) — aucun déterminant non-clé. Les dénormalisations
+E2–E6 introduisent des DF `non-clé → non-clé` **contrôlées** par un invariant d'écriture, pas
+un nouveau déterminant.
+
+### 7.5 Les vues ne sont pas normalisées — et c'est voulu
+
+`v_session_metrics`, `v_daily_activity`, `v_tool_usage`, `v_data_quality` (§4) sont la
+**couche de lecture dénormalisée** du dashboard : agrégats, ratios, comptages pré-joints,
+recalculés à la volée. Les tables de base restent la source de vérité normalisée. Hors E2/E3,
+aucune donnée du dashboard n'est stockée en double de façon persistante.
 
 ## 8. Unités et valeurs manquantes
 

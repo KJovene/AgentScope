@@ -98,6 +98,7 @@ class ImportBatch:
     imported_at: datetime
     status: ImportStatus = ImportStatus.PENDING
     mapping_name: str | None = None
+    record_count: int | None = None  # nb d'enregistrements lus dans le fichier
     imported_count: int = 0
     duplicate_count: int = 0
     rejected_count: int = 0
@@ -109,6 +110,7 @@ class ImportBatch:
         ensure_non_empty(self.file_sha256, "ImportBatch.file_sha256")
         if self.imported_at.tzinfo is None:
             raise ValueError("ImportBatch.imported_at doit être timezone-aware (UTC)")
+        ensure_non_negative(self.record_count, "ImportBatch.record_count")
         for name in (
             "imported_count",
             "duplicate_count",
