@@ -29,6 +29,9 @@ dev = [
   "import-linter>=2.1",
 ]
 
+[project.scripts]
+agentscope-openapi = "agentscope.interfaces.api.openapi:main"
+
 [build-system]
 requires = ["setuptools>=68"]
 build-backend = "setuptools.build_meta"
@@ -61,6 +64,12 @@ mypy_path = "agentscope"
 testpaths = ["tests"]
 addopts = "-q --cov=agentscope --cov-report=term-missing"
 asyncio_mode = "auto"
+filterwarnings = [
+  # Bruit de versions dans les dépendances (starlette/anyio/httpx), pas notre code.
+  # Filtrage par message (module et catégorie varient selon l'ordre d'import).
+  "ignore:Using .httpx. with .starlette.testclient. is deprecated",
+  "ignore:The anyio.abc.BlockingPortal alias is deprecated",
+]
 
 [tool.coverage.run]
 branch = true
@@ -72,6 +81,7 @@ source = ["agentscope"]
 
 [tool.importlinter]
 root_package = "agentscope"
+include_external_packages = true
 
 [[tool.importlinter.contracts]]
 name = "Sens des dépendances entre couches"

@@ -22,9 +22,14 @@ class Settings(BaseSettings):
         extra="ignore",
     )
 
+    # Métadonnées applicatives.
+    app_name: str = "AgentScope API"
+    debug: bool = False
+
     # Base de données — SQLite par défaut (reproductible depuis un clone),
     # PostgreSQL via configuration (cf. ADR-0003).
     database_url: str = "sqlite:///./agentscope.db"
+    db_echo: bool = False
 
     # Origines autorisées pour le frontend. `NoDecode` : la valeur brute de l'env
     # (CSV) arrive au validateur au lieu d'être décodée en JSON par pydantic-settings.

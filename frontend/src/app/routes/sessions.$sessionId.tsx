@@ -3,8 +3,10 @@ import { createFileRoute } from '@tanstack/react-router';
 import { SessionDetailPage } from '@features/session-detail';
 
 export const Route = createFileRoute('/sessions/$sessionId')({
-  component: () => {
-    const { sessionId } = Route.useParams();
-    return <SessionDetailPage sessionId={sessionId} />;
-  },
+  component: SessionDetailRoute,
 });
+
+function SessionDetailRoute() {
+  const { sessionId } = Route.useParams();
+  return <SessionDetailPage sessionId={sessionId} />;
+}

@@ -113,6 +113,12 @@ typecheck: ## Types backend (mypy) + frontend (tsc)
 arch: ## Vérifie la règle des dépendances (import-linter)
 	$(COMPOSE) run --rm $(BACKEND) lint-imports
 
+.PHONY: openapi
+openapi: ## Exporte backend/openapi.json puis régénère le client TS du frontend
+	$(COMPOSE) run --rm $(BACKEND) python -m agentscope.interfaces.api.openapi openapi.json
+	cp backend/openapi.json frontend/openapi.json
+	$(COMPOSE) run --rm $(FRONTEND) npm run api:generate
+
 .PHONY: ci
 ci: lint typecheck arch test ## Ce que la CI exécute à chaque PR
 
