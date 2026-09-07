@@ -58,6 +58,10 @@ class Database:
             future=True,
         )
 
+    def create_session(self) -> Session:
+        """Session brute — la gestion de transaction est à l'appelant (cf. UnitOfWork)."""
+        return self._session_factory()
+
     @contextmanager
     def session(self) -> Iterator[Session]:
         """Session transactionnelle : commit si succès, rollback sinon."""
