@@ -1,9 +1,19 @@
-"""Erreurs du domaine metier."""
+"""Erreurs du domaine. Aucune dépendance externe."""
+
+from __future__ import annotations
 
 
 class DomainError(Exception):
-    """Erreur de base pour toute violation d'une regle metier."""
+    """Base de toutes les erreurs métier."""
+
+
+class InvariantViolationError(DomainError):
+    """Un invariant d'entité ou de value object n'est pas respecté."""
+
+
+class InvalidMappingError(DomainError):
+    """Un mapping ne respecte pas le contrat attendu (détail applicatif ailleurs)."""
 
 
 class LLMError(DomainError):
-    """Erreur levee par un LLMProvider : appel echoue, timeout, reponse malformee."""
+    """Erreur levée par un LLMProvider : appel échoué, timeout, réponse malformée."""

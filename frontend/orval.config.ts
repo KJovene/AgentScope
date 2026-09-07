@@ -8,7 +8,8 @@ import { defineConfig } from 'orval';
  */
 export default defineConfig({
   agentscope: {
-    input: '../backend/openapi.json',
+    // Copié depuis backend/openapi.json par `make openapi`.
+    input: './openapi.json',
     output: {
       mode: 'tags-split',
       target: './src/api/generated',
