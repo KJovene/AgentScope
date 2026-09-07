@@ -1,1 +1,4 @@
-"""Tests unitaires : domaine, transformations, validation, indicateurs (sans IA ni UI)."""
+"""Tests unitaires : domaine, transformations, validation, calcul d'indicateurs.
+
+Sans IA reelle, sans UI.
+"""
