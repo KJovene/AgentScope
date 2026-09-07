@@ -13,3 +13,7 @@ class InvariantViolationError(DomainError):
 
 class InvalidMappingError(DomainError):
     """Un mapping ne respecte pas le contrat attendu (détail applicatif ailleurs)."""
+
+
+class LLMError(DomainError):
+    """Erreur levée par un LLMProvider : appel échoué, timeout, réponse malformée."""
