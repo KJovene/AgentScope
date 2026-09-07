@@ -17,6 +17,8 @@ from agentscope.application.ports.repositories import (
     ToolCallRepository,
     UpsertOutcome,
 )
+from agentscope.application.ports.profiler import FieldProfiler, SensitiveFilter
+from agentscope.application.ports.source_reader import SourceReader
 from agentscope.application.ports.unit_of_work import UnitOfWork
 
 __all__ = [
@@ -31,4 +33,7 @@ __all__ = [
     "RejectRepository",
     "FieldProfileRepository",
     "UnitOfWork",
+    "SourceReader",
+    "FieldProfiler",
+    "SensitiveFilter",
 ]
