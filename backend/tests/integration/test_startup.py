@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from fastapi.testclient import TestClient
-import pytest
 
 from agentscope.infrastructure.config.settings import Settings
 from agentscope.interfaces.api.app import create_app
@@ -27,11 +26,8 @@ def test_container_initialization_in_lifespan() -> None:
 def test_override_container_dependency() -> None:
     app = create_app()
 
-    class MockContainer(Container):
-        pass
-
     mock_settings = Settings(db_url="sqlite:///:memory:")
-    mock_container = MockContainer(mock_settings)
+    mock_container = Container(mock_settings)
 
     app.dependency_overrides[get_container] = lambda: mock_container
 
