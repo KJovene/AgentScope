@@ -1,5 +1,5 @@
 """Point d'entrée de l'application : ``uvicorn agentscope.main:app``."""
 
-from agentscope.interfaces.api.app import create_app
+from agentscope.interfaces.api.app import app  # noqa: F401
 
-app = create_app()
+app = app()
