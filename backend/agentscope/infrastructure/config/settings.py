@@ -13,8 +13,6 @@ from typing import Annotated
 from pydantic import Field, field_validator
 from pydantic_settings import BaseSettings, NoDecode, SettingsConfigDict
 
-from agentscope.domain import RetentionMode
-
 
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(
@@ -32,10 +30,6 @@ class Settings(BaseSettings):
     # PostgreSQL via configuration (cf. ADR-0003).
     database_url: str = "sqlite:///./agentscope.db"
     db_echo: bool = False
-
-    # Rétention des enregistrements bruts (cf. ADR-0006, I1.7).
-    # "full" = payload conservé ; "minimal" = index + sha256, payload des rejets seulement.
-    raw_record_retention: RetentionMode = RetentionMode.FULL
 
     # Origines autorisées pour le frontend. `NoDecode` : la valeur brute de l'env
     # (CSV) arrive au validateur au lieu d'être décodée en JSON par pydantic-settings.

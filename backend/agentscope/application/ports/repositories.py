@@ -77,10 +77,6 @@ class ReferenceRepository(Protocol):
 
     def get_code_repository(self, source_name: str, name: str) -> Repository | None: ...
 
-    def list_code_repositories(self, source_name: str | None = None) -> list[Repository]:
-        """Tous les dépôts, ou ceux d'une source (dimension de filtre du dashboard)."""
-        ...
-
 
 @runtime_checkable
 class MappingRepository(Protocol):
