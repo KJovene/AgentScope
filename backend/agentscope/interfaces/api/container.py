@@ -11,6 +11,7 @@ from __future__ import annotations
 from agentscope.application.ports import UnitOfWork
 from agentscope.infrastructure.config.settings import Settings, get_settings
 from agentscope.infrastructure.persistence.database import Database
+from agentscope.infrastructure.persistence.unit_of_work import SqlAlchemyUnitOfWork
 
 
 class Container:
@@ -22,7 +23,7 @@ class Container:
 
     def build_unit_of_work(self) -> UnitOfWork:
         """UoW transactionnelle enveloppant les repositories (port I1.4, impl I1.5)."""
-        raise NotImplementedError("Unité de travail non branchée — voir issue I1.5.")
+        return SqlAlchemyUnitOfWork(self.database)
 
     def build_llm_provider(self) -> object:
         """Adaptateur LLM choisi d'après `settings.llm_provider` (I3.2 / I3.5).

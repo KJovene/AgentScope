@@ -160,19 +160,3 @@ modules = [
   "agentscope.infrastructure.llm",
   "agentscope.infrastructure.profiling",
 ]
-
-[[tool.importlinter.contracts]]
-name = "L'application ne dépend ni du web, ni de l'ORM, ni d'un SDK IA"
-type = "forbidden"
-source_modules = ["agentscope.application"]
-forbidden_modules = [
-  "fastapi",
-  "starlette",
-  "uvicorn",
-  "sqlalchemy",
-  "alembic",
-  "httpx",
-  "pandas",
-  "pyarrow",
-  "duckdb",
-]
