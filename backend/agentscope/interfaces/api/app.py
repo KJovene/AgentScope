@@ -7,52 +7,64 @@ les routes métier arrivent avec l'EPIC 4.
 
 from __future__ import annotations
 
-from collections.abc import AsyncIterator
-from contextlib import asynccontextmanager
+from fastapi import FastAPI, HTTPException, Request
+from fastapi.encoders import jsonable_encoder
+from fastapi.exceptions import RequestValidationError
+from fastapi.responses import JSONResponse
 
-from fastapi import APIRouter, FastAPI
-from fastapi.middleware.cors import CORSMiddleware
+from agentscope.interfaces.api.routes import (
+    analyze,
+    chat,
+    imports,
+    mappings,
+    metrics,
+    sessions,
+    sources,
+)
+from agentscope.interfaces.api.schemas.common import ProblemDetail
 
-from agentscope.infrastructure.config.settings import Settings, get_settings
-from agentscope.interfaces.api.container import Container
-from agentscope.interfaces.api.errors import register_exception_handlers
+API_PREFIX = "/api/v1"
 
-api_router = APIRouter(prefix="/api/v1")
+app = FastAPI(
+    title="AgentScope API",
+    version="0.1.0",
+    description=(
+        "Parcours principal : importer -> vérifier -> normaliser -> explorer. "
+        "I4.1 : endpoints stub renvoyant des fixtures pour débloquer le frontend."
+    ),
+)
 
 
-@api_router.get("/health", tags=["meta"])
-def health() -> dict[str, str]:
+@app.get("/health", tags=["platform"])
+async def health() -> dict[str, str]:
     return {"status": "ok"}
 
 
-def create_app(settings: Settings | None = None) -> FastAPI:
-    settings = settings or get_settings()
+for router in (imports.router, analyze.router, mappings.router, chat.router, sessions.router, sources.router):
+    app.include_router(router, prefix=API_PREFIX)
+app.include_router(metrics.router, prefix=API_PREFIX)
 
-    @asynccontextmanager
-    async def lifespan(app: FastAPI) -> AsyncIterator[None]:
-        app.state.container = Container(settings)
-        yield
-        app.state.container.database.engine.dispose()
 
-    app = FastAPI(
-        title=settings.app_name,
-        version="0.1.0",
-        debug=settings.debug,
-        lifespan=lifespan,
+@app.exception_handler(HTTPException)
+async def http_exception_handler(request: Request, exc: HTTPException) -> JSONResponse:
+    problem = ProblemDetail(title=exc.detail, status=exc.status_code, detail=exc.detail)
+    return JSONResponse(
+        status_code=exc.status_code,
+        content=jsonable_encoder(problem),
+        media_type="application/problem+json",
     )
 
-    app.add_middleware(
-        CORSMiddleware,
-        allow_origins=settings.cors_origins,
-        allow_credentials=False,
-        allow_methods=["*"],
-        allow_headers=["*"],
+
+@app.exception_handler(RequestValidationError)
+async def validation_exception_handler(request: Request, exc: RequestValidationError) -> JSONResponse:
+    problem = ProblemDetail(
+        title="Entrée invalide",
+        status=422,
+        detail="Un ou plusieurs champs ne respectent pas le schéma attendu.",
+        errors=jsonable_encoder(exc.errors()),
     )
-
-    register_exception_handlers(app)
-
-    # Alias non versionné conservé pour les sondes d'orchestrateur.
-    app.add_api_route("/health", health, tags=["meta"])
-    app.include_router(api_router)
-
-    return app
+    return JSONResponse(
+        status_code=422,
+        content=jsonable_encoder(problem),
+        media_type="application/problem+json",
+    )
