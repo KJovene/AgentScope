@@ -8,10 +8,15 @@ d'extension explicites, remplis par les EPICs 1 à 3.
 
 from __future__ import annotations
 
-from agentscope.application.ports import ProvenanceRepository, UnitOfWork
+from agentscope.application.ports import (
+    MetricsQueryService,
+    ProvenanceRepository,
+    UnitOfWork,
+)
 from agentscope.domain import RetentionPolicy
 from agentscope.infrastructure.config.settings import Settings, get_settings
 from agentscope.infrastructure.persistence.database import Database
+from agentscope.infrastructure.persistence.queries import SqlMetricsQueryService
 from agentscope.infrastructure.persistence.repositories import SqlProvenanceRepository
 from agentscope.infrastructure.persistence.unit_of_work import SqlAlchemyUnitOfWork
 
@@ -44,6 +49,6 @@ class Container:
             "— voir issues I3.2 (fake), I3.3/I3.4 (réels), I3.5 (fabrique)."
         )
 
-    def build_metrics_query_service(self) -> object:
-        """Service de lecture du dashboard (I1.9)."""
-        raise NotImplementedError("MetricsQueryService non branché — voir issue I1.9.")
+    def build_metrics_query_service(self) -> MetricsQueryService:
+        """Service de lecture du dashboard (I1.9). Session dédiée, lecture seule."""
+        return SqlMetricsQueryService(self.database.create_session())

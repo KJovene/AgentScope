@@ -5,6 +5,19 @@ concrètes (SQLAlchemy) vivent dans ``agentscope.infrastructure`` et sont câbl�
 dans le conteneur de composition.
 """
 
+from agentscope.application.ports.metrics import (
+    Granularity,
+    Indicators,
+    MetricFilter,
+    MetricsQueryService,
+    Page,
+    Paginated,
+    SessionDetail,
+    SessionListItem,
+    TimelineEntry,
+    TimeseriesMetric,
+    TimeseriesPoint,
+)
 from agentscope.application.ports.provenance import ProvenanceRepository
 from agentscope.application.ports.repositories import (
     FieldProfileRepository,
@@ -33,4 +46,16 @@ __all__ = [
     "FieldProfileRepository",
     "ProvenanceRepository",
     "UnitOfWork",
+    # lecture dashboard (I1.9)
+    "MetricsQueryService",
+    "MetricFilter",
+    "Page",
+    "Paginated",
+    "Indicators",
+    "TimeseriesPoint",
+    "TimeseriesMetric",
+    "Granularity",
+    "SessionListItem",
+    "SessionDetail",
+    "TimelineEntry",
 ]

@@ -69,6 +69,8 @@ filterwarnings = [
   # Filtrage par message (module et catégorie varient selon l'ordre d'import).
   "ignore:Using .httpx. with .starlette.testclient. is deprecated",
   "ignore:The anyio.abc.BlockingPortal alias is deprecated",
+  # stdlib : adaptateur datetime->SQLite déprécié en 3.12 (uniquement en tests SQLite).
+  "ignore:The default datetime adapter is deprecated:DeprecationWarning",
 ]
 
 [tool.coverage.run]

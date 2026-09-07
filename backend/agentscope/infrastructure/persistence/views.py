@@ -27,19 +27,23 @@ _ERROR_STATUSES = "('error', 'timeout')"
 
 def _duration_ms(dialect: str, start: str, end: str) -> str:
     if dialect == "sqlite":
-        return f"CAST((julianday({end}) - julianday({start})) * 86400000.0 AS INTEGER)"
-    return f"CAST(EXTRACT(EPOCH FROM ({end} - {start})) * 1000 AS BIGINT)"
+        # ROUND : julianday() est un flottant, la troncature perdrait ~1 ms par appel.
+        return f"CAST(ROUND((julianday({end}) - julianday({start})) * 86400000.0) AS INTEGER)"
+    return f"CAST(ROUND(EXTRACT(EPOCH FROM ({end} - {start})) * 1000) AS BIGINT)"
 
 
-def _day(dialect: str, column: str) -> str:
-    # SQLite : CAST(... AS DATE) tomberait en affinité numérique -> fonction date().
+def day_expr(dialect: str, column: str) -> str:
+    """Expression SQL « jour » portable (réutilisée par le MetricsQueryService, I1.9).
+
+    SQLite : ``CAST(... AS DATE)`` tomberait en affinité numérique -> fonction ``date()``.
+    """
     return f"date({column})" if dialect == "sqlite" else f"CAST({column} AS date)"
 
 
 def build_view_statements(dialect: str) -> dict[str, str]:
     dur_session = _duration_ms(dialect, "s.started_at", "s.ended_at")
     dur_tool = _duration_ms(dialect, "tc.started_at", "tc.ended_at")
-    day = _day(dialect, "s.started_at")
+    day = day_expr(dialect, "s.started_at")
     err = _ERROR_STATUSES
 
     model_agg = f"""
