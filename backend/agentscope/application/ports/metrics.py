@@ -36,6 +36,7 @@ class MetricFilter:
     sources: tuple[str, ...] = ()
     agents: tuple[str, ...] = ()
     models: tuple[str, ...] = ()
+    repositories: tuple[str, ...] = ()  # dépôts de code (SWE-chat)
     date_from: datetime | None = None
     date_to: datetime | None = None  # borne haute exclue
 
@@ -81,6 +82,7 @@ class SessionListItem:
     session_id: int
     source_name: str
     agent_name: str | None
+    repository_name: str | None
     started_at: datetime | None
     duration_ms: int | None
     model_call_count: int

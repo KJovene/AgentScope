@@ -95,6 +95,19 @@ class SqlReferenceRepository:
         ).scalar_one_or_none()
         return m.row_to_repository(row, source_name) if row is not None else None
 
+    def list_code_repositories(
+        self, source_name: str | None = None
+    ) -> list[RepositoryEntity]:
+        stmt = select(RepositoryRow, SourceRow.name).join(
+            SourceRow, SourceRow.id == RepositoryRow.source_id
+        )
+        if source_name is not None:
+            stmt = stmt.where(SourceRow.name == source_name)
+        rows = self._s.execute(
+            stmt.order_by(SourceRow.name, RepositoryRow.name)
+        ).all()
+        return [m.row_to_repository(row, src_name) for row, src_name in rows]
+
 
 class SqlMappingRepository:
     def __init__(self, session: Session) -> None:

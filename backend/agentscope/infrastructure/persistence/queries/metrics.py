@@ -28,7 +28,7 @@ from agentscope.application.ports import (
 )
 from agentscope.infrastructure.persistence.views import day_expr
 
-_LIST_KEYS = ("sources", "agents", "models")
+_LIST_KEYS = ("sources", "agents", "models", "repositories")
 _ERROR_STATUSES = ("error", "timeout")
 
 _METRIC_AGG: dict[TimeseriesMetric, str] = {
@@ -97,6 +97,9 @@ class SqlMetricsQueryService:
                 "session_id IN (SELECT session_id FROM model_call WHERE model_name IN :models)"
             )
             params["models"] = list(filters.models)
+        if filters.repositories:
+            conds.append("repository_name IN :repositories")
+            params["repositories"] = list(filters.repositories)
         if filters.date_from is not None:
             conds.append("started_at >= :date_from")
             params["date_from"] = filters.date_from
@@ -209,8 +212,9 @@ class SqlMetricsQueryService:
 
         rows = self._execute(
             f"""
-            SELECT session_id, source_name, agent_name, started_at, duration_ms,
-                   n_model_calls, n_tool_calls, total_tokens, total_cost_usd, n_errors
+            SELECT session_id, source_name, agent_name, repository_name, started_at,
+                   duration_ms, n_model_calls, n_tool_calls, total_tokens,
+                   total_cost_usd, n_errors
             FROM v_session_metrics
             WHERE {where}
             ORDER BY (started_at IS NULL), started_at DESC, session_id DESC
@@ -223,6 +227,7 @@ class SqlMetricsQueryService:
                 session_id=_int(r.session_id),
                 source_name=r.source_name,
                 agent_name=r.agent_name,
+                repository_name=r.repository_name,
                 started_at=_to_dt(r.started_at),
                 duration_ms=_opt_int(r.duration_ms),
                 model_call_count=_int(r.n_model_calls),

@@ -344,7 +344,7 @@ Ne remettent pas en cause la 3NF des tables de base ; recalculées à la volée.
 
 | Vue | Une ligne = | Colonnes principales |
 | --- | --- | --- |
-| `v_session_metrics` | une session | `session_id`, `source_name`, `agent_name`, `started_at`, `duration_ms` (calc.), `n_model_calls`, `n_tool_calls`, `total_tokens`, `prompt_tokens`, `completion_tokens`, `cached_tokens`, `cache_hit_ratio`, `total_cost_usd`, `n_errors`, `import_batch_id` |
+| `v_session_metrics` | une session | `session_id`, `source_name`, `agent_name`, `repository_name` (dépôt de code, SWE-chat), `started_at`, `duration_ms` (calc.), `n_model_calls`, `n_tool_calls`, `total_tokens`, `prompt_tokens`, `completion_tokens`, `cached_tokens`, `cache_hit_ratio`, `total_cost_usd`, `n_errors`, `import_batch_id` |
 | `v_daily_activity` | un couple (source, jour) | `n_sessions`, `n_model_calls`, `n_tool_calls`, `total_tokens` — jour = `date_trunc('day', session.started_at)` ; sessions sans `started_at` exclues (et comptées à part côté qualité) |
 | `v_tool_usage` | un couple (source, `tool_name`) | `n_calls`, `n_errors`, `error_rate`, `avg_duration_ms` |
 | `v_data_quality` | un `import_batch` | `source_name`, `record_count`, `imported_count`, `duplicate_count`, `rejected_count`, `missing_info_count`, `completeness_ratio` (= `imported_count / record_count`), `n_profiled_fields`, `avg_null_ratio` |

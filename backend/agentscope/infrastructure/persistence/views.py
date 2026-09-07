@@ -75,6 +75,7 @@ def build_view_statements(dialect: str) -> dict[str, str]:
                 s.id AS session_id,
                 src.name AS source_name,
                 s.agent_name AS agent_name,
+                repo.name AS repository_name,
                 s.started_at AS started_at,
                 s.ended_at AS ended_at,
                 s.import_batch_id AS import_batch_id,
@@ -93,6 +94,7 @@ def build_view_statements(dialect: str) -> dict[str, str]:
                 COALESCE(m.n_model_errors, 0) + COALESCE(t.n_tool_errors, 0) AS n_errors
             FROM session s
             JOIN source src ON src.id = s.source_id
+            LEFT JOIN repository repo ON repo.id = s.repository_id
             LEFT JOIN ({model_agg}) m ON m.session_id = s.id
             LEFT JOIN ({tool_agg}) t ON t.session_id = s.id
         """,
