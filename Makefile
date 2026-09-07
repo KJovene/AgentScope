@@ -123,6 +123,18 @@ openapi: ## Exporte backend/openapi.json puis régénère le client TS du fronte
 ci: lint typecheck arch test ## Ce que la CI exécute à chaque PR
 
 # ---------------------------------------------------------------------------
+# Données (I0.10 — provenance et méthode dans data/README.md)
+# ---------------------------------------------------------------------------
+
+.PHONY: data-tracelab
+data-tracelab: ## Télécharge l'extrait TraceLab épinglé (SHA256 vérifié) + échantillon de dev
+	python scripts/tracelab_extract.py --fetch --modulo 32 --out data/tracelab/extract-dev.jsonl
+
+.PHONY: fixtures
+fixtures: ## Régénère la fixture de test TraceLab commitée
+	python scripts/tracelab_extract.py --fetch --modulo 32 --max-sessions-per-provider 1 --out backend/tests/fixtures/tracelab/sample.jsonl
+
+# ---------------------------------------------------------------------------
 # Installation locale (hors Docker)
 # ---------------------------------------------------------------------------
 

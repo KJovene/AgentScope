@@ -76,7 +76,12 @@ branch = true
 source = ["agentscope"]
 
 # ---------------------------------------------------------------------------
-# Règle des dépendances (Clean Architecture) — vérifiée par `lint-imports` (I0.11)
+# Règle des dépendances (Clean Architecture — ADR-0002)
+#
+# Vérifiée par `lint-imports` : `make arch` en local, `tests/unit/test_architecture.py`
+# dans la suite pytest (donc dans la CI dès que le workflow I0.3 existe).
+# `include_external_packages` est indispensable : sans lui, grimp ne met pas les
+# paquets tiers dans le graphe et les contrats 2 et 3 ne détecteraient jamais rien.
 # ---------------------------------------------------------------------------
 
 [tool.importlinter]
@@ -84,7 +89,7 @@ root_package = "agentscope"
 include_external_packages = true
 
 [[tool.importlinter.contracts]]
-name = "Sens des dépendances entre couches"
+name = "1. Sens des dépendances entre couches"
 type = "layers"
 # Du plus haut (peut importer) au plus bas (ne peut pas remonter).
 layers = [
@@ -95,15 +100,63 @@ layers = [
 ]
 
 [[tool.importlinter.contracts]]
-name = "Le domaine ne dépend d'aucun framework"
+name = "2. Le domaine ne dépend d'aucun framework ni SDK"
 type = "forbidden"
 source_modules = ["agentscope.domain"]
 forbidden_modules = [
   "fastapi",
+  "starlette",
   "sqlalchemy",
+  "alembic",
   "pydantic",
+  "pydantic_settings",
   "httpx",
   "pandas",
   "pyarrow",
   "duckdb",
+  "anthropic",
+  "openai",
+]
+
+[[tool.importlinter.contracts]]
+name = "3. Les cas d'utilisation ne dépendent d'aucun framework ni SDK"
+type = "forbidden"
+source_modules = ["agentscope.application"]
+# Même liste que le domaine : les use cases parlent aux ports, jamais aux outils.
+forbidden_modules = [
+  "fastapi",
+  "starlette",
+  "sqlalchemy",
+  "alembic",
+  "pydantic",
+  "pydantic_settings",
+  "httpx",
+  "pandas",
+  "pyarrow",
+  "duckdb",
+  "anthropic",
+  "openai",
+]
+
+[[tool.importlinter.contracts]]
+name = "4. Seul le point de composition connaît l'infrastructure"
+type = "forbidden"
+# Routes et schémas passent par les ports injectés ; instancier un adaptateur
+# reste réservé à `app.py` / `dependencies.py` / `main.py`.
+source_modules = [
+  "agentscope.interfaces.api.routes",
+  "agentscope.interfaces.api.schemas",
+]
+forbidden_modules = ["agentscope.infrastructure"]
+
+[[tool.importlinter.contracts]]
+name = "5. Les adaptateurs d'infrastructure sont indépendants entre eux"
+type = "independence"
+# Un lecteur de fichier n'appelle pas la base ; un adaptateur LLM n'appelle pas
+# un lecteur. Ils ne se rencontrent que dans un cas d'utilisation.
+modules = [
+  "agentscope.infrastructure.persistence",
+  "agentscope.infrastructure.readers",
+  "agentscope.infrastructure.llm",
+  "agentscope.infrastructure.profiling",
 ]

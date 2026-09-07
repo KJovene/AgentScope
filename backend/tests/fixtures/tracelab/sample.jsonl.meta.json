@@ -1,0 +1,32 @@
+{
+  "source": {
+    "release": "v0.0.1",
+    "asset": "syfi_coding_trace.jsonl.gz",
+    "sha256": "9d265eae69a31cae203848bea936f018148eed7ca8bf56050c5abe96da0b4e6b",
+    "rows_scanned": 357161
+  },
+  "selection": {
+    "rule": "sha1(session_id) % modulo == 0",
+    "modulo": 32,
+    "max_sessions_per_provider": 1
+  },
+  "extract": {
+    "path": "backend/tests/fixtures/tracelab/sample.jsonl",
+    "rounds": 103,
+    "bytes": 189300,
+    "sessions": {
+      "claude": 1,
+      "codex": 1
+    },
+    "rounds_by_provider": {
+      "claude": 72,
+      "codex": 31
+    },
+    "tool_records_by_provider": {
+      "claude": 74,
+      "codex": 54
+    },
+    "distinct_models": 2,
+    "distinct_users": 2
+  }
+}
