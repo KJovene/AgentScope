@@ -1,0 +1,60 @@
+name: agentscope
+
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-agentscope}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-agentscope}
+      POSTGRES_DB: ${POSTGRES_DB:-agentscope}
+    ports:
+      - "${DB_PORT:-5432}:5432"
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-agentscope} -d ${POSTGRES_DB:-agentscope}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  backend:
+    build:
+      context: ./backend
+      target: dev
+    command: uvicorn agentscope.main:app --host 0.0.0.0 --port 8000 --reload
+    environment:
+      AGENTSCOPE_DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-agentscope}:${POSTGRES_PASSWORD:-agentscope}@db:5432/${POSTGRES_DB:-agentscope}
+      AGENTSCOPE_CORS_ORIGINS: http://localhost:${FRONTEND_PORT:-5173}
+      AGENTSCOPE_LLM_PROVIDER: ${AGENTSCOPE_LLM_PROVIDER:-fake}
+      AGENTSCOPE_LLM_MODEL: ${AGENTSCOPE_LLM_MODEL:-}
+      AGENTSCOPE_LLM_BASE_URL: ${AGENTSCOPE_LLM_BASE_URL:-}
+      AGENTSCOPE_LLM_API_KEY: ${AGENTSCOPE_LLM_API_KEY:-}
+    ports:
+      - "${BACKEND_PORT:-8000}:8000"
+    volumes:
+      # Code monté pour le rechargement à chaud ; les deps restent celles de l'image.
+      - ./backend:/app
+    depends_on:
+      db:
+        condition: service_healthy
+
+  frontend:
+    build:
+      context: ./frontend
+      target: dev
+    command: npm run dev -- --host 0.0.0.0 --port 5173
+    environment:
+      # Vite proxifie /api vers le service backend (voir vite.config.ts).
+      VITE_API_PROXY_TARGET: http://backend:8000
+      VITE_API_BASE_URL: /api
+    ports:
+      - "${FRONTEND_PORT:-5173}:5173"
+    volumes:
+      - ./frontend:/app
+      # Volume anonyme : garde le node_modules de l'image, non masqué par le montage.
+      - /app/node_modules
+    depends_on:
+      - backend
+
+volumes:
+  db-data:

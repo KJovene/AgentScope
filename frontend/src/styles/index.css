@@ -1,0 +1,37 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/*
+ * Semantic color tokens as HSL channels (see tailwind.config.ts).
+ * Light is the default; [data-theme="dark"] on <html> flips them.
+ */
+:root {
+  --surface: 0 0% 100%;
+  --surface-muted: 220 14% 96%;
+  --border: 220 13% 88%;
+  --foreground: 222 47% 11%;
+  --foreground-muted: 220 9% 46%;
+  --primary: 221 83% 53%;
+  --primary-foreground: 0 0% 100%;
+  --success: 142 71% 35%;
+  --warning: 38 92% 45%;
+  --danger: 0 72% 46%;
+}
+
+[data-theme='dark'] {
+  --surface: 222 47% 11%;
+  --surface-muted: 222 40% 8%;
+  --border: 220 17% 24%;
+  --foreground: 210 20% 96%;
+  --foreground-muted: 218 11% 65%;
+  --primary: 217 91% 60%;
+  --primary-foreground: 222 47% 11%;
+  --success: 142 60% 45%;
+  --warning: 38 92% 55%;
+  --danger: 0 72% 60%;
+}
+
+body {
+  @apply bg-surface-muted text-foreground antialiased;
+}
