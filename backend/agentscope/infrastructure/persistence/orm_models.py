@@ -46,6 +46,9 @@ def _in(column: str, enum_cls: type[Enum]) -> str:
 
 
 _TS = DateTime(timezone=True)
+# `none_as_null` : un payload Python `None` devient SQL NULL (et non le JSON `null`),
+# pour que la rétention `minimal` (I1.7) et les filtres `IS NULL` fonctionnent.
+_JSON = JSON(none_as_null=True)
 
 
 class SourceRow(Base):
@@ -81,7 +84,7 @@ class MappingRow(Base):
     name: Mapped[str] = mapped_column(Text, nullable=False)
     version: Mapped[int] = mapped_column(Integer, nullable=False)
     source_format: Mapped[str] = mapped_column(Text, nullable=False)
-    definition_json: Mapped[dict[str, Any]] = mapped_column(JSON, nullable=False)
+    definition_json: Mapped[dict[str, Any]] = mapped_column(_JSON, nullable=False)
     is_active: Mapped[bool] = mapped_column(
         Boolean, nullable=False, default=True, server_default=true()
     )
@@ -140,7 +143,7 @@ class RawRecordRow(Base):
     )
     record_index: Mapped[int] = mapped_column(Integer, nullable=False)
     record_sha256: Mapped[str] = mapped_column(Text, nullable=False)
-    payload_json: Mapped[dict[str, Any] | None] = mapped_column(JSON)
+    payload_json: Mapped[dict[str, Any] | None] = mapped_column(_JSON)
 
 
 class SessionRow(Base):
@@ -267,7 +270,7 @@ class ImportRejectRow(Base):
     target_entity: Mapped[str | None] = mapped_column(Text)
     reason_code: Mapped[str] = mapped_column(Text, nullable=False)
     reason_detail: Mapped[str] = mapped_column(Text, nullable=False)
-    payload_json: Mapped[dict[str, Any] | None] = mapped_column(JSON)
+    payload_json: Mapped[dict[str, Any] | None] = mapped_column(_JSON)
 
 
 class FieldProfileRow(Base):
@@ -287,7 +290,7 @@ class FieldProfileRow(Base):
     null_ratio: Mapped[float] = mapped_column(Float, nullable=False)
     distinct_count: Mapped[int] = mapped_column(Integer, nullable=False)
     sample_values_json: Mapped[list[Any]] = mapped_column(
-        JSON, nullable=False, default=list, server_default=text("'[]'")
+        _JSON, nullable=False, default=list, server_default=text("'[]'")
     )
 
 

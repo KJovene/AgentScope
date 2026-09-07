@@ -12,6 +12,7 @@ from pathlib import Path
 import pytest
 from alembic import command
 from alembic.config import Config
+from alembic.script import ScriptDirectory
 from sqlalchemy import Engine, create_engine, inspect, text
 from sqlalchemy.exc import IntegrityError
 
@@ -90,14 +91,15 @@ def seeded(engine: Engine) -> tuple[Engine, dict[str, int]]:
     }
 
 
-def test_creates_all_tables_and_stamps_version(engine: Engine) -> None:
+def test_creates_all_tables_and_stamps_head_revision(engine: Engine) -> None:
     inspector = inspect(engine)
     names = set(inspector.get_table_names())
     assert names >= EXPECTED_TABLES
-    version = None
+
+    head = ScriptDirectory(str(MIGRATIONS_DIR)).get_current_head()
     with engine.connect() as conn:
         version = conn.execute(text("SELECT version_num FROM alembic_version")).scalar_one()
-    assert version == "0001_initial"
+    assert version == head
 
 
 @pytest.mark.parametrize(
