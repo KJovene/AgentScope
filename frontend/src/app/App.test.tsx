@@ -1,6 +1,6 @@
 import { render, screen, fireEvent } from "@testing-library/react";
 import { describe, it, expect } from "vitest";
-import { Layout } from "./App"
+import { Layout } from "./Layout";
 
 describe("Layout & Navigation UI (I5.1)", () => {
   it("affiche la navigation latérale et bascule entre les zones", () => {
