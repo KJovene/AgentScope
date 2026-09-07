@@ -18,7 +18,6 @@ from agentscope.domain.entities import (
     ToolCall,
 )
 from agentscope.domain.errors import DomainError, InvalidMappingError, InvariantViolationError
-from agentscope.domain.retention import RetentionMode, RetentionPolicy
 from agentscope.domain.value_objects import (
     CallStatus,
     ErrorType,
@@ -54,9 +53,6 @@ __all__ = [
     "ErrorType",
     "RejectReason",
     "is_error_status",
-    # rétention
-    "RetentionMode",
-    "RetentionPolicy",
     # erreurs
     "DomainError",
     "InvariantViolationError",
