@@ -3,12 +3,17 @@
 from __future__ import annotations
 
 import copy
+import json
 
 import pytest
 
 from agentscope.application.ports.llm_provider import FieldExplanation, MappingProposal
 from agentscope.domain import LLMError
-from agentscope.infrastructure.llm.response_parsing import parse_mapping_response
+from agentscope.infrastructure.llm.response_parsing import (
+    extract_json_object,
+    parse_mapping_response,
+    parse_mapping_response_text,
+)
 
 VALID_DEFINITION = {
     "name": "tracelab-jsonl",
@@ -147,3 +152,27 @@ def test_unmapped_fields_avec_un_element_non_texte_est_refusee() -> None:
 
     with pytest.raises(LLMError, match="unmapped_fields"):
         parse_mapping_response(response)
+
+
+def test_extract_json_object_lit_un_json_brut() -> None:
+    assert extract_json_object(json.dumps(VALID_RESPONSE)) == VALID_RESPONSE
+
+
+def test_extract_json_object_retire_le_bloc_markdown() -> None:
+    text = f"Voici le mapping :\n```json\n{json.dumps(VALID_RESPONSE)}\n```\n"
+
+    assert extract_json_object(text) == VALID_RESPONSE
+
+
+def test_extract_json_object_illisible_est_refuse() -> None:
+    with pytest.raises(LLMError, match="JSON illisible"):
+        extract_json_object("not json at all")
+
+
+def test_parse_mapping_response_text_combine_extraction_et_conversion() -> None:
+    text = f"```json\n{json.dumps(VALID_RESPONSE)}\n```"
+
+    proposal = parse_mapping_response_text(text)
+
+    assert isinstance(proposal, MappingProposal)
+    assert proposal.definition == VALID_DEFINITION

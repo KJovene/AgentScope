@@ -14,6 +14,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import Session, sessionmaker
 
 from agentscope.application.ports.data_quality import DataQualityQueryService
+from agentscope.application.ports.imports import ImportService
 from agentscope.application.ports.metrics import MetricsQueryService
 from agentscope.application.ports.sources import SourcesQueryService
 from agentscope.infrastructure.config.settings import Settings
@@ -79,3 +80,11 @@ class Container:
         )
 
         return SqlDataQualityQueryService(session)
+
+    def make_import_service(self, session: Session) -> ImportService:
+        # Le service d'import réel (orchestration lecteur → normalizer → repos)
+        # n'est pas encore câblé : cf. issue I4.2. Les routes `/imports` existent
+        # (contrat OpenAPI) et sont couvertes en test via `dependency_overrides`.
+        raise NotImplementedError(
+            "Service d'import réel non câblé — voir I4.2 (routes /imports)."
+        )

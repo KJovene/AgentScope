@@ -13,6 +13,7 @@ from fastapi import Depends, Request
 from sqlalchemy.orm import Session
 
 from agentscope.application.ports.data_quality import DataQualityQueryService
+from agentscope.application.ports.imports import ImportService
 from agentscope.application.ports.metrics import MetricsQueryService
 from agentscope.application.ports.sources import SourcesQueryService
 from agentscope.infrastructure.config.settings import Settings
@@ -42,7 +43,7 @@ def get_db_session(container: ContainerDep) -> Iterator[Session]:
 DbSessionDep = Annotated[Session, Depends(get_db_session)]
 
 
-# --- Services de lecture (CQRS) --------------------------------------------------
+# --- Services de lecture (CQRS) + service d'import -----------------------------
 
 
 def get_metrics_service(
@@ -63,8 +64,15 @@ def get_data_quality_service(
     return container.make_data_quality_service(session)
 
 
+def get_import_service(
+    container: ContainerDep, session: DbSessionDep
+) -> ImportService:
+    return container.make_import_service(session)
+
+
 MetricsServiceDep = Annotated[MetricsQueryService, Depends(get_metrics_service)]
 SourcesServiceDep = Annotated[SourcesQueryService, Depends(get_sources_service)]
 DataQualityServiceDep = Annotated[
     DataQualityQueryService, Depends(get_data_quality_service)
 ]
+ImportServiceDep = Annotated[ImportService, Depends(get_import_service)]

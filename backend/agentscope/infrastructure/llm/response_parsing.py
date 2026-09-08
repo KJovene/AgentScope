@@ -12,6 +12,8 @@ brut qui remonterait jusqu'à l'appelant.
 
 from __future__ import annotations
 
+import json
+import re
 from typing import Any
 
 from agentscope.application.mapping.validator import parse_and_validate
@@ -27,6 +29,47 @@ from agentscope.domain import InvalidMappingError, LLMError
 #     "ambiguities": [...],
 #     "unmapped_fields": [...]
 #   }
+
+# `PromptBuilder` (I3.6) ne dicte pas le format de sortie (il est indépendant du
+# fournisseur) ; les adaptateurs concrets (I3.3/I3.4) ajoutent cette consigne au
+# prompt utilisateur pour obtenir une réponse exploitable par ce module.
+RESPONSE_FORMAT_INSTRUCTION = (
+    "Réponds uniquement avec un objet JSON valide (sans texte autour, sans bloc "
+    "markdown) de la forme exacte :\n"
+    '{\n'
+    '  "definition": { ... contrat de mapping conforme au schéma cible ... },\n'
+    '  "explanations": [\n'
+    '    {"target_field": "...", "source_field": "..." ou null, "rationale": "...", '
+    '"confidence": 0.0}\n'
+    "  ],\n"
+    '  "ambiguities": ["..."],\n'
+    '  "unmapped_fields": ["..."]\n'
+    "}"
+)
+
+_JSON_FENCE_RE = re.compile(r"```(?:json)?\s*(.*?)\s*```", re.DOTALL)
+
+
+def extract_json_object(text: str) -> Any:
+    """Extrait un objet JSON d'une réponse texte de modèle.
+
+    Tolère un bloc encadré par des triples-backticks (```` ```json ... ``` ````),
+    fréquent chez certains modèles malgré la consigne de réponse « JSON seul ».
+    """
+    candidate = text.strip()
+    fence_match = _JSON_FENCE_RE.search(candidate)
+    if fence_match:
+        candidate = fence_match.group(1).strip()
+
+    try:
+        return json.loads(candidate)
+    except json.JSONDecodeError as exc:
+        raise LLMError(f"Réponse du modèle invalide : JSON illisible ({exc}).") from exc
+
+
+def parse_mapping_response_text(text: str) -> MappingProposal:
+    """Combine extraction JSON (réponse texte brute d'un provider) + ``parse_mapping_response``."""
+    return parse_mapping_response(extract_json_object(text))
 
 
 def parse_mapping_response(raw: object) -> MappingProposal:

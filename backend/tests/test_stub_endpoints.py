@@ -44,39 +44,9 @@ def test_openapi_lists_all_contract_routes() -> None:
     assert expected.issubset(paths.keys())
 
 
-def test_create_import_stub() -> None:
-    resp = client.post(
-        "/api/v1/imports",
-        data={"mapping_id": "map_tracelab_v1"},
-        files={"files": ("trace.jsonl", b'{"session_id": "s1"}\n', "application/jsonl")},
-    )
-    assert resp.status_code == 200
-    body = resp.json()
-    assert body["status"] == "success"
-    assert body["imported_count"] > 0
-
-
-def test_list_and_get_import() -> None:
-    listed = client.get("/api/v1/imports")
-    assert listed.status_code == 200
-    body = listed.json()
-    assert body["limit"] <= 200
-    import_id = body["items"][0]["id"]
-
-    detail = client.get(f"/api/v1/imports/{import_id}")
-    assert detail.status_code == 200
-
-    rejects = client.get(f"/api/v1/imports/{import_id}/rejects")
-    assert rejects.status_code == 200
-    assert rejects.json()["total"] >= 1
-
-
-def test_get_import_not_found_is_problem_json() -> None:
-    resp = client.get("/api/v1/imports/does-not-exist")
-    assert resp.status_code == 404
-    body = resp.json()
-    assert body["status"] == 404
-    assert "title" in body and "detail" in body
+# NOTE : /imports/* n'est plus un stub — la route est branchée sur le port
+# `ImportService` (le service réel reste à câbler, cf. I4.2). Elle est couverte
+# par tests/integration/test_imports_routes.py (service simulé via dependency_overrides).
 
 
 def test_analyze_returns_profile_and_proposal() -> None:

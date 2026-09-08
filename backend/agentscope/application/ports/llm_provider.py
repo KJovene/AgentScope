@@ -15,10 +15,13 @@ from agentscope.domain import FieldProfileSet
 
 TargetSchema = Mapping[str, TargetEntity]
 
-# Types pas encore codes (I3.8 pour le chat). A remplacer par le vrai import
-# des qu'ils existent.
-ChatMessage = Any
-MappingContext = Any
+
+@dataclass(frozen=True)
+class ChatMessage:
+    """Un tour de la conversation avec l'agent."""
+
+    role: str  # "user" | "assistant"
+    text: str
 
 
 @dataclass(frozen=True)
@@ -39,6 +42,14 @@ class MappingProposal:
     explanations: list[FieldExplanation]
     ambiguities: list[str]  # points que l'agent signale comme incertains
     unmapped_fields: list[str]
+
+
+@dataclass(frozen=True)
+class MappingContext:
+    """Contexte donne a l'agent pour discuter d'une proposition en cours."""
+
+    proposal: MappingProposal
+    target_schema: TargetSchema
 
 
 @dataclass(frozen=True)
