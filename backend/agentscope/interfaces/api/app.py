@@ -65,7 +65,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
 
     register_exception_handlers(app_instance)
 
-    # Alias global non versionné
+    # Alias global non versionnÃ©
     app_instance.add_api_route("/health", health, tags=["meta"])
     app_instance.include_router(api_router)
 
