@@ -48,14 +48,15 @@ class MappingUpdate(BaseModel):
 
 
 class Mapping(BaseModel):
-    mapping_id: str
+    mapping_id: str  # = name (identifiant public, aligné sur le champ `mapping_id` de /imports)
     name: str
     version: int
+    source_name: str
     source_format: str
     definition: dict
     is_active: bool
     created_at: datetime
-    created_by: str
+    created_by: str | None = None
 
 
 class PreviewRow(BaseModel):

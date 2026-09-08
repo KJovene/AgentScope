@@ -14,7 +14,12 @@ from agentscope.application.mapping.target_schema import TARGET_SCHEMA
 from agentscope.application.mapping.validator import parse_and_validate
 from agentscope.application.ports.llm_provider import LLMProvider, MappingProposal
 from agentscope.application.ports.profiler import FieldProfiler
-from agentscope.domain import DomainError, InvalidMappingError, RawRecord
+from agentscope.domain import (
+    DomainError,
+    FieldProfileSet,
+    InvalidMappingError,
+    RawRecord,
+)
 
 
 class AnalysisFailedError(DomainError):
@@ -23,9 +28,10 @@ class AnalysisFailedError(DomainError):
 
 @dataclass(frozen=True, slots=True)
 class AnalysisResult:
-    """Résultat renvoyé à l'appelant : la proposition, déjà validée."""
+    """Résultat renvoyé à l'appelant : la proposition validée + le profil calculé."""
 
     proposal: MappingProposal
+    profile: FieldProfileSet
 
 
 class AnalyzeUnknownFile:
@@ -62,4 +68,4 @@ class AnalyzeUnknownFile:
                 f"non conforme au contrat : {exc}"
             ) from exc
 
-        return AnalysisResult(proposal=proposal)
+        return AnalysisResult(proposal=proposal, profile=profile)
