@@ -158,8 +158,6 @@ class Container:
         return SqlDataQualityQueryService(session)
 
     def make_import_service(self, session: Session) -> ImportService:
-        # Utilise l'implémentation DefaultImportService définie plus haut dans ce fichier
-        return DefaultImportService(session)
         from agentscope.infrastructure.persistence.services.import_service import (
             SqlImportService,
         )

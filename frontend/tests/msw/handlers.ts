@@ -30,5 +30,9 @@ export const handlers = [
     HttpResponse.json({ metric: 'sessions', granularity: 'day', points: [] }),
   ),
 
+  http.get('/api/metrics/tool-usage', () => HttpResponse.json([])),
+
   http.get('/api/sources', () => HttpResponse.json([])),
+
+  http.get('/api/sessions', () => HttpResponse.json({ items: [], total: 0, limit: 200, offset: 0 })),
 ];

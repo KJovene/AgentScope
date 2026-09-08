@@ -65,4 +65,22 @@ describe('dashboardApi transport', () => {
       kind: 'http',
     });
   });
+
+  it('getToolUsage() calls GET /metrics/tool-usage with the filter query params', async () => {
+    let url: URL | undefined;
+    server.use(
+      http.get('/api/metrics/tool-usage', ({ request }) => {
+        url = new URL(request.url);
+        return HttpResponse.json([
+          { tool_name: 'bash', n_calls: 10, n_errors: 1, avg_duration_ms: 200 },
+        ]);
+      }),
+    );
+
+    const res = await dashboardApi.getToolUsage({ ...EMPTY_METRIC_FILTERS, agents: ['claude'] });
+
+    expect(res).toHaveLength(1);
+    expect(res[0]?.tool_name).toBe('bash');
+    expect(url?.searchParams.getAll('agents')).toEqual(['claude']);
+  });
 });

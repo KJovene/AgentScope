@@ -49,3 +49,13 @@ export const timeseriesResponseSchema = z.object({
   points: z.array(timeseriesPointSchema),
 });
 export type TimeseriesResponse = z.infer<typeof timeseriesResponseSchema>;
+
+export const toolUsageItemSchema = z.object({
+  tool_name: z.string(),
+  n_calls: z.number().int().nonnegative(),
+  n_errors: z.number().int().nonnegative(),
+  avg_duration_ms: z.number().nullable(),
+});
+export type ToolUsageItem = z.infer<typeof toolUsageItemSchema>;
+
+export const toolUsageResponseSchema = z.array(toolUsageItemSchema);
