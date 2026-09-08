@@ -2,17 +2,21 @@
 
 from __future__ import annotations
 
+import json
 from collections import defaultdict
 from collections.abc import Iterable, Mapping
 from datetime import date, datetime
-import json
 from typing import Any
 
 from agentscope.domain import FieldProfile, FieldProfileSet, RawRecord
+from agentscope.infrastructure.profiling.sensitive_filter import DefaultSensitiveFilter
 
 
 class DefaultFieldProfiler:
     """Profile les champs imbriqués d'enregistrements bruts."""
+
+    def __init__(self, sensitive_filter: DefaultSensitiveFilter | None = None) -> None:
+        self._sensitive_filter = sensitive_filter or DefaultSensitiveFilter()
 
     def profile(self, records: Iterable[RawRecord], sample_size: int) -> FieldProfileSet:
         if sample_size < 0:
@@ -22,7 +26,8 @@ class DefaultFieldProfiler:
         values_by_path: dict[str, list[Any]] = defaultdict(list)
         all_paths: set[str] = set()
         for record in record_list:
-            flattened = dict(self._flatten(record.payload))
+            safe_payload = self._sensitive_filter.scrub(record.payload)
+            flattened = dict(self._flatten(safe_payload))
             all_paths.update(flattened)
             for path in all_paths:
                 values_by_path[path].append(flattened.get(path))
