@@ -8,6 +8,7 @@ from sqlalchemy.orm import Session
 
 from agentscope.infrastructure.config.settings import Settings
 from agentscope.interfaces.api.container import Container
+from agentscope.application.ports.metrics import MetricsQueryService
 
 
 def get_container(request: Request) -> Container:
@@ -28,6 +29,16 @@ def get_db_session(
         yield session
 
 
+def get_metrics_service(
+    container: Annotated[Container, Depends(get_container)],
+    session: Annotated[Session, Depends(get_db_session)],
+) -> MetricsQueryService:
+    return container.make_metrics_service(session)
+
 ContainerDep = Annotated[Container, Depends(get_container)]
 SettingsDep = Annotated[Settings, Depends(get_settings_dep)]
 DbSessionDep = Annotated[Session, Depends(get_db_session)]
+MetricsServiceDep = Annotated[MetricsQueryService, Depends(get_metrics_service)]
+
+
+
