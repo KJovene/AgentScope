@@ -1,7 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router';
 
-import { ImportHistoryPage } from '@features/import';
+import { ImportHistoryScreen } from '@features/import/ui/ImportHistoryScreen';
 
 export const Route = createFileRoute('/imports/')({
-  component: ImportHistoryPage,
+  component: ImportHistoryScreen,
 });
