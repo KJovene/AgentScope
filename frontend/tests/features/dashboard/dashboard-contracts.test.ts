@@ -5,6 +5,7 @@ import {
   indicatorsResponseSchema,
   timeseriesMetricSchema,
   timeseriesResponseSchema,
+  toolUsageResponseSchema,
 } from '@features/dashboard/api/dashboard.contracts';
 
 const validIndicators = {
@@ -60,5 +61,18 @@ describe('dashboard.contracts', () => {
       ],
     };
     expect(timeseriesResponseSchema.parse(payload)).toEqual(payload);
+  });
+
+  it('toolUsageResponseSchema accepts a well-formed list with a nullable avg_duration_ms', () => {
+    const payload = [
+      { tool_name: 'bash', n_calls: 12, n_errors: 2, avg_duration_ms: 150.5 },
+      { tool_name: 'grep', n_calls: 5, n_errors: 0, avg_duration_ms: null },
+    ];
+    expect(toolUsageResponseSchema.parse(payload)).toEqual(payload);
+  });
+
+  it('toolUsageResponseSchema rejects a negative n_errors', () => {
+    const payload = [{ tool_name: 'bash', n_calls: 12, n_errors: -1, avg_duration_ms: null }];
+    expect(toolUsageResponseSchema.safeParse(payload).success).toBe(false);
   });
 });

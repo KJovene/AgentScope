@@ -5,11 +5,16 @@ vi.mock('@features/dashboard/api/dashboard.api', () => ({
   dashboardApi: {
     getIndicators: vi.fn(),
     getTimeseries: vi.fn(),
+    getToolUsage: vi.fn(),
   },
 }));
 
 import { dashboardApi } from '@features/dashboard/api/dashboard.api';
-import { useIndicatorsQuery, useTimeseriesQuery } from '@features/dashboard/api/dashboard.queries';
+import {
+  useIndicatorsQuery,
+  useTimeseriesQuery,
+  useToolUsageQuery,
+} from '@features/dashboard/api/dashboard.queries';
 import { EMPTY_METRIC_FILTERS } from '@shared/lib/metric-filters';
 
 import { queryWrapper } from '../../utils';
@@ -78,5 +83,19 @@ describe('dashboard query hooks', () => {
 
     await waitFor(() => expect(result.current.isError).toBe(true));
     expect((result.current.error as unknown as { status: number }).status).toBe(500);
+  });
+
+  it('useToolUsageQuery returns the items from dashboardApi.getToolUsage', async () => {
+    mockedApi.getToolUsage.mockResolvedValueOnce([
+      { tool_name: 'bash', n_calls: 10, n_errors: 1, avg_duration_ms: 200 },
+    ]);
+
+    const { result } = renderHook(() => useToolUsageQuery(EMPTY_METRIC_FILTERS), {
+      wrapper: queryWrapper(),
+    });
+
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+    expect(result.current.data?.[0]?.tool_name).toBe('bash');
+    expect(mockedApi.getToolUsage).toHaveBeenCalledWith(EMPTY_METRIC_FILTERS, expect.anything());
   });
 });

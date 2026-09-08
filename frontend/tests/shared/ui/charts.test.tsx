@@ -1,7 +1,7 @@
 import { render, screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 
-import { ChartFrame, TimeSeriesChart } from '@shared/ui';
+import { ChartFrame, StackedBarChart, TimeSeriesChart } from '@shared/ui';
 
 describe('ChartFrame', () => {
   it('renders the title and children when not empty', () => {
@@ -53,6 +53,25 @@ describe('TimeSeriesChart', () => {
 
     // jsdom has no layout engine — Recharts' <ResponsiveContainer> renders an
     // empty box, but the wrapper itself must mount without throwing.
+    expect(container.querySelector('.recharts-responsive-container')).toBeInTheDocument();
+  });
+});
+
+describe('StackedBarChart', () => {
+  it('renders one bar per series without crashing', () => {
+    const { container } = render(
+      <StackedBarChart
+        data={[
+          { category: 'bash', success: 10, error: 2 },
+          { category: 'grep', success: 5, error: 0 },
+        ]}
+        series={[
+          { key: 'success', label: 'Réussis' },
+          { key: 'error', label: 'Erreurs' },
+        ]}
+      />,
+    );
+
     expect(container.querySelector('.recharts-responsive-container')).toBeInTheDocument();
   });
 });
