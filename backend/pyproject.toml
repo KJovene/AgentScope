@@ -4,6 +4,7 @@ version = "0.1.0"
 description = "AgentScope — normalisation et dashboarding de traces d'agents IA"
 readme = "README.md"
 requires-python = ">=3.12"
+license = "MIT"
 dependencies = [
   "fastapi>=0.115",
   "uvicorn[standard]>=0.32",
@@ -33,7 +34,7 @@ dev = [
 agentscope-openapi = "agentscope.interfaces.api.openapi:main"
 
 [build-system]
-requires = ["setuptools>=68"]
+requires = ["setuptools>=77"]
 build-backend = "setuptools.build_meta"
 
 [tool.setuptools.packages.find]
