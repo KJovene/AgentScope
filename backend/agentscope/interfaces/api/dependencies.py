@@ -16,6 +16,7 @@ from agentscope.application.ports.data_quality import DataQualityQueryService
 from agentscope.application.ports.imports import ImportService
 from agentscope.application.ports.metrics import MetricsQueryService
 from agentscope.application.ports.sources import SourcesQueryService
+from agentscope.application.ports.workbench import MappingWorkbenchService
 from agentscope.infrastructure.config.settings import Settings
 from agentscope.interfaces.api.container import Container
 
@@ -70,9 +71,16 @@ def get_import_service(
     return container.make_import_service(session)
 
 
+def get_workbench_service(container: ContainerDep) -> MappingWorkbenchService:
+    return container.make_workbench_service()
+
+
 MetricsServiceDep = Annotated[MetricsQueryService, Depends(get_metrics_service)]
 SourcesServiceDep = Annotated[SourcesQueryService, Depends(get_sources_service)]
 DataQualityServiceDep = Annotated[
     DataQualityQueryService, Depends(get_data_quality_service)
 ]
 ImportServiceDep = Annotated[ImportService, Depends(get_import_service)]
+WorkbenchServiceDep = Annotated[
+    MappingWorkbenchService, Depends(get_workbench_service)
+]

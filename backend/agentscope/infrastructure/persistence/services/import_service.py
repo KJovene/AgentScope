@@ -18,42 +18,20 @@ from __future__ import annotations
 import json
 from collections.abc import Callable, Sequence
 from datetime import UTC, datetime
-from pathlib import PurePosixPath
 
 from sqlalchemy.orm import Session
 
+from agentscope.application.mapping.file_format import detect_format as _format_for
 from agentscope.application.ports.imports import ImportBatchItem, ImportRejectItem
 from agentscope.application.ports.metrics import Page, Paginated
 from agentscope.application.ports.source_reader import SourceReader
 from agentscope.application.ports.unit_of_work import UnitOfWork
 from agentscope.application.use_cases.import_file import ImportFile, ImportReport
-from agentscope.domain import DomainError, FileFormat, ImportBatch, ImportStatus
+from agentscope.domain import DomainError, ImportBatch, ImportStatus
 from agentscope.infrastructure.persistence.repositories.sql import (
     SqlImportRepository,
     SqlRejectRepository,
 )
-
-_SUFFIX_TO_FORMAT = {
-    ".jsonl": FileFormat.JSONL,
-    ".ndjson": FileFormat.JSONL,
-    ".csv": FileFormat.CSV,
-    ".parquet": FileFormat.PARQUET,
-}
-
-
-class UnsupportedFileError(DomainError):
-    """Extension de fichier non reconnue pour l'import."""
-
-
-def _format_for(filename: str) -> FileFormat:
-    suffix = PurePosixPath(filename).suffix.lower()
-    fmt = _SUFFIX_TO_FORMAT.get(suffix)
-    if fmt is None:
-        accepted = ", ".join(sorted(_SUFFIX_TO_FORMAT))
-        raise UnsupportedFileError(
-            f"Format non reconnu pour « {filename} » (extensions acceptées : {accepted})."
-        )
-    return fmt
 
 
 _STATUS_MAP = {

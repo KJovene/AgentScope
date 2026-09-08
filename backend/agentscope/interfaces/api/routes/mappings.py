@@ -1,17 +1,26 @@
 from __future__ import annotations
 
-from fastapi import APIRouter, HTTPException
+import dataclasses
+import json
+from typing import Any
+
+from fastapi import APIRouter, File, Form, HTTPException, UploadFile
 
 from agentscope.interfaces.api import fixtures
+from agentscope.interfaces.api.dependencies import WorkbenchServiceDep
 from agentscope.interfaces.api.schemas.common import Paginated
 from agentscope.interfaces.api.schemas.mappings import (
     Mapping,
     MappingCreate,
     MappingUpdate,
     PreviewResult,
+    PreviewRow,
 )
 
 router = APIRouter(tags=["mappings"])
+
+
+# --- CRUD : encore des stubs (issue I4.5) ------------------------------------
 
 
 @router.post("/mappings", response_model=Mapping, status_code=201)
@@ -42,8 +51,40 @@ async def update_mapping(mapping_id: str, payload: MappingUpdate) -> Mapping:
     return Mapping(**updated)
 
 
+# --- Prévisualisation : branchée (issue I4.3) -------------------------------
+
+
+_ENTITY_ATTRS = (("session", "sessions"), ("model_call", "model_calls"), ("tool_call", "tool_calls"))
+
+
+def _row_dict(obj: Any) -> dict[str, Any]:
+    return dataclasses.asdict(obj) if dataclasses.is_dataclass(obj) else dict(obj)
+
+
 @router.post("/mappings/{mapping_id}/preview", response_model=PreviewResult)
-async def preview_mapping(mapping_id: str) -> PreviewResult:
-    if mapping_id != fixtures.MAPPING["mapping_id"]:
-        raise HTTPException(status_code=404, detail=f"Mapping '{mapping_id}' introuvable.")
-    return PreviewResult(**fixtures.PREVIEW_RESULT)
+async def preview_mapping(
+    mapping_id: str,
+    service: WorkbenchServiceDep,
+    file: UploadFile = File(..., description="Échantillon du fichier source"),
+    definition: str = Form(..., description="Définition du mapping (JSON) à prévisualiser"),
+    sample_size: int = Form(50, ge=1, le=500),
+) -> PreviewResult:
+    """Dry-run de normalisation d'un mapping sur un échantillon — aucune écriture."""
+    try:
+        parsed = json.loads(definition)
+    except json.JSONDecodeError as exc:
+        raise HTTPException(
+            status_code=422, detail="Le champ `definition` doit être un JSON valide."
+        ) from exc
+
+    content = await file.read()
+    report = service.preview(file.filename or "upload", content, parsed, sample_size)
+    result = report.result
+
+    rows = [
+        PreviewRow(entity=entity, row=_row_dict(item))
+        for entity, attr in _ENTITY_ATTRS
+        for item in getattr(result, attr)
+    ]
+    rejects = [_row_dict(r) for r in result.rejects]
+    return PreviewResult(rows=rows, rejects=rejects)

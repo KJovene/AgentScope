@@ -44,22 +44,14 @@ def test_openapi_lists_all_contract_routes() -> None:
     assert expected.issubset(paths.keys())
 
 
-# NOTE : /imports/* n'est plus un stub — la route est branchée sur le port
-# `ImportService` (le service réel reste à câbler, cf. I4.2). Elle est couverte
-# par tests/integration/test_imports_routes.py (service simulé via dependency_overrides).
+# NOTE : plusieurs routes ne sont plus des stubs et sont couvertes ailleurs :
+#  - /imports/*            -> port ImportService            (test_imports_routes.py,
+#                                                            test_imports_api_real.py)
+#  - /analyze              -> MappingWorkbenchService (I4.3) (test_analyze_preview_routes.py)
+#  - /mappings/{id}/preview -> idem                          (test_analyze_preview_routes.py)
 
 
-def test_analyze_returns_profile_and_proposal() -> None:
-    resp = client.post(
-        "/api/v1/analyze",
-        files={"file": ("unknown.jsonl", b'{"a": 1}\n', "application/jsonl")},
-    )
-    assert resp.status_code == 200
-    body = resp.json()
-    assert "profile" in body and "proposal" in body
-
-
-def test_mapping_crud_and_preview() -> None:
+def test_mapping_crud_stub() -> None:
     created = client.post(
         "/api/v1/mappings",
         json={"name": "tracelab-jsonl", "source_format": "jsonl", "definition": {}},
@@ -76,10 +68,6 @@ def test_mapping_crud_and_preview() -> None:
     updated = client.put(f"/api/v1/mappings/{mapping_id}", json={"definition": {"entities": {}}})
     assert updated.status_code == 200
     assert updated.json()["version"] == fetched.json()["version"] + 1
-
-    preview = client.post(f"/api/v1/mappings/{mapping_id}/preview")
-    assert preview.status_code == 200
-    assert "rows" in preview.json()
 
 
 def test_chat_has_no_db_side_effect_and_returns_reply() -> None:
