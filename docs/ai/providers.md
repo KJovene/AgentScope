@@ -73,12 +73,14 @@ Les implémentations vivent dans
 | `AGENTSCOPE_LLM_PROVIDER` | Adaptateur | Couvre | État |
 | --- | --- | --- | --- |
 | `fake` **(défaut)** | `FakeLLMProvider` | tests, CI, développement hors ligne | ✅ livré |
-| `anthropic` | `AnthropicProvider` | API Anthropic | ⬜ I3.3 |
-| `openai` | `OpenAICompatibleProvider` | API OpenAI | ⬜ I3.4 |
-| `ollama` | `OpenAICompatibleProvider` + `base_url` | Ollama, LM Studio, tout serveur compatible OpenAI — **modèle local, aucune clé** | ⬜ I3.4 |
+| `anthropic` | `AnthropicProvider` | API Anthropic | ✅ livré |
+| `openai` | `OpenAIProvider` | API OpenAI, **et** tout serveur compatible (Ollama, LM Studio) via `AGENTSCOPE_LLM_BASE_URL` — même code, aucune valeur `AGENTSCOPE_LLM_PROVIDER` dédiée | ✅ livré |
 
 Un seul adaptateur est actif à la fois, choisi au démarrage par la factory pilotée par la
-configuration (I3.5).
+configuration ([I3.5](../../backend/agentscope/infrastructure/llm/factory.py), ✅ livrée).
+`create_llm_provider(settings)` lit `settings.llm_provider` et construit l'adaptateur ; un nom
+inconnu ou une configuration incomplète (clé/modèle manquant) lève `LLMProviderConfigError`,
+jamais un crash silencieux.
 
 ### `FakeLLMProvider` — le fournisseur par défaut
 
@@ -185,10 +187,12 @@ et 3 d'`import-linter` échouent sinon.
 | --- | --- |
 | Port `LLMProvider`, DTO (`MappingProposal`, `FieldExplanation`, `ChatReply`), `LLMError` | ✅ livrés et testés (I3.1) |
 | `FakeLLMProvider` | ✅ livré et testé (I3.2) |
-| Adaptateurs Anthropic / OpenAI-compatible | ⬜ I3.3, I3.4 |
-| Factory pilotée par la configuration | ⬜ I3.5 — **tant qu'elle n'existe pas, changer `AGENTSCOPE_LLM_PROVIDER` reste sans effet** |
-| Constructeur de prompt + `SensitiveFilter` | ⬜ I3.6, I2.14 |
-| Use cases `AnalyzeUnknownFile`, `ChatAboutMapping`, `PreviewMapping` | ⬜ EPIC 3 |
+| Adaptateurs Anthropic / OpenAI-compatible | ✅ livrés et testés (I3.3, I3.4) |
+| Factory pilotée par la configuration | ✅ livrée et testée (I3.5) |
+| Constructeur de prompt + `SensitiveFilter` | ✅ livrés et testés (I3.6, I2.14) |
+| Use case `AnalyzeUnknownFile` | ✅ livré et testé (I3.7) |
+| Use case `ChatAboutMapping` | ✅ livré et testé (I3.8) |
+| Use case `PreviewMapping` | ✅ livré et testé (I3.9) |
 | Vérification avec 2 modèles réels | ⬜ I3.13 — [`verification-report.md`](verification-report.md) |
 
 Ce document décrit le contrat figé au cadrage : il est ce que les adaptateurs doivent respecter,
