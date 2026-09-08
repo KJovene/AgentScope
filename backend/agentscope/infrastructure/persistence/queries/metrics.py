@@ -297,6 +297,39 @@ class SqlMetricsQueryService:
             timeline=timeline,
         )
 
+    # -- répartition des outils --------------------------------------------------
+
+    def tool_usage(self, f: MetricFilter) -> list[dict[str, Any]]:
+        conds: list[str] = []
+        params: dict[str, Any] = {}
+        if f.sources:
+            conds.append("source_name IN :sources")
+            params["sources"] = list(f.sources)
+        where = " AND ".join(conds) if conds else "1 = 1"
+        rows = self._execute(
+            f"""
+            SELECT
+                tool_name,
+                SUM(n_calls)         AS n_calls,
+                SUM(n_errors)        AS n_errors,
+                AVG(avg_duration_ms) AS avg_duration_ms
+            FROM v_tool_usage
+            WHERE {where}
+            GROUP BY tool_name
+            ORDER BY n_calls DESC, tool_name
+            """,
+            params,
+        )
+        return [
+            {
+                "tool_name": r.tool_name,
+                "n_calls": _int(r.n_calls),
+                "n_errors": _int(r.n_errors),
+                "avg_duration_ms": _opt_float(r.avg_duration_ms),
+            }
+            for r in rows
+        ]
+
 
 def _timeline_entry(r: Row[Any]) -> TimelineEntry:
     started, ended = _to_dt(r.started_at), _to_dt(r.ended_at)

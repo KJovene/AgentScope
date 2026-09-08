@@ -44,39 +44,9 @@ def test_openapi_lists_all_contract_routes() -> None:
     assert expected.issubset(paths.keys())
 
 
-def test_create_import_stub() -> None:
-    resp = client.post(
-        "/api/v1/imports",
-        data={"mapping_id": "map_tracelab_v1"},
-        files={"files": ("trace.jsonl", b'{"session_id": "s1"}\n', "application/jsonl")},
-    )
-    assert resp.status_code == 200
-    body = resp.json()
-    assert body["status"] == "success"
-    assert body["imported_count"] > 0
-
-
-def test_list_and_get_import() -> None:
-    listed = client.get("/api/v1/imports")
-    assert listed.status_code == 200
-    body = listed.json()
-    assert body["limit"] <= 200
-    import_id = body["items"][0]["id"]
-
-    detail = client.get(f"/api/v1/imports/{import_id}")
-    assert detail.status_code == 200
-
-    rejects = client.get(f"/api/v1/imports/{import_id}/rejects")
-    assert rejects.status_code == 200
-    assert rejects.json()["total"] >= 1
-
-
-def test_get_import_not_found_is_problem_json() -> None:
-    resp = client.get("/api/v1/imports/does-not-exist")
-    assert resp.status_code == 404
-    body = resp.json()
-    assert body["status"] == 404
-    assert "title" in body and "detail" in body
+# NOTE : /imports/* n'est plus un stub — la route est branchée sur le port
+# `ImportService` (le service réel reste à câbler, cf. I4.2). Elle est couverte
+# par tests/integration/test_imports_routes.py (service simulé via dependency_overrides).
 
 
 def test_analyze_returns_profile_and_proposal() -> None:
@@ -121,26 +91,10 @@ def test_chat_has_no_db_side_effect_and_returns_reply() -> None:
     assert "text" in resp.json()
 
 
-def test_metrics_endpoints() -> None:
-    assert client.get("/api/v1/metrics/indicators").status_code == 200
-    assert client.get("/api/v1/metrics/timeseries?metric=sessions&granularity=day").status_code == 200
-    assert client.get("/api/v1/metrics/tool-usage").status_code == 200
-
-
-def test_sessions_list_and_detail() -> None:
-    listed = client.get("/api/v1/sessions")
-    assert listed.status_code == 200
-    session_id = listed.json()["items"][0]["id"]
-
-    detail = client.get(f"/api/v1/sessions/{session_id}")
-    assert detail.status_code == 200
-    assert "model_calls" in detail.json()
-    assert "tool_calls" in detail.json()
-
-
-def test_sources_and_data_quality() -> None:
-    assert client.get("/api/v1/sources").status_code == 200
-    assert client.get("/api/v1/data-quality").status_code == 200
+# NOTE : /metrics/*, /sessions/*, /sources et /data-quality ne sont plus des stubs.
+# Ils sont branchés sur des services de lecture réels et couverts par
+# tests/integration/test_metrics_routes.py, test_sessions_routes.py et
+# test_sources_and_quality_routes.py (avec bases migrées / services simulés).
 
 
 def test_validation_error_is_problem_json() -> None:
