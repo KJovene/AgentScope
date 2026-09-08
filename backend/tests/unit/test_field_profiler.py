@@ -58,3 +58,22 @@ def test_profiler_rejects_negative_sample_size_and_supports_empty_input() -> Non
         assert "sample_size" in str(error)
     else:
         raise AssertionError("negative sample_size was accepted")
+
+
+def test_profiler_masque_les_donnees_sensibles_dans_les_echantillons() -> None:
+    record = _record(
+        0,
+        {
+            "email": "alice@example.com",
+            "credentials": "api_key=sk-test-secret-123456789",
+            "path": r"C:\Users\alice\project\trace.jsonl",
+        },
+    )
+
+    profile = DefaultFieldProfiler().profile([record], sample_size=1)
+
+    samples = [value for field in profile.fields for value in field.sample_values]
+    assert "alice@example.com" not in samples
+    assert all("sk-test-secret-123456789" not in str(value) for value in samples)
+    assert all(r"C:\Users\alice" not in str(value) for value in samples)
+    assert all("[REDACTED]" in str(value) for value in samples)
