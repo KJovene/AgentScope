@@ -202,6 +202,20 @@ class SqlImportRepository:
         ).scalar_one_or_none()
         return m.row_to_import_batch(row, source_name, mapping_name)
 
+    def get_by_sha256(self, file_sha256: str) -> ImportBatch | None:
+        row = self._s.execute(
+            select(ImportBatchRow, SourceRow.name, MappingRow.name)
+            .join(SourceRow, ImportBatchRow.source_id == SourceRow.id)
+            .join(MappingRow, ImportBatchRow.mapping_id == MappingRow.id, isouter=True)
+            .where(ImportBatchRow.file_sha256 == file_sha256)
+            .order_by(ImportBatchRow.imported_at.desc(), ImportBatchRow.id.desc())
+            .limit(1)
+        ).first()
+        if row is None:
+            return None
+        batch_row, source_name, mapping_name = row
+        return m.row_to_import_batch(batch_row, source_name, mapping_name)
+
     def list_recent(self, limit: int, offset: int) -> list[ImportBatch]:
         rows = self._s.execute(
             select(ImportBatchRow, SourceRow.name, MappingRow.name)

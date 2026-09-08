@@ -22,7 +22,11 @@ from agentscope.application.ports.imports import (
     ImportService,
 )
 from agentscope.application.ports.metrics import MetricsQueryService, Page, Paginated
+from agentscope.application.ports.imports import ImportService
+from agentscope.application.ports.mapping_crud import MappingCrudService
+from agentscope.application.ports.metrics import MetricsQueryService
 from agentscope.application.ports.sources import SourcesQueryService
+from agentscope.application.ports.workbench import MappingWorkbenchService
 from agentscope.infrastructure.config.settings import Settings
 
 
@@ -92,6 +96,10 @@ class Database:
             bind=self.engine, autoflush=False, autocommit=False, expire_on_commit=False
         )
 
+    def create_session(self) -> Session:
+        """Session brute — la gestion de transaction incombe à l'appelant (UnitOfWork)."""
+        return self.session_factory()
+
     @contextmanager
     def session(self) -> Iterator[Session]:
         """Session transactionnelle : commit si succès, rollback sinon."""
@@ -117,6 +125,14 @@ class Container:
             or "sqlite:///:memory:"
         )
         self.database = Database(db_url)
+
+    @staticmethod
+    def _readers() -> tuple[object, ...]:
+        from agentscope.infrastructure.readers.csv_reader import CsvReader
+        from agentscope.infrastructure.readers.jsonl_reader import JsonlReader
+        from agentscope.infrastructure.readers.parquet_reader import ParquetReader
+
+        return (JsonlReader(), CsvReader(), ParquetReader())
 
     # -- Services de lecture (CQRS, issue I1.9) : une instance par requête -----
 
@@ -144,3 +160,43 @@ class Container:
     def make_import_service(self, session: Session) -> ImportService:
         # Utilise l'implémentation DefaultImportService définie plus haut dans ce fichier
         return DefaultImportService(session)
+        from agentscope.infrastructure.persistence.services.import_service import (
+            SqlImportService,
+        )
+        from agentscope.infrastructure.persistence.unit_of_work import (
+            SqlAlchemyUnitOfWork,
+        )
+
+        database = self.database
+
+        def uow_factory() -> SqlAlchemyUnitOfWork:
+            return SqlAlchemyUnitOfWork(database)
+
+        return SqlImportService(
+            session=session,
+            uow_factory=uow_factory,
+            readers=self._readers(),
+        )
+
+    def make_mapping_service(self, session: Session) -> MappingCrudService:
+        from agentscope.infrastructure.persistence.services.mapping_service import (
+            SqlMappingService,
+        )
+
+        return SqlMappingService(session)
+
+    def make_workbench_service(self) -> MappingWorkbenchService:
+        """Atelier de mapping (I4.3) : analyse + prévisualisation, sans persistance."""
+        from agentscope.infrastructure.llm.factory import create_llm_provider
+        from agentscope.infrastructure.profiling.field_profiler import (
+            DefaultFieldProfiler,
+        )
+        from agentscope.infrastructure.services.workbench_service import (
+            MappingWorkbenchAdapter,
+        )
+
+        return MappingWorkbenchAdapter(
+            readers=self._readers(),
+            profiler=DefaultFieldProfiler(),
+            llm_provider=create_llm_provider(self.settings),
+        )
