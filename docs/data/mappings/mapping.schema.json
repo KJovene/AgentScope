@@ -1,0 +1,94 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://agentscope.local/schemas/mapping.schema.json",
+  "title": "AgentScope mapping definition",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["name", "version", "source_format", "entities"],
+  "properties": {
+    "name": {"type": "string", "minLength": 1},
+    "version": {"type": "integer", "minimum": 1},
+    "source_format": {"enum": ["jsonl", "csv", "parquet"]},
+    "constants": {
+      "type": "object",
+      "additionalProperties": true
+    },
+    "unmapped_fields": {
+      "type": "array",
+      "items": {"type": "string"}
+    },
+    "entities": {
+      "type": "object",
+      "minProperties": 1,
+      "additionalProperties": {"$ref": "#/$defs/entity"}
+    }
+  },
+  "$defs": {
+    "entity": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["identity", "fields"],
+      "properties": {
+        "iterate": {"$ref": "#/$defs/iterate"},
+        "identity": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["key_fields"],
+          "properties": {
+            "key_fields": {
+              "type": "array",
+              "minItems": 1,
+              "items": {"type": "string", "minLength": 1}
+            }
+          }
+        },
+        "fields": {
+          "type": "object",
+          "minProperties": 1,
+          "additionalProperties": {"$ref": "#/$defs/field"}
+        },
+        "parent": {"$ref": "#/$defs/parent"}
+      }
+    },
+    "iterate": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "path": {"type": "string"},
+        "where": {
+          "type": "array",
+          "items": {
+            "type": "array",
+            "minItems": 2,
+            "maxItems": 3,
+            "prefixItems": [
+              {"type": "string", "minLength": 1},
+              {"enum": ["eq", "ne", "in", "exists", "gt", "lt"]}
+            ],
+            "items": true
+          }
+        }
+      }
+    },
+    "parent": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["entity", "key_from"],
+      "properties": {
+        "entity": {"type": "string", "minLength": 1},
+        "key_from": {"type": "string", "minLength": 1}
+      }
+    },
+    "field": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "from": {"type": "string", "minLength": 1},
+        "transform": {"type": "string", "minLength": 1},
+        "args": {"type": "object", "additionalProperties": true},
+        "required": {"type": "boolean"},
+        "on_error": {"enum": ["reject", "null", "skip"]}
+      }
+    }
+  }
+}
