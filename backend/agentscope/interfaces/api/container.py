@@ -6,6 +6,7 @@ from typing import Generator
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session, sessionmaker
 
+from agentscope.application.ports.metrics import MetricsQueryService
 from agentscope.infrastructure.config.settings import Settings
 from agentscope.application.ports.sources import SourcesQueryService
 from agentscope.application.ports.data_quality import DataQualityQueryService
@@ -51,7 +52,6 @@ class Container:
 
   def __init__(self, settings: Settings) -> None:
         self.settings = settings
-        # Résolution robuste de l'URL DB (database_url ou db_url)
         db_url = (
             getattr(settings, "database_url", None)
             or getattr(settings, "db_url", None)
@@ -59,3 +59,8 @@ class Container:
         )
         self.database = Database(db_url)
 
+    def make_metrics_service(self, session: Session) -> MetricsQueryService:
+        from agentscope.infrastructure.persistence.services.metrics_service import (
+            SQLAlchemyMetricsQueryService,
+        )
+        return SQLAlchemyMetricsQueryService(session)
