@@ -6,10 +6,12 @@ from typing import Generator
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session, sessionmaker
 
-from agentscope.application.ports.metrics import MetricsQueryService
-from agentscope.infrastructure.config.settings import Settings
-from agentscope.application.ports.sources import SourcesQueryService
 from agentscope.application.ports.data_quality import DataQualityQueryService
+from agentscope.application.ports.imports import ImportService
+from agentscope.application.ports.metrics import MetricsQueryService
+from agentscope.application.ports.sources import SourcesQueryService
+from agentscope.infrastructure.config.settings import Settings
+
 
 class Database:
 
@@ -32,25 +34,7 @@ class Database:
 
 class Container:
 
-  def make_metrics_service(self, session: Session) -> MetricsQueryService:
-    from agentscope.infrastructure.persistence.services.metrics_service import (
-        SQLAlchemyMetricsQueryService,
-    )
-    return SQLAlchemyMetricsQueryService(session)
-
-  def make_sources_service(self, session: Session) -> SourcesQueryService:
-        from agentscope.infrastructure.persistence.services.sources_service import (
-            SQLAlchemySourcesQueryService,
-        )
-        return SQLAlchemySourcesQueryService(session)
-
-  def make_data_quality_service(self, session: Session) -> DataQualityQueryService:
-        from agentscope.infrastructure.persistence.services.data_quality_service import (
-            SQLAlchemyDataQualityQueryService,
-        )
-        return SQLAlchemyDataQualityQueryService(session)
-
-  def __init__(self, settings: Settings) -> None:
+    def __init__(self, settings: Settings) -> None:
         self.settings = settings
         db_url = (
             getattr(settings, "database_url", None)
@@ -64,3 +48,21 @@ class Container:
             SQLAlchemyMetricsQueryService,
         )
         return SQLAlchemyMetricsQueryService(session)
+
+    def make_sources_service(self, session: Session) -> SourcesQueryService:
+        from agentscope.infrastructure.persistence.services.sources_service import (
+            SQLAlchemySourcesQueryService,
+        )
+        return SQLAlchemySourcesQueryService(session)
+
+    def make_data_quality_service(self, session: Session) -> DataQualityQueryService:
+        from agentscope.infrastructure.persistence.services.data_quality_service import (
+            SQLAlchemyDataQualityQueryService,
+        )
+        return SQLAlchemyDataQualityQueryService(session)
+
+    def make_import_service(self, session: Session) -> ImportService:
+        from agentscope.infrastructure.persistence.services.import_service import (
+            SQLAlchemyImportService,
+        )
+        return SQLAlchemyImportService(session)
