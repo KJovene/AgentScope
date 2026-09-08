@@ -1,7 +1,7 @@
 import { render, screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 
-import { ChartFrame, StackedBarChart, TimeSeriesChart } from '@shared/ui';
+import { buildDurationHistogram, ChartFrame, DistributionChart, StackedBarChart, TimeSeriesChart } from '@shared/ui';
 
 describe('ChartFrame', () => {
   it('renders the title and children when not empty', () => {
@@ -71,6 +71,41 @@ describe('StackedBarChart', () => {
         ]}
       />,
     );
+
+    expect(container.querySelector('.recharts-responsive-container')).toBeInTheDocument();
+  });
+});
+
+describe('buildDurationHistogram', () => {
+  it('returns an empty array for no values', () => {
+    expect(buildDurationHistogram([])).toEqual([]);
+  });
+
+  it('puts every value in a single bucket when they are all equal', () => {
+    expect(buildDurationHistogram([500, 500, 500])).toEqual([{ range: '500ms', count: 3 }]);
+  });
+
+  it('bins values into the requested bucket count, min and max both included', () => {
+    const buckets = buildDurationHistogram([0, 1000, 2000, 3000, 4000], 4);
+
+    expect(buckets).toHaveLength(4);
+    expect(buckets.reduce((sum, b) => sum + b.count, 0)).toBe(5);
+    // The max value falls in the last bucket, not dropped/overflowed.
+    expect(buckets[3]?.count).toBeGreaterThan(0);
+  });
+
+  it('formats sub-second durations in ms and longer ones in seconds', () => {
+    const buckets = buildDurationHistogram([100, 100], 1);
+    expect(buckets[0]?.range).toBe('100ms');
+
+    const secondBuckets = buildDurationHistogram([1500, 1500], 1);
+    expect(secondBuckets[0]?.range).toBe('1.5s');
+  });
+});
+
+describe('DistributionChart', () => {
+  it('renders without crashing given a list of durations', () => {
+    const { container } = render(<DistributionChart values={[100, 200, 300, 4000]} />);
 
     expect(container.querySelector('.recharts-responsive-container')).toBeInTheDocument();
   });

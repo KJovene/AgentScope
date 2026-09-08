@@ -1,9 +1,12 @@
 export { Button, type ButtonProps } from './Button';
 export { Card, CardHeader, CardTitle } from './Card';
 export {
+  buildDurationHistogram,
   CHART_COLORS,
   CHART_SERIES_COLORS,
   ChartFrame,
+  DistributionChart,
+  type HistogramBucket,
   StackedBarChart,
   type StackedBarDatum,
   type StackedBarSeries,
