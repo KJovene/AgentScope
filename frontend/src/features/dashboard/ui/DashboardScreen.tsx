@@ -5,6 +5,7 @@ import { ApiError } from "@shared/api/api-error";
 import type { ProblemDetails } from "@shared/api/types";
 import { Button, ChartFrame, TimeSeriesChart } from "@shared/ui";
 import { ApiErrorBanner } from "@shared/components/ApiErrorBanner";
+import { FilterBar } from "@shared/components/filters";
 import { IndicatorCard } from "./IndicatorCard";
 import { useIndicatorsQuery, useTimeseriesQuery } from "../api/dashboard.queries";
 import type { TimeseriesMetric } from "../api/dashboard.contracts";
@@ -47,6 +48,8 @@ export const DashboardScreen: React.FC = () => {
           Vue globale des indicateurs de performance et d'utilisation des agents.
         </p>
       </div>
+
+      <FilterBar />
 
       <ApiErrorBanner
         error={

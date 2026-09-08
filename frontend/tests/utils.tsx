@@ -69,6 +69,7 @@ export function renderRouted(
 
   return {
     client,
+    router,
     ...render(
       <QueryClientProvider client={client}>
         <RouterProvider router={router} />
