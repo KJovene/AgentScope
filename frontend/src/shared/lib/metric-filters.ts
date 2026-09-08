@@ -24,9 +24,9 @@ export const EMPTY_METRIC_FILTERS: MetricFilters = {
 /** Serialize to the query params the API expects (repeated keys, ISO dates). */
 export function metricFiltersToQuery(f: MetricFilters): Record<string, string[] | string | undefined> {
   return {
-    source: f.sources,
-    agent: f.agents,
-    model: f.models,
+    sources: f.sources,
+    agents: f.agents,
+    models: f.models,
     from: f.from,
     to: f.to,
   };

@@ -39,9 +39,9 @@ describe('metric-filters', () => {
       to: undefined,
     };
     expect(metricFiltersToQuery(f)).toEqual({
-      source: ['s1'],
-      agent: ['a1'],
-      model: ['m1'],
+      sources: ['s1'],
+      agents: ['a1'],
+      models: ['m1'],
       from: '2026-01-01T00:00:00Z',
       to: undefined,
     });
