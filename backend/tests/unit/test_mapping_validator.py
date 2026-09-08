@@ -48,6 +48,19 @@ def test_un_mapping_correct_passe() -> None:
     validate_mapping(parse_and_validate(VALID))  # ne lève rien
 
 
+def test_schema_json_refuse_une_structure_invalide_avec_un_message_explicite() -> None:
+    broken = copy.deepcopy(VALID)
+    del broken["version"]
+    broken["entities"]["session"]["identity"]["key_fields"] = []
+
+    with pytest.raises(InvalidMappingError, match="Mapping JSON invalide") as error:
+        parse_and_validate(broken)
+
+    message = str(error.value)
+    assert "version" in message
+    assert "key_fields" in message
+
+
 def test_champ_cible_inconnu_est_refuse() -> None:
     broken = _mutant(session={
         "identity": {"key_fields": ["session_id"]},

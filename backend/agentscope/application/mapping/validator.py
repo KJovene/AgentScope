@@ -16,6 +16,11 @@ d'un coup tout ce qui ne va pas — « mapping invalide ⇒ refus expliqué ».
 
 from __future__ import annotations
 
+import json
+from pathlib import Path
+
+from jsonschema import Draft202012Validator
+
 from agentscope.application.mapping.contract import EntitySpec, MappingDefinition
 from agentscope.application.mapping.target_schema import (
     PARENT_ENTITY,
@@ -47,9 +52,32 @@ def validate_mapping(mapping: MappingDefinition) -> None:
 
 def parse_and_validate(raw: object) -> MappingDefinition:
     """Raccourci : lit le dict puis le valide. Lève ``InvalidMappingError`` sinon."""
+    _validate_json_schema(raw)
     mapping = MappingDefinition.from_dict(raw)
     validate_mapping(mapping)
     return mapping
+
+
+# ---------------------------------------------------------------------------
+
+
+_SCHEMA_PATH = (
+    Path(__file__).resolve().parents[4] / "docs" / "data" / "mappings" / "mapping.schema.json"
+)
+_SCHEMA = json.loads(_SCHEMA_PATH.read_text(encoding="utf-8"))
+_SCHEMA_VALIDATOR = Draft202012Validator(_SCHEMA)
+
+
+def _validate_json_schema(raw: object) -> None:
+    errors = sorted(_SCHEMA_VALIDATOR.iter_errors(raw), key=lambda error: list(error.path))
+    if not errors:
+        return
+
+    details = []
+    for error in errors:
+        location = ".".join(str(part) for part in error.path) or "mapping"
+        details.append(f"`{location}` : {error.message}")
+    raise InvalidMappingError("Mapping JSON invalide :\n- " + "\n- ".join(details))
 
 
 # ---------------------------------------------------------------------------
