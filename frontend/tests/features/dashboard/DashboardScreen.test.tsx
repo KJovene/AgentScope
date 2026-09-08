@@ -82,13 +82,17 @@ describe("DashboardScreen UI (I5.1 / I5.10)", () => {
         HttpResponse.json({ metric: "sessions", granularity: "day", points: [] }),
       ),
       http.get("/api/metrics/tool-usage", () => HttpResponse.json([])),
+      http.get("/api/sessions", () =>
+        HttpResponse.json({ items: [], total: 0, limit: 200, offset: 0 }),
+      ),
     );
 
     renderDashboard();
 
     await waitFor(() => {
-      // Le graphe d'activité ET la répartition des outils sont vides.
-      expect(screen.getAllByText("Aucune donnée disponible")).toHaveLength(2);
+      // Le graphe d'activité, la répartition des outils ET la distribution
+      // des durées sont vides.
+      expect(screen.getAllByText("Aucune donnée disponible")).toHaveLength(3);
     });
   });
 
@@ -131,6 +135,32 @@ describe("DashboardScreen UI (I5.1 / I5.10)", () => {
 
     await waitFor(() => {
       expect(screen.getByText("Répartition des outils")).toBeDefined();
+    });
+  });
+
+  it("affiche la distribution de la durée des sessions et signale celles sans horodatage", async () => {
+    server.use(
+      http.get("/api/metrics/indicators", () => HttpResponse.json(INDICATORS)),
+      http.get("/api/sessions", () =>
+        HttpResponse.json({
+          items: [
+            { session_id: 1, source_name: "s", agent_name: "a", duration_ms: 1000, model_call_count: 1, tool_call_count: 0, error_count: 0 },
+            { session_id: 2, source_name: "s", agent_name: "a", duration_ms: null, model_call_count: 1, tool_call_count: 0, error_count: 0 },
+          ],
+          total: 2,
+          limit: 200,
+          offset: 0,
+        }),
+      ),
+    );
+
+    renderDashboard();
+
+    await waitFor(() => {
+      expect(screen.getByText("Distribution de la durée des sessions")).toBeDefined();
+      expect(
+        screen.getByText("1 session(s) sans horodatage, exclue(s) de la distribution."),
+      ).toBeDefined();
     });
   });
 });

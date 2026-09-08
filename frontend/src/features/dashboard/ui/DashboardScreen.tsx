@@ -3,9 +3,10 @@ import { useState } from "react";
 import { useMetricFilters } from "@shared/hooks/use-metric-filters";
 import { ApiError } from "@shared/api/api-error";
 import type { ProblemDetails } from "@shared/api/types";
-import { Button, ChartFrame, StackedBarChart, TimeSeriesChart } from "@shared/ui";
+import { Button, ChartFrame, DistributionChart, StackedBarChart, TimeSeriesChart } from "@shared/ui";
 import { ApiErrorBanner } from "@shared/components/ApiErrorBanner";
 import { FilterBar } from "@shared/components/filters";
+import { useSessionsQuery } from "@shared/api/sessions.queries";
 import { IndicatorCard } from "./IndicatorCard";
 import { useIndicatorsQuery, useTimeseriesQuery, useToolUsageQuery } from "../api/dashboard.queries";
 import type { TimeseriesMetric } from "../api/dashboard.contracts";
@@ -46,6 +47,13 @@ export const DashboardScreen: React.FC = () => {
     success: item.n_calls - item.n_errors,
     error: item.n_errors,
   }));
+
+  const sessions = useSessionsQuery({ ...filters, limit: 200, offset: 0 });
+  const sessionItems = sessions.data?.items ?? [];
+  const durations = sessionItems
+    .map((s) => s.duration_ms)
+    .filter((d): d is number => d != null);
+  const missingTimingCount = sessionItems.length - durations.length;
 
   return (
     <div className="mx-auto max-w-6xl space-y-6">
@@ -150,6 +158,33 @@ export const DashboardScreen: React.FC = () => {
               { key: "error", label: "Erreurs", color: "hsl(var(--danger))" },
             ]}
           />
+        )}
+      </ChartFrame>
+
+      <ApiErrorBanner
+        error={
+          sessions.error
+            ? toProblemDetails(sessions.error, "Impossible de charger la durée des sessions.")
+            : null
+        }
+      />
+
+      <ChartFrame
+        title="Distribution de la durée des sessions"
+        isEmpty={!sessions.isLoading && durations.length === 0}
+        emptyDescription="Aucune session avec horodatage ne correspond aux filtres actifs."
+      >
+        {sessions.isLoading ? (
+          <div className="p-8 text-center text-sm text-slate-500">Chargement des sessions...</div>
+        ) : (
+          <>
+            {missingTimingCount > 0 && (
+              <p className="mb-2 text-xs text-foreground-muted">
+                {missingTimingCount} session(s) sans horodatage, exclue(s) de la distribution.
+              </p>
+            )}
+            <DistributionChart values={durations} />
+          </>
         )}
       </ChartFrame>
     </div>
