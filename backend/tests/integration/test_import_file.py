@@ -130,6 +130,28 @@ def test_import_produit_un_bilan_et_persiste(seeded: MakeUow, database: Database
     assert counts["import_batch"] == 1
 
 
+def test_bilan_et_rejet_exposent_un_reason_code_explicite(
+    seeded: MakeUow, database: Database
+) -> None:
+    report = _import_file(seeded).execute(
+        content=_jsonl(ROWS),
+        original_filename="demo.jsonl",
+        file_format=FileFormat.JSONL,
+        mapping_name="demo-jsonl",
+    )
+
+    assert report.rejected_count == 1
+    with seeded() as uow:
+        rejects = uow.rejects.list_for_import(
+            report.source_name, report.file_sha256, limit=10, offset=0
+        )
+
+    assert len(rejects) == 1
+    assert rejects[0].record_index == 3
+    assert rejects[0].reason.value == "missing_required_field"
+    assert "sid" in rejects[0].detail
+
+
 # --- idempotence (issue I2.7) --------------------------------------------------
 
 
