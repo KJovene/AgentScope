@@ -1,0 +1,11 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Plan de réalisation (EPICs, tâches, contrats)
+    url: https://github.com/KJovene/AgentScope/blob/dev/docs/PLAN.md
+    about: Le backlog et les critères de vérification de chaque tâche Ixx.
+  - name: Guide de contribution
+    url: https://github.com/KJovene/AgentScope/blob/dev/CONTRIBUTING.md
+    about: Branches, commits, pull requests, revue — à lire avant d'ouvrir une PR.
+  - name: Prise en main
+    url: https://github.com/KJovene/AgentScope/blob/dev/README.md
+    about: Installer et lancer le projet avant de signaler un problème.

@@ -1,0 +1,82 @@
+name: Tâche
+description: Une tâche du plan de réalisation (Ixx) ou un travail à planifier
+title: "Ixx — "
+body:
+  - type: textarea
+    id: contexte
+    attributes:
+      label: Contexte
+      description: Pourquoi cette tâche, à quel EPIC elle se rattache, lien vers docs/PLAN.md.
+      placeholder: EPIC 2 — Ingestion. Voir docs/PLAN.md §7, tâche I2.7.
+    validations:
+      required: true
+
+  - type: textarea
+    id: dod
+    attributes:
+      label: Résultat attendu (Definition of Done)
+      description: Des critères **vérifiables**, pas des intentions.
+      value: |
+        - [ ]
+        - [ ]
+        - [ ] Tests ajoutés / mis à jour
+        - [ ] Documentation mise à jour si un contrat est impacté
+    validations:
+      required: true
+
+  - type: input
+    id: dependances
+    attributes:
+      label: Dépendances
+      description: Issues bloquantes et issues débloquées.
+      placeholder: "Bloquée par : #12 · Bloque : #34"
+
+  - type: input
+    id: interface
+    attributes:
+      label: Interface impactée
+      description: Port, schéma DB, OpenAPI, contrat de mapping — ou « aucune ». Si une interface partagée bouge, poser aussi le label `contract`.
+      placeholder: aucune
+    validations:
+      required: true
+
+  - type: dropdown
+    id: workstream
+    attributes:
+      label: Workstream
+      options:
+        - WS-A — Domaine & modèle de données (ws:domain)
+        - WS-B — Ingestion & normalisation (ws:ingestion)
+        - WS-C — Agent IA & mapping (ws:ai)
+        - WS-D — API & Dashboard (ws:dashboard)
+        - WS-E — Plateforme (ws:platform)
+    validations:
+      required: true
+
+  - type: dropdown
+    id: priorite
+    attributes:
+      label: Priorité
+      options:
+        - P0 — indispensable à la release
+        - P1 — important
+        - P2 — si le temps le permet
+    validations:
+      required: true
+
+  - type: dropdown
+    id: estimation
+    attributes:
+      label: Estimation
+      options:
+        - S (≈ ½ jour-personne)
+        - M (≈ 1 jour-personne)
+        - L (≈ 2 jours-personne)
+    validations:
+      required: true
+
+  - type: markdown
+    attributes:
+      value: |
+        Après création : poser les labels (`ws:…`, `type:…`, `contract` si besoin), le milestone
+        (`J1` → `J4`) et ajouter la carte au board. Voir [CONTRIBUTING.md](https://github.com/KJovene/AgentScope/blob/dev/CONTRIBUTING.md).

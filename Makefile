@@ -145,6 +145,10 @@ ci: lint typecheck arch test ## Ce que la CI exécute à chaque PR
 data-tracelab: ## Télécharge l'extrait TraceLab épinglé (SHA256 vérifié) + échantillon de dev
 	python scripts/tracelab_extract.py --fetch --modulo 32 --out data/tracelab/extract-dev.jsonl
 
+.PHONY: findings
+findings: ## Recalcule les chiffres de docs/findings.md depuis l'extrait TraceLab (I6.7)
+	python scripts/findings_tracelab.py
+
 .PHONY: fixtures
 fixtures: ## Régénère la fixture de test TraceLab commitée
 	python scripts/tracelab_extract.py --fetch --modulo 32 --max-sessions-per-provider 1 --out backend/tests/fixtures/tracelab/sample.jsonl
