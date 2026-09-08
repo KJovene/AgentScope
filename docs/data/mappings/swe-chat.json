@@ -1,0 +1,115 @@
+{
+  "name": "swe-chat-jsonl",
+  "version": 1,
+  "source_format": "jsonl",
+  "constants": {
+    "source_name": "SWE-chat"
+  },
+  "unmapped_fields": [
+    "conversation_title",
+    "messages",
+    "patch",
+    "issue_url"
+  ],
+  "entities": {
+    "session": {
+      "iterate": {
+        "path": ""
+      },
+      "identity": {
+        "key_fields": [
+          "session_id"
+        ]
+      },
+      "fields": {
+        "external_id": {
+          "from": "session_id",
+          "required": true,
+          "on_error": "reject"
+        },
+        "agent_name": {
+          "from": "agent"
+        },
+        "repository_name": {
+          "from": "repository"
+        }
+      }
+    },
+    "model_call": {
+      "iterate": {
+        "path": ""
+      },
+      "parent": {
+        "entity": "session",
+        "key_from": "session_id"
+      },
+      "identity": {
+        "key_fields": [
+          "session_id",
+          "turn_index"
+        ]
+      },
+      "fields": {
+        "sequence": {
+          "from": "turn_index",
+          "transform": "to_int"
+        },
+        "model_name": {
+          "from": "model",
+          "required": true,
+          "on_error": "reject"
+        },
+        "provider": {
+          "from": "provider"
+        },
+        "prompt_tokens": {
+          "from": "input_tokens",
+          "transform": "to_int"
+        },
+        "completion_tokens": {
+          "from": "output_tokens",
+          "transform": "to_int"
+        }
+      }
+    },
+    "tool_call": {
+      "iterate": {
+        "path": "tools"
+      },
+      "parent": {
+        "entity": "session",
+        "key_from": "session_id"
+      },
+      "identity": {
+        "key_fields": [
+          "session_id",
+          "turn_index",
+          "tool_index"
+        ]
+      },
+      "fields": {
+        "sequence": {
+          "from": "tool_index",
+          "transform": "to_int"
+        },
+        "tool_name": {
+          "from": "name",
+          "required": true,
+          "on_error": "reject"
+        },
+        "model_call_sequence": {
+          "from": "turn_index",
+          "transform": "to_int"
+        },
+        "input_bytes": {
+          "from": "input_bytes",
+          "transform": "to_int"
+        },
+        "output_bytes": {
+          "from": "output_bytes",
+          "transform": "to_int"
+        }
+      }
+    }
+  }
+}

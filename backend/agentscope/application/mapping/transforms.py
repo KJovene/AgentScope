@@ -118,6 +118,10 @@ def _map_enum(value: Any, args: Mapping[str, Any], context: Mapping[str, Any] | 
         raise TransformError("map_enum attend mapping={...}")
     if value in mapping:
         return mapping[value]
+    if isinstance(value, bool):
+        json_key = str(value).lower()
+        if json_key in mapping:
+            return mapping[json_key]
     return args.get("default")
 
 
