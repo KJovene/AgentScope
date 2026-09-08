@@ -9,7 +9,12 @@ import pytest
 
 from agentscope.application.mapping.prompt_builder import PromptBuilder
 from agentscope.application.mapping.target_schema import TARGET_SCHEMA
-from agentscope.application.ports.llm_provider import ChatReply, LLMProvider, MappingProposal
+from agentscope.application.ports.llm_provider import (
+    ChatMessage,
+    ChatReply,
+    LLMProvider,
+    MappingProposal,
+)
 from agentscope.domain import FieldProfile, FieldProfileSet, LLMError
 from agentscope.infrastructure.llm.anthropic_provider import AnthropicProvider
 
@@ -197,7 +202,7 @@ def test_chat_returns_the_model_text_without_a_revised_proposal() -> None:
 
     reply = provider.chat(
         conversation_id="conv-1",
-        messages=[{"role": "user", "content": "Pourquoi ce mapping ?"}],
+        messages=[ChatMessage(role="user", text="Pourquoi ce mapping ?")],
         context=None,
     )
 

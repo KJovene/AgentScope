@@ -74,11 +74,7 @@ class AnthropicProvider:
         messages: list[ChatMessage],
         context: MappingContext,
     ) -> ChatReply:
-        # Format exact de `messages`/`context` fixé par I3.8 (non codé) ; en
-        # attendant, on suppose des dicts `{"role": ..., "content": ...}`.
-        anthropic_messages = (
-            [{"role": m["role"], "content": m["content"]} for m in messages] or None
-        )
+        anthropic_messages = [{"role": m.role, "content": m.text} for m in messages] or None
         text = self._call_messages_api(system=None, messages=anthropic_messages)
         return ChatReply(text=text, revised_proposal=None)
 
