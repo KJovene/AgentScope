@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useNavigate } from "@tanstack/react-router";
 
 import { useMetricFilters } from "@shared/hooks/use-metric-filters";
 import { ApiError } from "@shared/api/api-error";
@@ -10,6 +11,8 @@ import { useSessionsQuery } from "@shared/api/sessions.queries";
 import { IndicatorCard } from "./IndicatorCard";
 import { useIndicatorsQuery, useTimeseriesQuery, useToolUsageQuery } from "../api/dashboard.queries";
 import type { TimeseriesMetric } from "../api/dashboard.contracts";
+import type { TimeSeriesPoint } from "@shared/ui";
+import { dayDrillDownFilters } from "../model/drilldown";
 import { METRIC_DEFINITIONS } from "../types";
 
 const ACTIVITY_METRICS: { value: TimeseriesMetric; label: string }[] = [
@@ -32,6 +35,7 @@ function toProblemDetails(error: unknown, fallbackDetail: string): ProblemDetail
 
 export const DashboardScreen: React.FC = () => {
   const { filters } = useMetricFilters();
+  const navigate = useNavigate();
   const [activityMetric, setActivityMetric] = useState<TimeseriesMetric>("sessions");
 
   const indicators = useIndicatorsQuery(filters);
@@ -54,6 +58,15 @@ export const DashboardScreen: React.FC = () => {
     .map((s) => s.duration_ms)
     .filter((d): d is number => d != null);
   const missingTimingCount = sessionItems.length - durations.length;
+
+  // Drill-down (I5.14) : un point du graphe d'activité -> sessions de ce jour,
+  // filtres actifs conservés.
+  function handleActivityPointClick(point: TimeSeriesPoint) {
+    void navigate({
+      to: "/sessions",
+      search: dayDrillDownFilters(filters, point),
+    });
+  }
 
   return (
     <div className="mx-auto max-w-6xl space-y-6">
@@ -131,7 +144,11 @@ export const DashboardScreen: React.FC = () => {
         {timeseries.isLoading ? (
           <div className="p-8 text-center text-sm text-slate-500">Chargement de l'activité...</div>
         ) : (
-          <TimeSeriesChart data={points} valueLabel={activeMetricLabel} />
+          <TimeSeriesChart
+            data={points}
+            valueLabel={activeMetricLabel}
+            onPointClick={handleActivityPointClick}
+          />
         )}
       </ChartFrame>
 

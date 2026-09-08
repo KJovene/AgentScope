@@ -55,6 +55,18 @@ describe('TimeSeriesChart', () => {
     // empty box, but the wrapper itself must mount without throwing.
     expect(container.querySelector('.recharts-responsive-container')).toBeInTheDocument();
   });
+
+  it('renders without crashing when onPointClick is provided', () => {
+    const { container } = render(
+      <TimeSeriesChart
+        data={[{ period: '2026-01-01', value: 3 }]}
+        valueLabel="Sessions"
+        onPointClick={() => {}}
+      />,
+    );
+
+    expect(container.querySelector('.recharts-responsive-container')).toBeInTheDocument();
+  });
 });
 
 describe('StackedBarChart', () => {

@@ -15,6 +15,7 @@ export const Route = createRootRouteWithContext<RouterContext>()({
 const NAV = [
   { to: '/', label: 'Dashboard' },
   { to: '/imports', label: 'Imports' },
+  { to: '/sessions', label: 'Sessions' },
   { to: '/sources/new', label: 'Ajouter une source' },
   { to: '/chat', label: 'Assistant Chat' },
 
