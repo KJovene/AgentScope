@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import traceback
 from typing import Any
 
 from fastapi import FastAPI, Request, status
@@ -63,9 +64,10 @@ def register_exception_handlers(app: FastAPI) -> None:
         )
 
     @app.exception_handler(Exception)
-    async def _on_unhandled(_request: Request, _exc: Exception) -> JSONResponse:
+    async def _on_unhandled(_request: Request, exc: Exception) -> JSONResponse:
+        traceback.print_exc()
         return _problem(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             title="Erreur interne",
-            detail="Une erreur inattendue est survenue.",
+            detail=str(exc),
         )

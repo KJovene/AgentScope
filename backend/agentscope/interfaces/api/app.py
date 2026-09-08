@@ -1,9 +1,4 @@
-"""Fabrique de l'application FastAPI.
-
-``create_app()`` construit une instance neuve à chaque appel (isolation en tests).
-Le conteneur de composition est créé dans le *lifespan* et exposé sur
-``app.state.container`` ; les routes y accèdent via ``dependencies.py``.
-"""
+"""Fabrique de l'application FastAPI."""
 
 from __future__ import annotations
 
@@ -12,8 +7,11 @@ from contextlib import asynccontextmanager
 
 from fastapi import APIRouter, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from sqlalchemy import text
 
 from agentscope.infrastructure.config.settings import Settings, get_settings
+from agentscope.infrastructure.persistence import views as views_module
+from agentscope.infrastructure.persistence.orm_models import Base
 from agentscope.interfaces.api.container import Container
 from agentscope.interfaces.api.errors import register_exception_handlers
 from agentscope.interfaces.api.routes import (
@@ -58,13 +56,36 @@ def create_app(settings: Settings | None = None) -> FastAPI:
 
     @asynccontextmanager
     async def lifespan(app: FastAPI) -> AsyncIterator[None]:
-        app.state.container = Container(settings)
+        container = Container(settings)
+        app.state.container = container
+
+        # 1. Création des tables ORM
+        Base.metadata.create_all(bind=container.database.engine)
+
+        # 2. Exécution dynamique de l'initialisation des vues SQL de views.py
+        with container.database.engine.begin() as conn:
+            if hasattr(views_module, "create_views"):
+                views_module.create_views(conn)
+            elif hasattr(views_module, "init_views"):
+                views_module.init_views(conn)
+            else:
+                for attr_name in dir(views_module):
+                    if not attr_name.startswith("_"):
+                        attr = getattr(views_module, attr_name)
+                        if isinstance(attr, str) and "CREATE" in attr.upper():
+                            conn.execute(text(attr))
+                        elif callable(attr) and attr_name.startswith("create"):
+                            try:
+                                attr(conn)
+                            except Exception:
+                                pass
+
         try:
             yield
         finally:
-            container = getattr(app.state, "container", None)
-            if container is not None and hasattr(container, "database"):
-                container.database.engine.dispose()
+            c = getattr(app.state, "container", None)
+            if c is not None and hasattr(c, "database"):
+                c.database.engine.dispose()
 
     app = FastAPI(
         title=settings.app_name,
