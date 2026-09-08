@@ -62,8 +62,15 @@ export function renderRouted(
     validateSearch,
     component: () => ui,
   });
+  // A dummy target so `<Link to="/sessions/$sessionId">` resolves without
+  // crashing in tests — never actually navigated to.
+  const sessionDetailStubRoute = createRoute({
+    getParentRoute: () => rootRoute,
+    path: '/sessions/$sessionId',
+    component: () => null,
+  });
   const router = createRouter({
-    routeTree: rootRoute.addChildren([indexRoute]),
+    routeTree: rootRoute.addChildren([indexRoute, sessionDetailStubRoute]),
     history: createMemoryHistory({ initialEntries: [`/${initialSearch}`] }),
   });
 
