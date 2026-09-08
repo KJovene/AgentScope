@@ -1,0 +1,6 @@
+[allowlist]
+description = "Fixtures de tests historiques contenant des valeurs volontairement fictives"
+commits = [
+  "555fb54032a8af41f01b8bb7066f082353d59922",
+  "0fff771d6982b2ccfa22d57f7d086636c7454816",
+]

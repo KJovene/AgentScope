@@ -82,10 +82,10 @@ def test_adversarial_sample_stays_confined_to_the_data_section() -> None:
 def test_build_masks_sensitive_data_with_the_real_filter() -> None:
     """Intégration avec le vrai `DefaultSensitiveFilter` (I2.14)."""
     builder = PromptBuilder(sensitive_filter=DefaultSensitiveFilter())
-    sample = [{"email": "alice@example.com", "credentials": "api_key=sk-test-secret-123456789"}]
+    sample = [{"email": "alice@example.com", "credentials": "api_key=fixture-value-to-redact"}]
 
     prompt = builder.build(target_schema=TARGET_SCHEMA, profile=_profile(), sample=sample)
 
     assert "alice@example.com" not in prompt.user
-    assert "sk-test-secret-123456789" not in prompt.user
+    assert "fixture-value-to-redact" not in prompt.user
     assert "[REDACTED]" in prompt.user
