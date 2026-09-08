@@ -121,26 +121,10 @@ def test_chat_has_no_db_side_effect_and_returns_reply() -> None:
     assert "text" in resp.json()
 
 
-def test_metrics_endpoints() -> None:
-    assert client.get("/api/v1/metrics/indicators").status_code == 200
-    assert client.get("/api/v1/metrics/timeseries?metric=sessions&granularity=day").status_code == 200
-    assert client.get("/api/v1/metrics/tool-usage").status_code == 200
-
-
-def test_sessions_list_and_detail() -> None:
-    listed = client.get("/api/v1/sessions")
-    assert listed.status_code == 200
-    session_id = listed.json()["items"][0]["id"]
-
-    detail = client.get(f"/api/v1/sessions/{session_id}")
-    assert detail.status_code == 200
-    assert "model_calls" in detail.json()
-    assert "tool_calls" in detail.json()
-
-
-def test_sources_and_data_quality() -> None:
-    assert client.get("/api/v1/sources").status_code == 200
-    assert client.get("/api/v1/data-quality").status_code == 200
+# NOTE : /metrics/*, /sessions/*, /sources et /data-quality ne sont plus des stubs.
+# Ils sont branchés sur des services de lecture réels et couverts par
+# tests/integration/test_metrics_routes.py, test_sessions_routes.py et
+# test_sources_and_quality_routes.py (avec bases migrées / services simulés).
 
 
 def test_validation_error_is_problem_json() -> None:
