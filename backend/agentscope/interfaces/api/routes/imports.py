@@ -14,7 +14,7 @@ async def create_import(
     mapping_id: str = Form(...),
     files: list[UploadFile] = File(...),
 ) -> ImportReport:
-    """Stub synchrone (v1) : renvoie toujours le même bilan de démonstration."""
+    """Stub synchrone (v1) : renvoie un bilan de démonstration."""
     return ImportReport(**fixtures.IMPORT_REPORT)
 
 

@@ -25,7 +25,7 @@ describe("Layout & Navigation UI (I5.1)", () => {
 
     render(
       <Layout>
-        {({ setError }) => (
+        {({ setError }: { setError: (error: { title: string; status: number; detail: string }) => void }) => (
           <button onClick={() => setError(errorSample)}>Déclencher erreur</button>
         )}
       </Layout>
