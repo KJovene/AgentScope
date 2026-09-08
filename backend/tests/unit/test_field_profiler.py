@@ -65,7 +65,7 @@ def test_profiler_masque_les_donnees_sensibles_dans_les_echantillons() -> None:
         0,
         {
             "email": "alice@example.com",
-            "credentials": "api_key=sk-test-secret-123456789",
+            "credentials": "api_key=fixture-value-to-redact",
             "path": r"C:\Users\alice\project\trace.jsonl",
         },
     )
@@ -74,6 +74,6 @@ def test_profiler_masque_les_donnees_sensibles_dans_les_echantillons() -> None:
 
     samples = [value for field in profile.fields for value in field.sample_values]
     assert "alice@example.com" not in samples
-    assert all("sk-test-secret-123456789" not in str(value) for value in samples)
+    assert all("fixture-value-to-redact" not in str(value) for value in samples)
     assert all(r"C:\Users\alice" not in str(value) for value in samples)
     assert all("[REDACTED]" in str(value) for value in samples)
