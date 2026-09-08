@@ -3,7 +3,7 @@ import { apiClient } from "@shared/api/client";
 import { ApiError } from "@shared/api/types";
 import type { ProblemDetails } from "@shared/api/types";
 import { ApiErrorBanner } from "@shared/components/ApiErrorBanner";
-import type { ImportReport } from "./types";
+import type { ImportReport } from "../types";
 
 interface ImportScreenProps {
   onImportCompleted?: (report: ImportReport) => void;
@@ -186,7 +186,9 @@ export const ImportScreen: React.FC<ImportScreenProps> = ({ onImportCompleted })
         <div className="rounded-md bg-slate-50 p-3 text-center dark:bg-slate-900">
         <p className="text-xs text-slate-500">Infos manquantes</p>
         <p className="mt-1 text-xl font-bold text-slate-900 dark:text-slate-100">
-        {report.missing_info_count}
+        {typeof report.missing_info_count === "number"
+          ? report.missing_info_count
+          : JSON.stringify(report.missing_info_count)}
         </p>
         </div>
         </div>

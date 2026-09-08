@@ -1,7 +1,7 @@
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
-import { ImportScreen } from '@features/import/ImportScreen';
+import { ImportScreen } from '@/features/import/ui/ImportScreen';
 import { apiClient } from '@shared/api/client';
 import { ApiError } from '@shared/api/types';
 
