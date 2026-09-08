@@ -3,6 +3,7 @@
  * from here — deep imports are blocked by ESLint (see eslint.config.js).
  */
 export { ImportHistoryScreen } from './ui/ImportHistoryScreen';
+export { ImportScreen } from './ui/ImportScreen';
 export { ImportReportPage } from './ui/ImportReportPage';
 
 // Reusable pieces other features may legitimately need:

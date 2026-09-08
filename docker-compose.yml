@@ -35,6 +35,8 @@ services:
     volumes:
       # Code monté pour le rechargement à chaud ; les deps restent celles de l'image.
       - ./backend:/app
+      # Le validateur de mappings lit le schéma partagé depuis /docs.
+      - ./docs:/docs:ro
     depends_on:
       db:
         condition: service_healthy
@@ -47,7 +49,7 @@ services:
     environment:
       # Vite proxifie /api vers le service backend (voir vite.config.ts).
       VITE_API_PROXY_TARGET: http://backend:8000
-      VITE_API_BASE_URL: /api
+      VITE_API_BASE_URL: /api/v1
     ports:
       - "${FRONTEND_PORT:-5173}:5173"
     volumes:
