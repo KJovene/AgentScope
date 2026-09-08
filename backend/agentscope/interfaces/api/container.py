@@ -32,6 +32,10 @@ class Database:
             bind=self.engine, autoflush=False, autocommit=False, expire_on_commit=False
         )
 
+    def create_session(self) -> Session:
+        """Session brute — la gestion de transaction incombe à l'appelant (UnitOfWork)."""
+        return self.session_factory()
+
     @contextmanager
     def session(self) -> Iterator[Session]:
         """Session transactionnelle : commit si succès, rollback sinon."""
@@ -82,9 +86,23 @@ class Container:
         return SqlDataQualityQueryService(session)
 
     def make_import_service(self, session: Session) -> ImportService:
-        # Le service d'import réel (orchestration lecteur → normalizer → repos)
-        # n'est pas encore câblé : cf. issue I4.2. Les routes `/imports` existent
-        # (contrat OpenAPI) et sont couvertes en test via `dependency_overrides`.
-        raise NotImplementedError(
-            "Service d'import réel non câblé — voir I4.2 (routes /imports)."
+        from agentscope.infrastructure.persistence.services.import_service import (
+            SqlImportService,
+        )
+        from agentscope.infrastructure.persistence.unit_of_work import (
+            SqlAlchemyUnitOfWork,
+        )
+        from agentscope.infrastructure.readers.csv_reader import CsvReader
+        from agentscope.infrastructure.readers.jsonl_reader import JsonlReader
+        from agentscope.infrastructure.readers.parquet_reader import ParquetReader
+
+        database = self.database
+
+        def uow_factory() -> SqlAlchemyUnitOfWork:
+            return SqlAlchemyUnitOfWork(database)
+
+        return SqlImportService(
+            session=session,
+            uow_factory=uow_factory,
+            readers=(JsonlReader(), CsvReader(), ParquetReader()),
         )
