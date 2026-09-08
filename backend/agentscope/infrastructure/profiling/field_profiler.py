@@ -9,7 +9,7 @@ from datetime import date, datetime
 from typing import Any
 
 from agentscope.domain import FieldProfile, FieldProfileSet, RawRecord
-from agentscope.infrastructure.profiling.sensitive_filter import DefaultSensitiveFilter
+from agentscope.infrastructure.security.sensitive_filter import DefaultSensitiveFilter
 
 
 class DefaultFieldProfiler:

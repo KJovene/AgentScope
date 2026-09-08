@@ -7,7 +7,7 @@ from agentscope.application.mapping.prompt_builder import (
 )
 from agentscope.application.mapping.target_schema import TARGET_SCHEMA
 from agentscope.domain import FieldProfile, FieldProfileSet
-from agentscope.infrastructure.profiling.sensitive_filter import DefaultSensitiveFilter
+from agentscope.infrastructure.security.sensitive_filter import DefaultSensitiveFilter
 
 
 class _NoopSensitiveFilter:

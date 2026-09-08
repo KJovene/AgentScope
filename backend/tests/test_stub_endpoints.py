@@ -1,10 +1,19 @@
-"""
-I4.1 — Definition of Done : /docs affiche tous les endpoints ; le front peut démarrer.
+"""Contrat OpenAPI (issue I4.1) : toutes les routes du §5.3 sont exposées et
+``/docs`` démarre.
 
-Ce test ne vérifie pas de logique métier (il n'y en a pas encore ici) : il
-vérifie que chaque route du contrat §5.3 répond avec la forme attendue à
-partir des fixtures, et que les erreurs suivent bien le format problem+json.
+La plupart des routes sont désormais branchées sur des services réels et
+couvertes par leurs tests d'intégration dédiés :
+
+- ``/imports/*``            → ``test_imports_routes.py`` / ``test_imports_api_real.py``
+- ``/analyze`` · ``/mappings/{id}/preview`` → ``test_analyze_preview_routes.py``
+- ``/chat``                 → ``test_chat_route.py``
+- ``/mappings`` (CRUD)      → ``test_mappings_routes.py``
+- ``/metrics/*`` · ``/sessions/*`` · ``/sources`` · ``/data-quality``
+      → ``test_metrics_routes.py`` / ``test_sessions_routes.py`` /
+        ``test_sources_and_quality_routes.py``
+- format ``problem+json`` des erreurs → ``test_error_handling.py``
 """
+
 from __future__ import annotations
 
 from fastapi.testclient import TestClient
@@ -42,46 +51,3 @@ def test_openapi_lists_all_contract_routes() -> None:
         "/api/v1/data-quality",
     }
     assert expected.issubset(paths.keys())
-
-
-# NOTE : plusieurs routes ne sont plus des stubs et sont couvertes ailleurs :
-#  - /imports/*            -> port ImportService            (test_imports_routes.py,
-#                                                            test_imports_api_real.py)
-#  - /analyze              -> MappingWorkbenchService (I4.3) (test_analyze_preview_routes.py)
-#  - /mappings/{id}/preview -> idem                          (test_analyze_preview_routes.py)
-
-
-def test_mapping_crud_stub() -> None:
-    created = client.post(
-        "/api/v1/mappings",
-        json={"name": "tracelab-jsonl", "source_format": "jsonl", "definition": {}},
-    )
-    assert created.status_code == 201
-    mapping_id = created.json()["mapping_id"]
-
-    listed = client.get("/api/v1/mappings")
-    assert listed.status_code == 200
-
-    fetched = client.get(f"/api/v1/mappings/{mapping_id}")
-    assert fetched.status_code == 200
-
-    updated = client.put(f"/api/v1/mappings/{mapping_id}", json={"definition": {"entities": {}}})
-    assert updated.status_code == 200
-    assert updated.json()["version"] == fetched.json()["version"] + 1
-
-
-# NOTE : /chat est branché sur MappingWorkbenchService (I4.4) — couvert par
-# tests/integration/test_chat_route.py.
-# /metrics/*, /sessions/*, /sources et /data-quality sont branchés sur des
-# services de lecture réels — couverts par test_metrics_routes.py,
-# test_sessions_routes.py et test_sources_and_quality_routes.py.
-
-
-def test_validation_error_is_problem_json() -> None:
-    # /mappings (POST) est un stub sans dépendance conteneur : convient pour
-    # vérifier le format d'erreur de validation avec un simple TestClient(app).
-    resp = client.post("/api/v1/mappings", json={"name": "x"})  # source_format + definition manquants
-    assert resp.status_code == 422
-    body = resp.json()
-    assert body["status"] == 422
-    assert isinstance(body["errors"], list) and len(body["errors"]) > 0

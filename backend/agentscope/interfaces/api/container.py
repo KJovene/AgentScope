@@ -15,6 +15,7 @@ from sqlalchemy.orm import Session, sessionmaker
 
 from agentscope.application.ports.data_quality import DataQualityQueryService
 from agentscope.application.ports.imports import ImportService
+from agentscope.application.ports.mapping_crud import MappingCrudService
 from agentscope.application.ports.metrics import MetricsQueryService
 from agentscope.application.ports.sources import SourcesQueryService
 from agentscope.application.ports.workbench import MappingWorkbenchService
@@ -112,6 +113,13 @@ class Container:
             uow_factory=uow_factory,
             readers=self._readers(),
         )
+
+    def make_mapping_service(self, session: Session) -> MappingCrudService:
+        from agentscope.infrastructure.persistence.services.mapping_service import (
+            SqlMappingService,
+        )
+
+        return SqlMappingService(session)
 
     def make_workbench_service(self) -> MappingWorkbenchService:
         """Atelier de mapping (I4.3) : analyse + prévisualisation, sans persistance."""
