@@ -55,3 +55,8 @@ Thumbs.db
 !.vscode/extensions.json
 !.vscode/settings.shared.json
 *.swp
+
+# ---------- Couverture de tests ----------
+coverage/
+coverage.json
+coverage-summary.json

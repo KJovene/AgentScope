@@ -61,4 +61,17 @@ export default tseslint.config(
       ],
     },
   },
+  {
+    // Tests deliberately reach into internal modules and shared test helpers.
+    files: ['tests/**/*.{ts,tsx}'],
+    rules: {
+      'no-restricted-imports': 'off',
+      'boundaries/element-types': 'off',
+      'boundaries/no-private': 'off',
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        { argsIgnorePattern: '^_', ignoreRestSiblings: true },
+      ],
+    },
+  },
 );
