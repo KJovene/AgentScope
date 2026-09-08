@@ -17,6 +17,8 @@ const NAV = [
   { to: '/imports', label: 'Imports' },
   { to: '/sessions', label: 'Sessions' },
   { to: '/sources/new', label: 'Ajouter une source' },
+  { to: '/chat', label: 'Assistant Chat' },
+
 ] as const;
 
 function RootLayout() {
