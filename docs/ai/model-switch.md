@@ -31,10 +31,15 @@ IA et n'est pas affecté.
 
 | Variable | Rôle | Obligatoire |
 | --- | --- | --- |
-| `AGENTSCOPE_LLM_PROVIDER` | `fake` · `anthropic` · `openai` · `ollama` | oui (défaut `fake`) |
+| `AGENTSCOPE_LLM_PROVIDER` | `fake` · `anthropic` · `openai` (voir note ci-dessous pour Ollama/LM Studio) | oui (défaut `fake`) |
 | `AGENTSCOPE_LLM_MODEL` | identifiant du modèle chez ce fournisseur | oui sauf pour `fake` |
-| `AGENTSCOPE_LLM_BASE_URL` | endpoint, pour les serveurs compatibles OpenAI | pour `ollama` / serveur local |
-| `AGENTSCOPE_LLM_API_KEY` | clé secrète | pour les fournisseurs distants |
+| `AGENTSCOPE_LLM_BASE_URL` | endpoint, pour les serveurs compatibles OpenAI | pour un serveur local |
+| `AGENTSCOPE_LLM_API_KEY` | clé secrète | pour `anthropic` ; optionnelle pour `openai` (un serveur local n'en demande pas) |
+
+> Il n'existe **pas** de valeur `ollama` pour `AGENTSCOPE_LLM_PROVIDER`. Ollama et LM Studio sont
+> des serveurs compatibles avec l'API OpenAI : on les utilise avec `AGENTSCOPE_LLM_PROVIDER=openai`
+> et `AGENTSCOPE_LLM_BASE_URL` pointé vers ce serveur — même code, aucune branche dédiée
+> (ADR-0005). Voir la recette ci-dessous.
 
 Ces valeurs sont lues **au démarrage du processus** : un changement dans `.env` ne prend effet
 qu'après redémarrage du backend.
@@ -63,9 +68,10 @@ AGENTSCOPE_LLM_API_KEY=<clé>
 ### Modèle local — Ollama ou LM Studio *(aucune clé)*
 
 ```bash
-AGENTSCOPE_LLM_PROVIDER=ollama
+AGENTSCOPE_LLM_PROVIDER=openai
 AGENTSCOPE_LLM_MODEL=<modèle servi localement>
 AGENTSCOPE_LLM_BASE_URL=http://host.docker.internal:11434/v1
+# AGENTSCOPE_LLM_API_KEY : inutile, laisser vide ou absent
 ```
 
 > Depuis un conteneur, `localhost` désigne le conteneur lui-même : utiliser
@@ -141,9 +147,8 @@ Ces quatre points sont exactement ce que consigne le compte rendu I3.13 / I6.9.
 | --- | --- |
 | Variables de configuration `AGENTSCOPE_LLM_*` | ✅ lues par `Settings` |
 | `FakeLLMProvider` | ✅ livré |
-| **Factory pilotée par la configuration** | ⬜ I3.5 — **tant qu'elle n'existe pas, changer `AGENTSCOPE_LLM_PROVIDER` n'a aucun effet** : seul le fournisseur factice est instancié |
-| Adaptateurs réels (Anthropic, OpenAI-compatible) | ⬜ I3.3, I3.4 |
+| Factory pilotée par la configuration | ✅ livrée (I3.5) — la procédure ci-dessus est opérante |
+| Adaptateurs réels (Anthropic, OpenAI-compatible) | ✅ livrés (I3.3, I3.4) |
 | Deux configurations vérifiées bout en bout | ⬜ I3.13 — [`verification-report.md`](verification-report.md) |
 
-La procédure ci-dessus est celle prévue par [ADR-0005](../architecture/adr/0005-abstraction-ia.md)
-et ne changera pas ; elle devient opérante quand la factory et les adaptateurs sont fusionnés.
+La procédure ci-dessus est celle prévue par [ADR-0005](../architecture/adr/0005-abstraction-ia.md).
