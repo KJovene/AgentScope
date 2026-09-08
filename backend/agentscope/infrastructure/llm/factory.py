@@ -9,13 +9,13 @@ configuration (variables d'environnement ``AGENTSCOPE_LLM_*``).
 from __future__ import annotations
 
 from agentscope.application.mapping.prompt_builder import PromptBuilder
+from agentscope.application.mapping.sensitive_filter import DefaultSensitiveFilter
 from agentscope.application.ports.llm_provider import LLMProvider
 from agentscope.domain import DomainError
 from agentscope.infrastructure.config.settings import Settings
 from agentscope.infrastructure.llm.anthropic_provider import AnthropicProvider
 from agentscope.infrastructure.llm.fake_provider import FakeLLMProvider
 from agentscope.infrastructure.llm.openai_provider import OpenAIProvider
-from agentscope.infrastructure.profiling.sensitive_filter import DefaultSensitiveFilter
 
 _KNOWN_PROVIDERS = ("fake", "anthropic", "openai")
 
