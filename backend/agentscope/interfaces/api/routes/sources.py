@@ -1,18 +1,30 @@
 from __future__ import annotations
 
+import dataclasses
+from typing import Any
+
 from fastapi import APIRouter
 
-from agentscope.interfaces.api import fixtures
-from agentscope.interfaces.api.schemas.sources import DataQuality, Source
+from agentscope.interfaces.api.dependencies import SourcesServiceDep
+from agentscope.interfaces.api.schemas.sources import SourceResponse
 
 router = APIRouter(tags=["sources"])
 
 
-@router.get("/sources", response_model=list[Source])
-async def list_sources() -> list[Source]:
-    return [Source(**s) for s in fixtures.SOURCES]
+def _to_dict(obj: Any) -> dict[str, Any]:
+    if isinstance(obj, dict):
+        return obj
+    if dataclasses.is_dataclass(obj) and not isinstance(obj, type):
+        return dataclasses.asdict(obj)
+    if hasattr(obj, "__dict__"):
+        return obj.__dict__
+    raise TypeError(f"Impossible de convertir {type(obj)} en dictionnaire")
 
 
-@router.get("/data-quality", response_model=list[DataQuality])
-async def get_data_quality() -> list[DataQuality]:
-    return [DataQuality(**d) for d in fixtures.DATA_QUALITY]
+@router.get("/sources", response_model=list[SourceResponse])
+async def list_sources(
+    service: SourcesServiceDep,
+) -> list[SourceResponse]:
+    """Référentiel des sources de traces d'agents enregistrées."""
+    sources = service.list_sources()
+    return [SourceResponse(**_to_dict(s)) for s in sources]
