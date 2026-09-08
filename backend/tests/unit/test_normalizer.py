@@ -154,52 +154,9 @@ def test_reimport_produit_le_meme_resultat() -> None:
 # Bout-en-bout sur l'extrait TraceLab réel (DoD de l'issue I2.6)
 # ---------------------------------------------------------------------------
 
-TRACELAB_MAPPING = {
-    "name": "tracelab-jsonl",
-    "version": 1,
-    "source_format": "jsonl",
-    "constants": {"source_name": "TraceLab"},
-    "entities": {
-        "session": {
-            "iterate": {"path": ""},
-            "identity": {"key_fields": ["session_id"]},
-            "fields": {
-                "external_id": {"from": "session_id", "required": True, "on_error": "reject"},
-                "agent_name": {"from": "provider"},
-            },
-        },
-        "model_call": {
-            "iterate": {"path": ""},
-            "parent": {"entity": "session", "key_from": "session_id"},
-            "identity": {"key_fields": ["session_id", "round_index"]},
-            "fields": {
-                "sequence": {"from": "round_index", "transform": "to_int"},
-                "model_name": {"from": "model", "required": True, "on_error": "reject"},
-                "provider": {"from": "provider"},
-                "prompt_tokens": {"from": "input_tokens_total", "transform": "to_int"},
-                "completion_tokens": {"from": "output_tokens", "transform": "to_int"},
-            },
-        },
-        "tool_call": {
-            "iterate": {"path": "tools"},
-            "parent": {"entity": "session", "key_from": "session_id"},
-            "identity": {"key_fields": ["session_id", "round_index", "tool_index"]},
-            "fields": {
-                "tool_name": {"from": "tool_name", "required": True, "on_error": "reject"},
-                "status": {
-                    "from": "is_error",
-                    "transform": "map_enum",
-                    "args": {"mapping": {True: "error", False: "success"}},
-                },
-                "error_type": {
-                    "from": "is_error",
-                    "transform": "map_enum",
-                    "args": {"mapping": {True: "tool_error"}},
-                },
-            },
-        },
-    },
-}
+TRACELAB_MAPPING_PATH = (
+    Path(__file__).resolve().parents[3] / "docs" / "data" / "mappings" / "tracelab.json"
+)
 
 
 def _tracelab_records() -> list[RawRecord]:
@@ -216,7 +173,10 @@ def _tracelab_records() -> list[RawRecord]:
 def test_bout_en_bout_tracelab() -> None:
     records = _tracelab_records()
 
-    result = Normalizer().normalize(records, MappingDefinition.from_dict(TRACELAB_MAPPING))
+    mapping = MappingDefinition.from_dict(
+        json.loads(TRACELAB_MAPPING_PATH.read_text(encoding="utf-8"))
+    )
+    result = Normalizer().normalize(records, mapping)
 
     assert result.rejects == ()
     # 2 sessions (claude + codex), 103 rounds -> 103 model_calls
@@ -238,7 +198,9 @@ def test_bout_en_bout_tracelab() -> None:
 def test_tracelab_reimport_zero_doublon() -> None:
     records = _tracelab_records()
     normalizer = Normalizer()
-    mapping = MappingDefinition.from_dict(TRACELAB_MAPPING)
+    mapping = MappingDefinition.from_dict(
+        json.loads(TRACELAB_MAPPING_PATH.read_text(encoding="utf-8"))
+    )
 
     first = normalizer.normalize(records, mapping)
     second = normalizer.normalize(records + records, mapping)  # fichier "doublé"
