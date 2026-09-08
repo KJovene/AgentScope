@@ -24,10 +24,16 @@ from agentscope.application.ports.llm_provider import (
 
 @dataclass(frozen=True, slots=True)
 class ChatResult:
-    """Résultat d'un tour d'échange : réponse + proposition à jour."""
+    """Résultat d'un tour d'échange : réponse + proposition à jour.
+
+    ``revised_proposal`` vaut ``None`` quand l'agent n'a pas révisé la
+    proposition à ce tour ; ``current_proposal`` est toujours la version en
+    vigueur (révision si elle existe, sinon la proposition reçue).
+    """
 
     text: str
     current_proposal: MappingProposal
+    revised_proposal: MappingProposal | None = None
 
     @property
     def ambiguities(self) -> list[str]:
@@ -50,4 +56,8 @@ class ChatAboutMapping:
         reply = self._llm_provider.chat(conversation_id, messages, context)
 
         updated_proposal = reply.revised_proposal or current_proposal
-        return ChatResult(text=reply.text, current_proposal=updated_proposal)
+        return ChatResult(
+            text=reply.text,
+            current_proposal=updated_proposal,
+            revised_proposal=reply.revised_proposal,
+        )

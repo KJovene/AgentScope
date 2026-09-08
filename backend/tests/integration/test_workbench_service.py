@@ -8,7 +8,11 @@ import json
 
 import pytest
 
-from agentscope.application.ports.llm_provider import MappingProposal
+from agentscope.application.ports.llm_provider import (
+    ChatMessage,
+    ChatReply,
+    MappingProposal,
+)
 from agentscope.application.use_cases.analyze_unknown_file import AnalysisFailedError
 from agentscope.application.use_cases.preview_mapping import PreviewFailedError
 from agentscope.domain import DomainError
@@ -44,13 +48,16 @@ SAMPLE = "\n".join(
 class _ValidStubProvider:
     name = "stub-valid"
 
+    def __init__(self, chat_reply: ChatReply | None = None) -> None:
+        self._chat_reply = chat_reply or ChatReply(text="Explication.", revised_proposal=None)
+
     def propose_mapping(self, profile, sample, target_schema):
         return MappingProposal(
             definition=_VALID_DEFINITION, explanations=[], ambiguities=[], unmapped_fields=[]
         )
 
-    def chat(self, *a, **k):  # pragma: no cover
-        raise NotImplementedError
+    def chat(self, conversation_id, messages, context):
+        return self._chat_reply
 
 
 def _readers():
@@ -100,3 +107,38 @@ def test_preview_rejects_an_invalid_mapping_definition() -> None:
 def test_preview_unknown_extension_raises_domain_error() -> None:
     with pytest.raises(DomainError):
         _adapter(_ValidStubProvider()).preview("sample.bin", SAMPLE, _VALID_DEFINITION)
+
+
+def _proposal(ambiguities: list[str]) -> MappingProposal:
+    return MappingProposal(
+        definition=_VALID_DEFINITION,
+        explanations=[],
+        ambiguities=ambiguities,
+        unmapped_fields=[],
+    )
+
+
+def test_chat_returns_text_and_keeps_proposal_without_revision() -> None:
+    provider = _ValidStubProvider(ChatReply(text="Parce que X.", revised_proposal=None))
+    original = _proposal(["`agent` ambigu"])
+
+    result = _adapter(provider).chat(
+        "conv-1", [ChatMessage(role="user", text="pourquoi ?")], original
+    )
+
+    assert result.text == "Parce que X."
+    assert result.revised_proposal is None
+    assert result.current_proposal is original
+    assert result.ambiguities == ["`agent` ambigu"]
+
+
+def test_chat_surfaces_a_revised_proposal() -> None:
+    revised = _proposal([])
+    provider = _ValidStubProvider(ChatReply(text="Je corrige.", revised_proposal=revised))
+
+    result = _adapter(provider).chat(
+        "conv-1", [ChatMessage(role="user", text="corrige X")], _proposal(["à revoir"])
+    )
+
+    assert result.revised_proposal is revised
+    assert result.current_proposal is revised

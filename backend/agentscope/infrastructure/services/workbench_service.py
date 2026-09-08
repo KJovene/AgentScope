@@ -12,12 +12,20 @@ from io import BytesIO
 
 from agentscope.application.mapping.file_format import detect_format
 from agentscope.application.mapping.validator import parse_and_validate
-from agentscope.application.ports.llm_provider import LLMProvider
+from agentscope.application.ports.llm_provider import (
+    ChatMessage,
+    LLMProvider,
+    MappingProposal,
+)
 from agentscope.application.ports.profiler import FieldProfiler
 from agentscope.application.ports.source_reader import SourceReader
 from agentscope.application.use_cases.analyze_unknown_file import (
     AnalysisResult,
     AnalyzeUnknownFile,
+)
+from agentscope.application.use_cases.chat_about_mapping import (
+    ChatAboutMapping,
+    ChatResult,
 )
 from agentscope.application.use_cases.preview_mapping import (
     PreviewFailedError,
@@ -40,6 +48,7 @@ class MappingWorkbenchAdapter:
             profiler=profiler, llm_provider=llm_provider, sample_size=sample_size
         )
         self._preview = PreviewMapping(readers=self._readers)
+        self._chat = ChatAboutMapping(llm_provider=llm_provider)
 
     def analyze(self, filename: str, content: bytes) -> AnalysisResult:
         fmt = detect_format(filename)
@@ -62,6 +71,14 @@ class MappingWorkbenchAdapter:
             mapping=mapping,
             sample_size=sample_size,
         )
+
+    def chat(
+        self,
+        conversation_id: str,
+        messages: list[ChatMessage],
+        current_proposal: MappingProposal,
+    ) -> ChatResult:
+        return self._chat.execute(conversation_id, messages, current_proposal)
 
     def _reader_for(self, fmt_value: str) -> SourceReader:
         for reader in self._readers:

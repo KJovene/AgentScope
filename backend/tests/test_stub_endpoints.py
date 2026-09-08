@@ -70,23 +70,17 @@ def test_mapping_crud_stub() -> None:
     assert updated.json()["version"] == fetched.json()["version"] + 1
 
 
-def test_chat_has_no_db_side_effect_and_returns_reply() -> None:
-    resp = client.post(
-        "/api/v1/chat",
-        json={"conversation_id": "c1", "message": "Pourquoi ce mapping ?", "file_ref": "profile_1"},
-    )
-    assert resp.status_code == 200
-    assert "text" in resp.json()
-
-
-# NOTE : /metrics/*, /sessions/*, /sources et /data-quality ne sont plus des stubs.
-# Ils sont branchés sur des services de lecture réels et couverts par
-# tests/integration/test_metrics_routes.py, test_sessions_routes.py et
-# test_sources_and_quality_routes.py (avec bases migrées / services simulés).
+# NOTE : /chat est branché sur MappingWorkbenchService (I4.4) — couvert par
+# tests/integration/test_chat_route.py.
+# /metrics/*, /sessions/*, /sources et /data-quality sont branchés sur des
+# services de lecture réels — couverts par test_metrics_routes.py,
+# test_sessions_routes.py et test_sources_and_quality_routes.py.
 
 
 def test_validation_error_is_problem_json() -> None:
-    resp = client.post("/api/v1/chat", json={"conversation_id": "c1"})  # champs requis manquants
+    # /mappings (POST) est un stub sans dépendance conteneur : convient pour
+    # vérifier le format d'erreur de validation avec un simple TestClient(app).
+    resp = client.post("/api/v1/mappings", json={"name": "x"})  # source_format + definition manquants
     assert resp.status_code == 422
     body = resp.json()
     assert body["status"] == 422
