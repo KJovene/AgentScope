@@ -81,12 +81,14 @@ describe("DashboardScreen UI (I5.1 / I5.10)", () => {
       http.get("/api/metrics/timeseries", () =>
         HttpResponse.json({ metric: "sessions", granularity: "day", points: [] }),
       ),
+      http.get("/api/metrics/tool-usage", () => HttpResponse.json([])),
     );
 
     renderDashboard();
 
     await waitFor(() => {
-      expect(screen.getByText("Aucune donnée disponible")).toBeDefined();
+      // Le graphe d'activité ET la répartition des outils sont vides.
+      expect(screen.getAllByText("Aucune donnée disponible")).toHaveLength(2);
     });
   });
 
@@ -112,6 +114,23 @@ describe("DashboardScreen UI (I5.1 / I5.10)", () => {
 
     await waitFor(() => {
       expect(tokensButton.getAttribute("aria-pressed")).toBe("true");
+    });
+  });
+
+  it("affiche la répartition des outils", async () => {
+    server.use(
+      http.get("/api/metrics/indicators", () => HttpResponse.json(INDICATORS)),
+      http.get("/api/metrics/tool-usage", () =>
+        HttpResponse.json([
+          { tool_name: "bash", n_calls: 10, n_errors: 2, avg_duration_ms: 120 },
+        ]),
+      ),
+    );
+
+    renderDashboard();
+
+    await waitFor(() => {
+      expect(screen.getByText("Répartition des outils")).toBeDefined();
     });
   });
 });

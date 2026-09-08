@@ -25,3 +25,10 @@ export function useTimeseriesQuery(
     queryFn: ({ signal }) => dashboardApi.getTimeseries(filters, metric, granularity, signal),
   });
 }
+
+export function useToolUsageQuery(filters: MetricFilters) {
+  return useQuery({
+    queryKey: queryKeys.metrics.toolUsage(filters),
+    queryFn: ({ signal }) => dashboardApi.getToolUsage(filters, signal),
+  });
+}

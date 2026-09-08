@@ -4,6 +4,7 @@ import { metricFiltersToQuery, type MetricFilters } from '@shared/lib/metric-fil
 import {
   indicatorsResponseSchema,
   timeseriesResponseSchema,
+  toolUsageResponseSchema,
   type Granularity,
   type TimeseriesMetric,
 } from './dashboard.contracts';
@@ -27,6 +28,12 @@ export const dashboardApi = {
   ) =>
     http.get('/metrics/timeseries', timeseriesResponseSchema, {
       query: { ...metricFiltersToQuery(filters), metric, granularity },
+      signal,
+    }),
+
+  getToolUsage: (filters: MetricFilters, signal?: AbortSignal) =>
+    http.get('/metrics/tool-usage', toolUsageResponseSchema, {
+      query: metricFiltersToQuery(filters),
       signal,
     }),
 };

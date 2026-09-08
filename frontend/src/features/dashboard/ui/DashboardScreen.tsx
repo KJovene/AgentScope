@@ -3,11 +3,11 @@ import { useState } from "react";
 import { useMetricFilters } from "@shared/hooks/use-metric-filters";
 import { ApiError } from "@shared/api/api-error";
 import type { ProblemDetails } from "@shared/api/types";
-import { Button, ChartFrame, TimeSeriesChart } from "@shared/ui";
+import { Button, ChartFrame, StackedBarChart, TimeSeriesChart } from "@shared/ui";
 import { ApiErrorBanner } from "@shared/components/ApiErrorBanner";
 import { FilterBar } from "@shared/components/filters";
 import { IndicatorCard } from "./IndicatorCard";
-import { useIndicatorsQuery, useTimeseriesQuery } from "../api/dashboard.queries";
+import { useIndicatorsQuery, useTimeseriesQuery, useToolUsageQuery } from "../api/dashboard.queries";
 import type { TimeseriesMetric } from "../api/dashboard.contracts";
 import { METRIC_DEFINITIONS } from "../types";
 
@@ -35,10 +35,17 @@ export const DashboardScreen: React.FC = () => {
 
   const indicators = useIndicatorsQuery(filters);
   const timeseries = useTimeseriesQuery(filters, activityMetric, "day");
+  const toolUsage = useToolUsageQuery(filters);
 
   const points = timeseries.data?.points ?? [];
   const activeMetricLabel =
     ACTIVITY_METRICS.find((m) => m.value === activityMetric)?.label ?? activityMetric;
+
+  const toolUsageData = (toolUsage.data ?? []).map((item) => ({
+    category: item.tool_name,
+    success: item.n_calls - item.n_errors,
+    error: item.n_errors,
+  }));
 
   return (
     <div className="mx-auto max-w-6xl space-y-6">
@@ -117,6 +124,32 @@ export const DashboardScreen: React.FC = () => {
           <div className="p-8 text-center text-sm text-slate-500">Chargement de l'activité...</div>
         ) : (
           <TimeSeriesChart data={points} valueLabel={activeMetricLabel} />
+        )}
+      </ChartFrame>
+
+      <ApiErrorBanner
+        error={
+          toolUsage.error
+            ? toProblemDetails(toolUsage.error, "Impossible de charger la répartition des outils.")
+            : null
+        }
+      />
+
+      <ChartFrame
+        title="Répartition des outils"
+        isEmpty={!toolUsage.isLoading && toolUsageData.length === 0}
+        emptyDescription="Aucun appel d'outil ne correspond aux filtres actifs."
+      >
+        {toolUsage.isLoading ? (
+          <div className="p-8 text-center text-sm text-slate-500">Chargement des outils...</div>
+        ) : (
+          <StackedBarChart
+            data={toolUsageData}
+            series={[
+              { key: "success", label: "Réussis" },
+              { key: "error", label: "Erreurs", color: "hsl(var(--danger))" },
+            ]}
+          />
         )}
       </ChartFrame>
     </div>
