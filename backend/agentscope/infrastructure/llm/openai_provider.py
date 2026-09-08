@@ -84,9 +84,7 @@ class OpenAIProvider:
         messages: list[ChatMessage],
         context: MappingContext,
     ) -> ChatReply:
-        # Format exact de `messages`/`context` fixé par I3.8 (non codé) ; en
-        # attendant, on suppose des dicts `{"role": ..., "content": ...}`.
-        openai_messages = [{"role": m["role"], "content": m["content"]} for m in messages]
+        openai_messages = [{"role": m.role, "content": m.text} for m in messages]
         text = self._call_chat_completions_api(openai_messages or [{"role": "user", "content": ""}])
         return ChatReply(text=text, revised_proposal=None)
 
