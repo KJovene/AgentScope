@@ -1,30 +1,39 @@
 from __future__ import annotations
 
-from datetime import datetime
-
-from pydantic import BaseModel
-
-
-class Indicators(BaseModel):
-    """Une valeur absente est `null`, jamais `0` (cf. §4 « Indicateurs »)."""
-
-    sessions: int | None
-    tokens_in: int | None
-    tokens_out: int | None
-    tokens_cached: int | None
-    cost_usd: float | None
-    median_session_duration_s: float | None
-    error_rate: float | None
-    cache_hit_rate: float | None
+from pydantic import BaseModel, ConfigDict, Field
+from agentscope.application.ports.metrics import Granularity, TimeseriesMetric
 
 
-class Point(BaseModel):
-    timestamp: datetime
-    value: float | None
+class IndicatorsResponse(BaseModel):
+    model_config = ConfigDict(protected_namespaces=())
+
+    session_count: int = Field(description="Nombre total de sessions")
+    model_call_count: int
+    tool_call_count: int
+    error_count: int
+    total_tokens: int | None = Field(default=None, description="null si indisponible")
+    prompt_tokens: int | None = Field(default=None)
+    completion_tokens: int | None = Field(default=None)
+    cached_tokens: int | None = Field(default=None)
+    total_cost_usd: float | None = Field(default=None)
+    error_rate: float | None = Field(default=None)
+    cache_hit_ratio: float | None = Field(default=None)
+    median_session_duration_ms: float | None = Field(default=None)
 
 
-class ToolUsage(BaseModel):
+class TimeseriesPointResponse(BaseModel):
+    period: str
+    value: float | None = Field(default=None)
+
+
+class TimeseriesResponse(BaseModel):
+    metric: TimeseriesMetric
+    granularity: Granularity
+    points: list[TimeseriesPointResponse]
+
+
+class ToolUsageResponseItem(BaseModel):
     tool_name: str
     n_calls: int
     n_errors: int
-    avg_duration_ms: float | None
+    avg_duration_ms: float | None = Field(default=None)

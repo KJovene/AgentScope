@@ -19,6 +19,7 @@ from agentscope.interfaces.api.errors import register_exception_handlers
 from agentscope.interfaces.api.routes import (
     analyze,
     chat,
+    data_quality,
     imports,
     mappings,
     metrics,
@@ -39,9 +40,24 @@ def _api_router() -> APIRouter:
         return {"status": "ok"}
 
     return router
+api_router = APIRouter(prefix=API_PREFIX)
+api_router.include_router(imports.router)
+api_router.include_router(analyze.router)
+api_router.include_router(mappings.router)
+api_router.include_router(chat.router)
+api_router.include_router(metrics.router)
+api_router.include_router(sessions.router)
+api_router.include_router(sources.router)
+api_router.include_router(data_quality.router)
+
+
+@api_router.get("/health", tags=["platform"])
+def health() -> dict[str, str]:
+    return {"status": "ok"}
 
 
 def create_app(settings: Settings | None = None) -> FastAPI:
+    """Fabrique de l'application FastAPI."""
     settings = settings or get_settings()
 
     @asynccontextmanager
@@ -57,7 +73,8 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app = FastAPI(
         title=settings.app_name,
         version="0.1.0",
-        description="Parcours principal : importer → vérifier → normaliser → explorer.",
+        description="Parcours principal : importer -> vérifier -> normaliser -> explorer.",
+        debug=settings.debug,
         lifespan=lifespan,
     )
 
@@ -77,6 +94,13 @@ def create_app(settings: Settings | None = None) -> FastAPI:
 
     app.include_router(_api_router())
     return app
+    register_exception_handlers(app_instance)
+
+    # Alias non versionné et routeur /api/v1
+    app_instance.add_api_route("/health", health, tags=["platform"])
+    app_instance.include_router(api_router)
+
+    return app_instance
 
 
 app = create_app()

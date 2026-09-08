@@ -7,7 +7,8 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import Session, sessionmaker
 
 from agentscope.infrastructure.config.settings import Settings
-
+from agentscope.application.ports.sources import SourcesQueryService
+from agentscope.application.ports.data_quality import DataQualityQueryService
 
 class Database:
 
@@ -30,7 +31,25 @@ class Database:
 
 class Container:
 
-    def __init__(self, settings: Settings) -> None:
+  def make_metrics_service(self, session: Session) -> MetricsQueryService:
+    from agentscope.infrastructure.persistence.services.metrics_service import (
+        SQLAlchemyMetricsQueryService,
+    )
+    return SQLAlchemyMetricsQueryService(session)
+
+  def make_sources_service(self, session: Session) -> SourcesQueryService:
+        from agentscope.infrastructure.persistence.services.sources_service import (
+            SQLAlchemySourcesQueryService,
+        )
+        return SQLAlchemySourcesQueryService(session)
+
+  def make_data_quality_service(self, session: Session) -> DataQualityQueryService:
+        from agentscope.infrastructure.persistence.services.data_quality_service import (
+            SQLAlchemyDataQualityQueryService,
+        )
+        return SQLAlchemyDataQualityQueryService(session)
+
+  def __init__(self, settings: Settings) -> None:
         self.settings = settings
         # Résolution robuste de l'URL DB (database_url ou db_url)
         db_url = (
@@ -39,3 +58,4 @@ class Container:
             or "sqlite:///:memory:"
         )
         self.database = Database(db_url)
+
