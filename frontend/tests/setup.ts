@@ -36,6 +36,21 @@ for (const name of ['localStorage', 'sessionStorage'] as const) {
   });
 }
 
+// jsdom has no ResizeObserver; Recharts' <ResponsiveContainer> needs one to measure its box.
+class ResizeObserverStub {
+  observe() {}
+  unobserve() {}
+  disconnect() {}
+}
+Object.defineProperty(globalThis, 'ResizeObserver', {
+  value: ResizeObserverStub,
+  configurable: true,
+  writable: true,
+});
+
+// jsdom doesn't implement scrollTo; TanStack Router's scroll restoration calls it on navigation.
+window.scrollTo = () => {};
+
 // The machine running CI-less coverage can be slow; give async utils room.
 configure({ asyncUtilTimeout: 3000 });
 

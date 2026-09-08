@@ -11,10 +11,22 @@ export const handlers = [
 
   http.get('/api/metrics/indicators', () =>
     HttpResponse.json({
-      sessions: 0,
-      totalTokens: null,
-      totalCostUsd: null,
-      errorRate: null,
+      session_count: 0,
+      model_call_count: 0,
+      tool_call_count: 0,
+      error_count: 0,
+      total_tokens: null,
+      prompt_tokens: null,
+      completion_tokens: null,
+      cached_tokens: null,
+      total_cost_usd: null,
+      error_rate: null,
+      cache_hit_ratio: null,
+      median_session_duration_ms: null,
     }),
+  ),
+
+  http.get('/api/metrics/timeseries', () =>
+    HttpResponse.json({ metric: 'sessions', granularity: 'day', points: [] }),
   ),
 ];

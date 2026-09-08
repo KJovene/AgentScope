@@ -1,41 +1,43 @@
-import React, { useEffect, useState } from "react";
-import { apiClient } from "../../../shared/api/client";
-import { ApiError } from "../../../shared/api/types";
-import type { ProblemDetails } from "../../../shared/api/types";
-import { ApiErrorBanner } from "../../../shared/components/ApiErrorBanner";
+import { useState } from "react";
+
+import { useMetricFilters } from "@shared/hooks/use-metric-filters";
+import { ApiError } from "@shared/api/api-error";
+import type { ProblemDetails } from "@shared/api/types";
+import { Button, ChartFrame, TimeSeriesChart } from "@shared/ui";
+import { ApiErrorBanner } from "@shared/components/ApiErrorBanner";
 import { IndicatorCard } from "./IndicatorCard";
-import type { IndicatorsResponse } from "../types";
-import { METRIC_DEFINITIONS } from "../types"
+import { useIndicatorsQuery, useTimeseriesQuery } from "../api/dashboard.queries";
+import type { TimeseriesMetric } from "../api/dashboard.contracts";
+import { METRIC_DEFINITIONS } from "../types";
+
+const ACTIVITY_METRICS: { value: TimeseriesMetric; label: string }[] = [
+  { value: "sessions", label: "Sessions" },
+  { value: "tokens", label: "Tokens" },
+];
+
+function toProblemDetails(error: unknown, fallbackDetail: string): ProblemDetails {
+  if (error instanceof ApiError && error.problem) {
+    return {
+      type: error.problem.type,
+      title: error.problem.title,
+      status: error.problem.status,
+      detail: error.problem.detail,
+      errors: error.problem.errors?.map((e) => ({ field: e.field ?? "", message: e.message })),
+    };
+  }
+  return { title: "Erreur réseau", status: 500, detail: fallbackDetail };
+}
 
 export const DashboardScreen: React.FC = () => {
-  const [indicators, setIndicators] = useState<IndicatorsResponse | null>(null);
-  const [loading, setLoading] = useState<boolean>(true);
-  const [error, setError] = useState<ProblemDetails | null>(null);
+  const { filters } = useMetricFilters();
+  const [activityMetric, setActivityMetric] = useState<TimeseriesMetric>("sessions");
 
-  useEffect(() => {
-    fetchIndicators();
-  }, []);
+  const indicators = useIndicatorsQuery(filters);
+  const timeseries = useTimeseriesQuery(filters, activityMetric, "day");
 
-  const fetchIndicators = async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const data = await apiClient.get<IndicatorsResponse>("/metrics/indicators");
-      setIndicators(data);
-    } catch (err) {
-      if (err instanceof ApiError) {
-        setError(err.problem);
-      } else {
-        setError({
-          title: "Erreur réseau",
-          status: 500,
-          detail: "Impossible de charger les métriques du tableau de bord.",
-        });
-      }
-    } finally {
-      setLoading(false);
-    }
-  };
+  const points = timeseries.data?.points ?? [];
+  const activeMetricLabel =
+    ACTIVITY_METRICS.find((m) => m.value === activityMetric)?.label ?? activityMetric;
 
   return (
     <div className="mx-auto max-w-6xl space-y-6">
@@ -46,32 +48,75 @@ export const DashboardScreen: React.FC = () => {
         </p>
       </div>
 
-      <ApiErrorBanner error={error} onDismiss={() => setError(null)} />
+      <ApiErrorBanner
+        error={
+          indicators.error
+            ? toProblemDetails(indicators.error, "Impossible de charger les métriques du tableau de bord.")
+            : null
+        }
+      />
 
-      {loading ? (
+      {indicators.isLoading ? (
         <div className="p-8 text-center text-sm text-slate-500">Chargement des indicateurs...</div>
       ) : (
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <IndicatorCard
             definition={METRIC_DEFINITIONS.sessions!}
-            value={indicators?.session_count ?? 0}
+            value={indicators.data?.session_count ?? 0}
           />
           <IndicatorCard
             definition={METRIC_DEFINITIONS.tokens!}
-            value={indicators?.total_tokens ?? null}
+            value={indicators.data?.total_tokens ?? null}
           />
           <IndicatorCard
             definition={METRIC_DEFINITIONS.cost!}
-            value={indicators?.total_cost_usd ?? null}
+            value={indicators.data?.total_cost_usd ?? null}
             formatter={(v) => `$${v.toFixed(2)}`}
           />
           <IndicatorCard
             definition={METRIC_DEFINITIONS.errorRate!}
-            value={indicators?.error_rate !== undefined && indicators.error_rate !== null ? indicators.error_rate * 100 : null}
+            value={indicators.data?.error_rate != null ? indicators.data.error_rate * 100 : null}
             formatter={(v) => `${v.toFixed(1)} %`}
           />
         </div>
       )}
+
+      <ApiErrorBanner
+        error={
+          timeseries.error
+            ? toProblemDetails(timeseries.error, "Impossible de charger l'activité.")
+            : null
+        }
+      />
+
+      <ChartFrame
+        title="Activité"
+        isEmpty={!timeseries.isLoading && points.length === 0}
+        emptyDescription="Aucune session ne correspond aux filtres actifs."
+        actions={
+          <div className="flex gap-1">
+            {ACTIVITY_METRICS.map((m) => (
+              <Button
+                key={m.value}
+                type="button"
+                size="sm"
+                variant={activityMetric === m.value ? "primary" : "secondary"}
+                onClick={() => setActivityMetric(m.value)}
+                aria-pressed={activityMetric === m.value}
+              >
+                {m.label}
+              </Button>
+            ))}
+          </div>
+        }
+      >
+        {timeseries.isLoading ? (
+          <div className="p-8 text-center text-sm text-slate-500">Chargement de l'activité...</div>
+        ) : (
+          <TimeSeriesChart data={points} valueLabel={activeMetricLabel} />
+        )}
+      </ChartFrame>
     </div>
   );
 };
+
