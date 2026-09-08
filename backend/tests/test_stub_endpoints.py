@@ -1,10 +1,19 @@
-"""
-I4.1 — Definition of Done : /docs affiche tous les endpoints ; le front peut démarrer.
+"""Contrat OpenAPI (issue I4.1) : toutes les routes du §5.3 sont exposées et
+``/docs`` démarre.
 
-Ce test ne vérifie pas de logique métier (il n'y en a pas encore ici) : il
-vérifie que chaque route du contrat §5.3 répond avec la forme attendue à
-partir des fixtures, et que les erreurs suivent bien le format problem+json.
+La plupart des routes sont désormais branchées sur des services réels et
+couvertes par leurs tests d'intégration dédiés :
+
+- ``/imports/*``            → ``test_imports_routes.py`` / ``test_imports_api_real.py``
+- ``/analyze`` · ``/mappings/{id}/preview`` → ``test_analyze_preview_routes.py``
+- ``/chat``                 → ``test_chat_route.py``
+- ``/mappings`` (CRUD)      → ``test_mappings_routes.py``
+- ``/metrics/*`` · ``/sessions/*`` · ``/sources`` · ``/data-quality``
+      → ``test_metrics_routes.py`` / ``test_sessions_routes.py`` /
+        ``test_sources_and_quality_routes.py``
+- format ``problem+json`` des erreurs → ``test_error_handling.py``
 """
+
 from __future__ import annotations
 
 from fastapi.testclient import TestClient
@@ -42,64 +51,3 @@ def test_openapi_lists_all_contract_routes() -> None:
         "/api/v1/data-quality",
     }
     assert expected.issubset(paths.keys())
-
-
-# NOTE : /imports/* n'est plus un stub — la route est branchée sur le port
-# `ImportService` (le service réel reste à câbler, cf. I4.2). Elle est couverte
-# par tests/integration/test_imports_routes.py (service simulé via dependency_overrides).
-
-
-def test_analyze_returns_profile_and_proposal() -> None:
-    resp = client.post(
-        "/api/v1/analyze",
-        files={"file": ("unknown.jsonl", b'{"a": 1}\n', "application/jsonl")},
-    )
-    assert resp.status_code == 200
-    body = resp.json()
-    assert "profile" in body and "proposal" in body
-
-
-def test_mapping_crud_and_preview() -> None:
-    created = client.post(
-        "/api/v1/mappings",
-        json={"name": "tracelab-jsonl", "source_format": "jsonl", "definition": {}},
-    )
-    assert created.status_code == 201
-    mapping_id = created.json()["mapping_id"]
-
-    listed = client.get("/api/v1/mappings")
-    assert listed.status_code == 200
-
-    fetched = client.get(f"/api/v1/mappings/{mapping_id}")
-    assert fetched.status_code == 200
-
-    updated = client.put(f"/api/v1/mappings/{mapping_id}", json={"definition": {"entities": {}}})
-    assert updated.status_code == 200
-    assert updated.json()["version"] == fetched.json()["version"] + 1
-
-    preview = client.post(f"/api/v1/mappings/{mapping_id}/preview")
-    assert preview.status_code == 200
-    assert "rows" in preview.json()
-
-
-def test_chat_has_no_db_side_effect_and_returns_reply() -> None:
-    resp = client.post(
-        "/api/v1/chat",
-        json={"conversation_id": "c1", "message": "Pourquoi ce mapping ?", "file_ref": "profile_1"},
-    )
-    assert resp.status_code == 200
-    assert "text" in resp.json()
-
-
-# NOTE : /metrics/*, /sessions/*, /sources et /data-quality ne sont plus des stubs.
-# Ils sont branchés sur des services de lecture réels et couverts par
-# tests/integration/test_metrics_routes.py, test_sessions_routes.py et
-# test_sources_and_quality_routes.py (avec bases migrées / services simulés).
-
-
-def test_validation_error_is_problem_json() -> None:
-    resp = client.post("/api/v1/chat", json={"conversation_id": "c1"})  # champs requis manquants
-    assert resp.status_code == 422
-    body = resp.json()
-    assert body["status"] == 422
-    assert isinstance(body["errors"], list) and len(body["errors"]) > 0
