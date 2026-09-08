@@ -13,7 +13,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from datetime import datetime
 from enum import StrEnum
-from typing import Protocol, runtime_checkable
+from typing import Any, Protocol, runtime_checkable
 
 
 class TimeseriesMetric(StrEnum):
@@ -141,3 +141,6 @@ class MetricsQueryService(Protocol):
     ) -> Paginated[SessionListItem]: ...
 
     def session_detail(self, session_id: int) -> SessionDetail | None: ...
+
+    def tool_usage(self, f: MetricFilter) -> list[dict[str, Any]]:
+        ...

@@ -9,7 +9,6 @@ from sqlalchemy.orm import Session, sessionmaker
 from agentscope.application.ports.metrics import MetricsQueryService
 from agentscope.infrastructure.config.settings import Settings
 
-
 class Database:
 
     def __init__(self, db_url: str) -> None:
@@ -30,6 +29,12 @@ class Database:
 
 
 class Container:
+
+  def make_metrics_service(self, session: Session) -> MetricsQueryService:
+    from agentscope.infrastructure.persistence.services.metrics_service import (
+        SQLAlchemyMetricsQueryService,
+    )
+    return SQLAlchemyMetricsQueryService(session)
 
     def __init__(self, settings: Settings) -> None:
         self.settings = settings

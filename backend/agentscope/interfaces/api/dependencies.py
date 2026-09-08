@@ -9,6 +9,7 @@ from sqlalchemy.orm import Session
 from agentscope.application.ports.metrics import MetricsQueryService
 from agentscope.infrastructure.config.settings import Settings
 from agentscope.interfaces.api.container import Container
+from agentscope.application.ports.metrics import MetricsQueryService
 
 
 def get_container(request: Request) -> Container:

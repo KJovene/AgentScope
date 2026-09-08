@@ -17,7 +17,12 @@ from agentscope.domain.entities import (
     SourceMapping,
     ToolCall,
 )
-from agentscope.domain.errors import DomainError, InvalidMappingError, InvariantViolationError
+from agentscope.domain.errors import (
+    DomainError,
+    InvalidMappingError,
+    InvariantViolationError,
+    LLMError,
+)
 from agentscope.domain.retention import RetentionMode, RetentionPolicy
 from agentscope.domain.value_objects import (
     CallStatus,
@@ -61,4 +66,5 @@ __all__ = [
     "DomainError",
     "InvariantViolationError",
     "InvalidMappingError",
+    "LLMError",
 ]
