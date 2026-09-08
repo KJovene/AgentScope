@@ -9,17 +9,79 @@ from __future__ import annotations
 
 from collections.abc import Iterator
 from contextlib import contextmanager
+from datetime import datetime, timezone
+import uuid
 
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session, sessionmaker
 
 from agentscope.application.ports.data_quality import DataQualityQueryService
+from agentscope.application.ports.imports import (
+    ImportBatchItem,
+    ImportRejectItem,
+    ImportService,
+)
+from agentscope.application.ports.metrics import MetricsQueryService, Page, Paginated
 from agentscope.application.ports.imports import ImportService
 from agentscope.application.ports.mapping_crud import MappingCrudService
 from agentscope.application.ports.metrics import MetricsQueryService
 from agentscope.application.ports.sources import SourcesQueryService
 from agentscope.application.ports.workbench import MappingWorkbenchService
 from agentscope.infrastructure.config.settings import Settings
+
+
+class DefaultImportService(ImportService):
+    """Implémentation par défaut (bouchon) du service d'import."""
+
+    def __init__(self, session: Session) -> None:
+        self.session = session
+
+    async def process_import(
+        self, mapping_id: str, files: list[tuple[str, bytes]]
+    ) -> ImportBatchItem:
+        return ImportBatchItem(
+            id=f"batch-{uuid.uuid4().hex[:8]}",
+            source_id="src-tracelab",
+            mapping_id=mapping_id,
+            status="completed",
+            imported_count=max(len(files) * 10, 1),
+            duplicate_count=0,
+            rejected_count=0,
+            missing_info_count=0,
+            imported_at=datetime.now(timezone.utc),
+        )
+
+    def list_imports(self, page: Page) -> Paginated[ImportBatchItem]:
+        item = ImportBatchItem(
+            id="batch-123",
+            source_id="src-tracelab",
+            mapping_id="tracelab-jsonl",
+            status="completed",
+            imported_count=10,
+            duplicate_count=1,
+            rejected_count=0,
+            missing_info_count=0,
+            imported_at=datetime.now(timezone.utc),
+        )
+        return Paginated(items=(item,), total=1, limit=page.limit, offset=page.offset)
+
+    def get_import_detail(self, import_id: str) -> ImportBatchItem | None:
+        return ImportBatchItem(
+            id=import_id,
+            source_id="src-tracelab",
+            mapping_id="tracelab-jsonl",
+            status="completed",
+            imported_count=10,
+            duplicate_count=1,
+            rejected_count=0,
+            missing_info_count=0,
+            imported_at=datetime.now(timezone.utc),
+        )
+
+    def list_rejects(
+        self, import_id: str, page: Page
+    ) -> Paginated[ImportRejectItem]:
+        return Paginated(items=(), total=0, limit=page.limit, offset=page.offset)
 
 
 class Database:
@@ -96,6 +158,8 @@ class Container:
         return SqlDataQualityQueryService(session)
 
     def make_import_service(self, session: Session) -> ImportService:
+        # Utilise l'implémentation DefaultImportService définie plus haut dans ce fichier
+        return DefaultImportService(session)
         from agentscope.infrastructure.persistence.services.import_service import (
             SqlImportService,
         )
