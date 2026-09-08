@@ -29,4 +29,6 @@ export const handlers = [
   http.get('/api/metrics/timeseries', () =>
     HttpResponse.json({ metric: 'sessions', granularity: 'day', points: [] }),
   ),
+
+  http.get('/api/sources', () => HttpResponse.json([])),
 ];

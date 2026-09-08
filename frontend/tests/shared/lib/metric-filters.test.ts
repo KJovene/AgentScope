@@ -17,6 +17,16 @@ describe('metric-filters', () => {
     expect(metricFiltersSchema.safeParse({ from: 'yesterday' }).success).toBe(false);
   });
 
+  it('schema coerces a single repeated-key value (a lone query string) into a one-element array', () => {
+    // TanStack Router (and URLSearchParams in general) parse `?agents=claude` as
+    // the string "claude", not ["claude"] — only 2+ occurrences produce an array.
+    expect(metricFiltersSchema.parse({ agents: 'claude' })).toEqual({
+      sources: [],
+      agents: ['claude'],
+      models: [],
+    });
+  });
+
   it('EMPTY_METRIC_FILTERS has no active filter', () => {
     expect(hasActiveFilters(EMPTY_METRIC_FILTERS)).toBe(false);
   });
