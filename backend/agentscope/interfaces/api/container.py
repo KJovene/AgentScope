@@ -8,6 +8,8 @@ from sqlalchemy.orm import Session, sessionmaker
 
 from agentscope.application.ports.metrics import MetricsQueryService
 from agentscope.infrastructure.config.settings import Settings
+from agentscope.application.ports.sources import SourcesQueryService
+from agentscope.application.ports.data_quality import DataQualityQueryService
 
 class Database:
 
@@ -36,7 +38,19 @@ class Container:
     )
     return SQLAlchemyMetricsQueryService(session)
 
-    def __init__(self, settings: Settings) -> None:
+  def make_sources_service(self, session: Session) -> SourcesQueryService:
+        from agentscope.infrastructure.persistence.services.sources_service import (
+            SQLAlchemySourcesQueryService,
+        )
+        return SQLAlchemySourcesQueryService(session)
+
+  def make_data_quality_service(self, session: Session) -> DataQualityQueryService:
+        from agentscope.infrastructure.persistence.services.data_quality_service import (
+            SQLAlchemyDataQualityQueryService,
+        )
+        return SQLAlchemyDataQualityQueryService(session)
+
+  def __init__(self, settings: Settings) -> None:
         self.settings = settings
         db_url = (
             getattr(settings, "database_url", None)
