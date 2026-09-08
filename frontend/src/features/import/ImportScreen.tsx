@@ -1,8 +1,8 @@
 import React, { useState } from "react";
-import { apiClient } from "../../shared/api/client";
-import { ApiError } from "../../shared/api/types";
-import type { ProblemDetails } from "../../shared/api/types";
-import { ApiErrorBanner } from "../../shared/components/ApiErrorBanner";
+import { apiClient } from "@shared/api/client";
+import { ApiError } from "@shared/api/types";
+import type { ProblemDetails } from "@shared/api/types";
+import { ApiErrorBanner } from "@shared/components/ApiErrorBanner";
 import type { ImportReport } from "./types";
 
 interface ImportScreenProps {

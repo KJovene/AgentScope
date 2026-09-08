@@ -94,6 +94,21 @@ test-backend: ## Tests backend (pytest)
 test-frontend: ## Tests frontend (vitest)
 	$(COMPOSE) run --rm $(FRONTEND) npm run test
 
+# --- Couverture (exécution locale, hors Docker : nécessite `make install`) ---
+# Seuil minimal : 80 % back et front. Chaque cible est indépendante.
+
+.PHONY: coverage
+coverage: coverage-backend coverage-frontend ## Couverture back + front (seuil 80 %)
+
+.PHONY: coverage-backend
+coverage-backend: ## Couverture backend seule — pytest-cov, rapport HTML dans backend/htmlcov/
+	cd $(BACKEND) && ./.venv/bin/python -m pytest \
+		--cov=agentscope --cov-report=term-missing --cov-report=html --cov-fail-under=80
+
+.PHONY: coverage-frontend
+coverage-frontend: ## Couverture frontend seule — vitest v8, rapport HTML dans frontend/coverage/
+	cd $(FRONTEND) && npm run test:coverage
+
 .PHONY: lint
 lint: ## Lint backend (ruff) + frontend (eslint)
 	$(COMPOSE) run --rm $(BACKEND) ruff check .

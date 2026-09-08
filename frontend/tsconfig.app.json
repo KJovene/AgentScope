@@ -31,5 +31,5 @@
       "@app/*": ["./src/app/*"]
     }
   },
-  "include": ["src"]
+  "include": ["src", "tests"]
 }

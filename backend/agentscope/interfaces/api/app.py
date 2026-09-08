@@ -1,3 +1,10 @@
+"""Fabrique de l'application FastAPI.
+
+``create_app()`` construit une instance neuve à chaque appel (isolation en tests).
+Le conteneur de composition est créé dans le *lifespan* et exposé sur
+``app.state.container`` ; les routes y accèdent via ``dependencies.py``.
+"""
+
 from __future__ import annotations
 
 from collections.abc import AsyncIterator
@@ -22,6 +29,17 @@ from agentscope.interfaces.api.routes import (
 
 API_PREFIX = "/api/v1"
 
+
+def _api_router() -> APIRouter:
+    router = APIRouter(prefix=API_PREFIX)
+    for module in (imports, analyze, mappings, chat, metrics, sessions, sources):
+        router.include_router(module.router)
+
+    @router.get("/health", tags=["meta"])
+    async def health_v1() -> dict[str, str]:
+        return {"status": "ok"}
+
+    return router
 api_router = APIRouter(prefix=API_PREFIX)
 api_router.include_router(imports.router)
 api_router.include_router(analyze.router)
@@ -45,11 +63,14 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     @asynccontextmanager
     async def lifespan(app: FastAPI) -> AsyncIterator[None]:
         app.state.container = Container(settings)
-        yield
-        if hasattr(app.state.container, "database"):
-            app.state.container.database.engine.dispose()
+        try:
+            yield
+        finally:
+            container = app.state.container
+            if hasattr(container, "database"):
+                container.database.engine.dispose()
 
-    app_instance = FastAPI(
+    app = FastAPI(
         title=settings.app_name,
         version="0.1.0",
         description="Parcours principal : importer -> vérifier -> normaliser -> explorer.",
@@ -57,7 +78,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         lifespan=lifespan,
     )
 
-    app_instance.add_middleware(
+    app.add_middleware(
         CORSMiddleware,
         allow_origins=settings.cors_origins,
         allow_credentials=False,
@@ -65,6 +86,14 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         allow_headers=["*"],
     )
 
+    register_exception_handlers(app)
+
+    @app.get("/health", tags=["meta"])
+    async def health() -> dict[str, str]:
+        return {"status": "ok"}
+
+    app.include_router(_api_router())
+    return app
     register_exception_handlers(app_instance)
 
     # Alias non versionné et routeur /api/v1
