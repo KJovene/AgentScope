@@ -101,7 +101,7 @@ export function SessionDetailPage({ sessionId }: SessionDetailPageProps) {
   }
 
   const detail = session.data;
-  const timeline = [...detail.timeline].sort((a, b) => a.sequence - b.sequence);
+  const timeline = [...(detail.timeline ?? [])].sort((a, b) => a.sequence - b.sequence);
 
   return (
     <div className="stagger space-y-6">

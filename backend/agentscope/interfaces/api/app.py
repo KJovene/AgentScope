@@ -7,7 +7,6 @@ from contextlib import asynccontextmanager
 
 from fastapi import APIRouter, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from sqlalchemy import text
 
 from agentscope.infrastructure.config.settings import Settings, get_settings
 from agentscope.infrastructure.persistence import views as views_module
@@ -61,26 +60,17 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         container = Container(settings)
         app.state.container = container
 
-        # 1. Création des tables ORM
+        # 1. Création des tables ORM absentes (idempotent).
         Base.metadata.create_all(bind=container.database.engine)
 
-        # 2. Exécution dynamique de l'initialisation des vues SQL de views.py
+        # 2. (Re)création des vues agrégées — toujours réalignées sur views.py.
+        #    On drop d'abord : `CREATE VIEW` échoue si la vue existe déjà avec un
+        #    schéma périmé (ce bootstrap dev ne passe pas par Alembic, donc une
+        #    colonne ajoutée à une vue — p. ex. `cost_is_estimated` — ne serait
+        #    jamais prise en compte sur une base préexistante).
         with container.database.engine.begin() as conn:
-            if hasattr(views_module, "create_views"):
-                views_module.create_views(conn)
-            elif hasattr(views_module, "init_views"):
-                views_module.init_views(conn)
-            else:
-                for attr_name in dir(views_module):
-                    if not attr_name.startswith("_"):
-                        attr = getattr(views_module, attr_name)
-                        if isinstance(attr, str) and "CREATE" in attr.upper():
-                            conn.execute(text(attr))
-                        elif callable(attr) and attr_name.startswith("create"):
-                            try:
-                                attr(conn)
-                            except Exception:
-                                pass
+            views_module.drop_all_views(conn)
+            views_module.create_all_views(conn)
 
         try:
             yield

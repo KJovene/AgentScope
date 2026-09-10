@@ -17,18 +17,23 @@ export function ChartTooltip({
   label,
   payload,
   valueFormatter = (v) => String(v),
+  labelFormatter,
 }: {
   active?: boolean;
   label?: ReactNode;
   payload?: TooltipEntry[];
   valueFormatter?: (value: number | string) => string;
+  /** Expands a shortened axis tick back to its full meaning (e.g. a bucket span). */
+  labelFormatter?: (label: ReactNode) => ReactNode;
 }) {
   if (!active || !payload || payload.length === 0) return null;
 
+  const heading = label == null ? null : (labelFormatter?.(label) ?? label);
+
   return (
     <div className="border border-neon-cyan bg-surface px-3 py-2 text-xs shadow-neon-cyan">
-      {label != null && (
-        <p className="mb-1 font-semibold uppercase tracking-wider text-foreground">{label}</p>
+      {heading != null && (
+        <p className="mb-1 font-semibold uppercase tracking-wider text-foreground">{heading}</p>
       )}
       <ul className="space-y-0.5">
         {payload.map((entry, i) => (

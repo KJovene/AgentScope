@@ -42,6 +42,9 @@ describe('format — missing values are never rendered as 0', () => {
     expect(formatDuration(820)).toBe('820 ms');
     expect(formatDuration(5_000)).toBe('5 s');
     expect(formatDuration(72_000)).toBe('1 min 12 s');
+    // Au-delà de l'heure, deux unités suffisent : ni "128 min", ni "1 h 8 min 51 s".
+    expect(formatDuration(3_900_000)).toBe('1 h 05 min');
+    expect(formatDuration(180_000_000)).toBe('2 j 2 h');
     expect(formatDuration(undefined)).toBe(UNAVAILABLE);
   });
 

@@ -58,6 +58,11 @@ window.HTMLElement.prototype.scrollIntoView = () => {};
 configure({ asyncUtilTimeout: 3000 });
 
 // Mock the API at the network boundary so tests never hit a real backend.
-beforeAll(() => server.listen({ onUnhandledRequest: 'error' }));
+// The signal patch is installed AFTER msw's interceptor so it sees the request
+// first and can strip the foreign signal before msw builds a Request from it.
+beforeAll(() => {
+  server.listen({ onUnhandledRequest: 'error' });
+  patchFetchSignal();
+});
 afterEach(() => server.resetHandlers());
 afterAll(() => server.close());

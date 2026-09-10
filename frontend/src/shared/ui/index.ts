@@ -2,6 +2,8 @@ export { Button, type ButtonProps } from './Button';
 export { Card, CardHeader, CardTitle } from './Card';
 export { CyberScope } from './CyberDecor';
 export {
+  BreakdownBarChart,
+  type BreakdownDatum,
   buildDurationHistogram,
   CHART_AXIS_PROPS,
   CHART_COLORS,
@@ -11,6 +13,8 @@ export {
   ChartTooltip,
   DistributionChart,
   type HistogramBucket,
+  ProportionBar,
+  type ProportionSegment,
   StackedBarChart,
   type StackedBarDatum,
   type StackedBarSeries,

@@ -6,6 +6,20 @@ interface IndicatorCardProps {
   value: number | null;
   formatter?: (val: number) => string;
   accent?: "cyan" | "violet";
+  /** Secondary line under the value: a derived ratio, an average, a count. */
+  caption?: string;
+  /** Small qualifier next to the label, e.g. "Estimé" for a priced-from-grid cost. */
+  badge?: string;
+  /** Relative variation against the previous period, as a ratio (0.12 = +12 %). */
+  delta?: number | null;
+  /**
+   * Whether a rise is good. Drives the status color, which is reserved for
+   * values that genuinely mean better/worse. Leave undefined for a neutral
+   * volume metric, where "more" is neither good nor bad.
+   */
+  higherIsBetter?: boolean;
+  /** Footer slot — a proportion bar or any compact breakdown of the value. */
+  children?: React.ReactNode;
 }
 
 const ACCENT = {
@@ -23,11 +37,46 @@ const ACCENT = {
   },
 } as const;
 
+/**
+ * Renders the variation as arrow + signed percentage, never color alone: the
+ * glyph and the sign carry the direction for a reader who cannot separate the
+ * two status hues.
+ */
+function DeltaBadge({ delta, higherIsBetter }: { delta: number; higherIsBetter?: boolean }) {
+  const rising = delta > 0;
+  const flat = Math.abs(delta) < 0.001;
+
+  const tone = flat || higherIsBetter === undefined
+    ? "text-foreground-muted"
+    : rising === higherIsBetter
+      ? "text-success"
+      : "text-danger";
+
+  const arrow = flat ? "→" : rising ? "↑" : "↓";
+  const sign = rising ? "+" : "";
+
+  return (
+    <span
+      className={`flex shrink-0 items-center gap-1 whitespace-nowrap text-[11px] font-semibold tabular-nums ${tone}`}
+      title="Variation par rapport à la période précédente de même durée"
+    >
+      <span aria-hidden="true">{arrow}</span>
+      {sign}
+      {(delta * 100).toFixed(1)} %
+    </span>
+  );
+}
+
 export const IndicatorCard: React.FC<IndicatorCardProps> = ({
   definition,
   value,
   formatter = (v) => v.toLocaleString("fr-FR"),
   accent = "cyan",
+  caption,
+  badge,
+  delta,
+  higherIsBetter,
+  children,
 }) => {
   const [showTooltip, setShowTooltip] = useState(false);
   const a = ACCENT[accent];
@@ -36,10 +85,15 @@ export const IndicatorCard: React.FC<IndicatorCardProps> = ({
   const displayValue = isNA ? "N/A" : formatter(value);
 
   return (
-    <div className={`cyber-card relative ${a.edge}`}>
+    <div className={`cyber-card relative ${a.edge} ${showTooltip ? "z-30" : ""}`}>
       <div className="flex items-center justify-between gap-2">
-        <span className="text-xs font-semibold uppercase tracking-wider text-foreground-muted">
+        <span className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-foreground-muted">
           {definition.label}
+          {badge && (
+            <span className="border border-border px-1 py-px text-[9px] font-medium normal-case tracking-normal">
+              {badge}
+            </span>
+          )}
         </span>
         <button
           type="button"
@@ -58,7 +112,7 @@ export const IndicatorCard: React.FC<IndicatorCardProps> = ({
 
       <div className="mt-3 flex items-baseline justify-between gap-2">
         <span
-          className={`text-2xl font-bold tabular-nums ${
+          className={`text-2xl font-bold ${
             isNA ? "text-foreground-muted" : `text-foreground ${a.value}`
           }`}
         >
@@ -67,10 +121,21 @@ export const IndicatorCard: React.FC<IndicatorCardProps> = ({
         <span className="text-xs text-foreground-muted">{definition.unit}</span>
       </div>
 
+      {(caption || (delta != null && !isNA)) && (
+        <div className="mt-2 flex items-center justify-between gap-2">
+          <span className="text-[11px] text-foreground-muted">{caption}</span>
+          {delta != null && !isNA && (
+            <DeltaBadge delta={delta} higherIsBetter={higherIsBetter} />
+          )}
+        </div>
+      )}
+
+      {children && <div className="mt-3">{children}</div>}
+
       {showTooltip && (
         <div
           role="tooltip"
-          className={`absolute left-2 right-2 top-12 z-20 border bg-surface-raised p-3 text-xs text-foreground shadow-elev-lg ${a.tip}`}
+          className={`absolute left-2 right-2 top-12 z-40 border bg-surface-raised p-3 text-xs text-foreground shadow-elev-lg ${a.tip}`}
         >
           <p className="font-semibold">{definition.label}</p>
           <div className="mt-2 space-y-1 text-[11px] text-foreground">
