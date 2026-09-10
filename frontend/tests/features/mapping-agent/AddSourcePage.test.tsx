@@ -1,5 +1,9 @@
-import { fireEvent, render, screen } from '@testing-library/react';
-import { describe, expect, it, vi } from 'vitest';
+import { act, fireEvent, render, screen } from '@testing-library/react';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+
+import { useWorkbenchStore } from '@features/mapping-agent/model/workbench-store';
+
+import { renderWithClient } from '../../utils';
 
 const mutationState = {
   mutate: vi.fn(),
@@ -29,6 +33,8 @@ function resetMutationState() {
 }
 
 describe('AddSourcePage (I5.5)', () => {
+  beforeEach(() => useWorkbenchStore.getState().reset());
+
   it('affiche un état vide tant qu\'aucun fichier n\'a été analysé', () => {
     resetMutationState();
     render(<AddSourcePage />);
@@ -44,7 +50,40 @@ describe('AddSourcePage (I5.5)', () => {
     const input = document.querySelector('input[type="file"]') as HTMLInputElement;
     fireEvent.change(input, { target: { files: [file] } });
 
-    expect(mutationState.mutate).toHaveBeenCalledWith({ file });
+    // The proposal has to reach the workbench store, so the call carries an
+    // onSuccess alongside the file.
+    expect(mutationState.mutate).toHaveBeenCalledWith(
+      { file },
+      expect.objectContaining({ onSuccess: expect.any(Function) }),
+    );
+  });
+
+  it('ouvre la conversation sur la proposition rendue par /analyze', () => {
+    resetMutationState();
+    renderWithClient(<AddSourcePage />);
+
+    const file = new File(['{"session_id":"s1"}'], 'trace.jsonl');
+    const input = document.querySelector('input[type="file"]') as HTMLInputElement;
+    fireEvent.change(input, { target: { files: [file] } });
+
+    const options = mutationState.mutate.mock.calls[0]?.[1] as {
+      onSuccess: (result: unknown) => void;
+    };
+    act(() =>
+      options.onSuccess({
+        profile: { record_count: 1, fields: [] },
+        proposal: {
+          definition: { source_format: 'jsonl' },
+          explanations: [],
+          ambiguities: [],
+          unmapped_fields: [],
+        },
+      }),
+    );
+
+    const state = useWorkbenchStore.getState();
+    expect(state.fileRef).toBe('trace.jsonl');
+    expect(state.proposal?.definition).toEqual({ source_format: 'jsonl' });
   });
 
   it('affiche le profil des champs après une analyse réussie', () => {
@@ -67,7 +106,7 @@ describe('AddSourcePage (I5.5)', () => {
       proposal: { definition: {}, explanations: [], ambiguities: [], unmapped_fields: [] },
     };
 
-    render(<AddSourcePage />);
+    renderWithClient(<AddSourcePage />);
 
     expect(screen.getByText('usage.input_tokens')).toBeDefined();
     expect(screen.getByText(/500 enregistrement/)).toBeDefined();
