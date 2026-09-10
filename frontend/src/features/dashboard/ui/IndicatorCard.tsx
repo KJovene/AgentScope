@@ -36,7 +36,7 @@ export const IndicatorCard: React.FC<IndicatorCardProps> = ({
   const displayValue = isNA ? "N/A" : formatter(value);
 
   return (
-    <div className={`cyber-card relative ${a.edge}`}>
+    <div className={`cyber-card relative ${a.edge} ${showTooltip ? "z-30" : ""}`}>
       <div className="flex items-center justify-between gap-2">
         <span className="text-xs font-semibold uppercase tracking-wider text-foreground-muted">
           {definition.label}
@@ -70,7 +70,7 @@ export const IndicatorCard: React.FC<IndicatorCardProps> = ({
       {showTooltip && (
         <div
           role="tooltip"
-          className={`absolute left-2 right-2 top-12 z-20 border bg-surface-raised p-3 text-xs text-foreground shadow-elev-lg ${a.tip}`}
+          className={`absolute left-2 right-2 top-12 z-40 border bg-surface-raised p-3 text-xs text-foreground shadow-elev-lg ${a.tip}`}
         >
           <p className="font-semibold">{definition.label}</p>
           <div className="mt-2 space-y-1 text-[11px] text-foreground">

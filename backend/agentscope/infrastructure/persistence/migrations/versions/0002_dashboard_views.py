@@ -23,7 +23,12 @@ depends_on: str | Sequence[str] | None = None
 
 
 def upgrade() -> None:
-    create_all_views(op.get_bind())
+    bind = op.get_bind()
+    # `drop` d'abord : le bootstrap dev (lifespan de `create_app`) peut avoir
+    # déjà créé les vues sur une base non encore stampée par Alembic. `CREATE
+    # VIEW` échouerait alors sur « relation … already exists ».
+    drop_all_views(bind)
+    create_all_views(bind)
 
 
 def downgrade() -> None:
