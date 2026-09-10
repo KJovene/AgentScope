@@ -19,8 +19,8 @@ Principes :
 from __future__ import annotations
 
 import hashlib
-from collections.abc import Iterable, Mapping
-from dataclasses import dataclass, field
+from collections.abc import Iterable, Mapping, Sequence
+from dataclasses import dataclass, field, replace
 from datetime import datetime
 from typing import Any
 
@@ -131,6 +131,52 @@ class _Accumulator:
         self._seen.add(key)
         return True
 
+    def backfill_session_intervals(self) -> None:
+        """Déduit l'enveloppe temporelle d'une session de ses appels quand le
+        mapping ne la fournit pas.
+
+        Beaucoup de sources itèrent par tour/round : on ne voit alors jamais la
+        session en entier, et ``session.started_at`` / ``ended_at`` restent NULL —
+        donc ``duration_ms`` aussi. Ici on ne fait que **combler les trous** :
+        ``started_at`` absent → plus tôt des ``started_at``/``ended_at`` des appels ;
+        ``ended_at`` absent → plus tard. Une borne déjà mappée est conservée.
+        """
+        starts: dict[str, list[datetime]] = {}
+        ends: dict[str, list[datetime]] = {}
+        for call in (*self.model_calls, *self.tool_calls):
+            if call.interval.started_at is not None:
+                starts.setdefault(call.session_external_id, []).append(call.interval.started_at)
+            if call.interval.ended_at is not None:
+                ends.setdefault(call.session_external_id, []).append(call.interval.ended_at)
+
+        for position, session in enumerate(self.sessions):
+            current = session.interval
+            if current.started_at is not None and current.ended_at is not None:
+                continue
+            moments = starts.get(session.external_id, []) + ends.get(session.external_id, [])
+            if not moments:
+                continue
+            new_start = current.started_at or min(moments)
+            new_end = current.ended_at or max(moments)
+            if new_end < new_start or (new_start, new_end) == (
+                current.started_at,
+                current.ended_at,
+            ):
+                continue
+            self.sessions[position] = replace(
+                session, interval=Interval(started_at=new_start, ended_at=new_end)
+            )
+
+        for target, attr in (
+            ("session.started_at", "started_at"),
+            ("session.ended_at", "ended_at"),
+        ):
+            still_missing = sum(1 for s in self.sessions if getattr(s.interval, attr) is None)
+            if still_missing:
+                self.missing_info[target] = still_missing
+            else:
+                self.missing_info.pop(target, None)
+
     def result(self) -> NormalizationResult:
         return NormalizationResult(
             sessions=tuple(self.sessions),
@@ -155,6 +201,7 @@ class Normalizer:
         acc = _Accumulator()
         for record in records:
             self._process_record(record, source_name, session_spec, child_specs, acc)
+        acc.backfill_session_intervals()
         return acc.result()
 
     # ------------------------------------------------------------------
@@ -300,8 +347,19 @@ class _Resolver:
 
 
 def _dig(payload: Any, path: str) -> Any:
+    """Lit ``a.b.c`` dans des dicts imbriqués. Un segment entier indexe une liste
+    (``timing_events.0.timestamp``), négatif compris (``timing_events.-1.timestamp``)."""
     current = payload
     for part in path.split("."):
+        if isinstance(current, Sequence) and not isinstance(current, (str, bytes)):
+            try:
+                index = int(part)
+            except ValueError:
+                return None
+            if not -len(current) <= index < len(current):
+                return None
+            current = current[index]
+            continue
         if not isinstance(current, Mapping) or part not in current:
             return None
         current = current[part]

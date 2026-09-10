@@ -111,13 +111,13 @@ Les douze champs renvoyés par `GET /api/v1/metrics/indicators`.
 
 | | |
 | --- | --- |
-| **Mesure** | coût déclaré par la source, jamais recalculé par AgentScope |
-| **Calcul** | `SUM(total_cost_usd)` sur `v_session_metrics` ← `SUM(model_call.cost_usd)` |
+| **Mesure** | coût **déclaré par la source** en priorité ; à défaut, **estimé** `tokens × tarif` depuis la table `model_pricing` |
+| **Calcul** | `SUM(total_cost_usd)` sur `v_session_metrics`, où `total_cost_usd` par appel = `COALESCE(model_call.cost_usd, (prompt·in + completion·out + cached·cached) / 1e6)` via `LEFT JOIN model_pricing` |
 | **Unité** | USD |
-| **Périmètre** | **uniquement** les sources qui fournissent un coût |
-| **Valeurs manquantes** | `NULL` → « non disponible ». AgentScope n'applique aucune grille tarifaire : un coût absent le reste |
-| **Comparabilité** | **à signaler systématiquement.** Une source sans coût tire le total vers le bas si on l'agrège avec une source qui en a un : filtrer par source avant de comparer |
-| **Champ API** | `total_cost_usd` |
+| **Grille tarifaire** | `model_pricing` (USD / million de tokens), donnée de référence éditable — `docs/data/model-pricing.json`, chargée par `POST /model-pricing` (`make seed-pricing`). **Sans ligne de tarif pour un modèle, l'estimation reste `NULL`** : un coût absent le reste. |
+| **Signalement** | `cost_is_estimated` (champ API) = `true` dès qu'un coût du périmètre est estimé et non déclaré. À afficher à côté du total. |
+| **Comparabilité** | **à signaler systématiquement.** Coût déclaré et coût estimé ne sont pas homogènes ; une source sans tarif tire le total vers le bas si agrégée avec une source qui en a. Filtrer par source avant de comparer. |
+| **Champs API** | `total_cost_usd`, `cost_is_estimated` |
 
 ### 3.5 Taux d'erreur
 

@@ -208,3 +208,153 @@ def test_tracelab_reimport_zero_doublon() -> None:
     assert len(second.sessions) == len(first.sessions)
     assert len(second.model_calls) == len(first.model_calls)
     assert len(second.tool_calls) == len(first.tool_calls)
+
+
+def test_from_path_indexe_les_listes() -> None:
+    """Un segment entier d'un chemin ``from`` indexe une liste, négatif compris."""
+    mapping = {
+        "name": "demo",
+        "version": 1,
+        "source_format": "jsonl",
+        "constants": {"source_name": "Demo"},
+        "entities": {
+            "session": {
+                "iterate": {"path": ""},
+                "identity": {"key_fields": ["sid"]},
+                "fields": {
+                    "external_id": {"from": "sid", "required": True, "on_error": "reject"},
+                    "started_at": {"from": "events.0.ts"},
+                    "ended_at": {"from": "events.-1.ts"},
+                },
+            }
+        },
+    }
+    record = _record(
+        0,
+        {
+            "sid": "s1",
+            "events": [
+                {"ts": "2026-01-01T00:00:00Z"},
+                {"ts": "2026-01-01T00:00:05Z"},
+                {"ts": "2026-01-01T00:00:09Z"},
+            ],
+        },
+    )
+
+    result = Normalizer().normalize([record], _mapping(mapping))
+
+    assert result.rejects == ()
+    session = result.sessions[0]
+    assert session.interval.started_at is not None
+    assert session.interval.ended_at is not None
+    assert session.interval.duration_ms == 9_000
+
+
+_INTERVAL_MAPPING = {
+    "name": "demo",
+    "version": 1,
+    "source_format": "jsonl",
+    "constants": {"source_name": "Demo"},
+    "entities": {
+        "session": {
+            "iterate": {"path": ""},
+            "identity": {"key_fields": ["sid"]},
+            "fields": {
+                "external_id": {"from": "sid", "required": True, "on_error": "reject"},
+                "started_at": {"from": "s_start"},
+                "ended_at": {"from": "s_end"},
+            },
+        },
+        "model_call": {
+            "iterate": {"path": "calls"},
+            "parent": {"entity": "session", "key_from": "sid"},
+            "identity": {"key_fields": ["sid", "seq"]},
+            "fields": {
+                "sequence": {"from": "seq", "transform": "to_int"},
+                "model_name": {"from": "model", "required": True, "on_error": "reject"},
+                "started_at": {"from": "t0"},
+                "ended_at": {"from": "t1"},
+            },
+        },
+    },
+}
+
+
+def _round(sid: str, seq: int, t0: str, t1: str, **session_times: str) -> RawRecord:
+    return _record(
+        seq,
+        {
+            "sid": sid,
+            **session_times,
+            "calls": [{"seq": seq, "model": "gpt", "t0": t0, "t1": t1}],
+        },
+    )
+
+
+def test_backfill_deduit_l_enveloppe_quand_la_session_n_est_pas_bornee() -> None:
+    records = [
+        _round("s1", 0, "2026-01-01T09:00:00Z", "2026-01-01T09:00:30Z"),
+        _round("s1", 1, "2026-01-01T09:05:00Z", "2026-01-01T09:07:00Z"),
+    ]
+
+    result = Normalizer().normalize(records, _mapping(_INTERVAL_MAPPING))
+
+    session = result.sessions[0]
+    assert session.interval.started_at.isoformat() == "2026-01-01T09:00:00+00:00"
+    assert session.interval.ended_at.isoformat() == "2026-01-01T09:07:00+00:00"
+    assert session.duration_ms == 420_000
+    assert "session.started_at" not in result.missing_info
+    assert "session.ended_at" not in result.missing_info
+
+
+def test_backfill_ne_touche_pas_une_borne_deja_mappee() -> None:
+    records = [
+        _round(
+            "s1",
+            0,
+            "2026-01-01T09:00:00Z",
+            "2026-01-01T09:30:00Z",
+            s_start="2026-01-01T08:00:00Z",  # mappé -> conservé
+        ),
+    ]
+
+    result = Normalizer().normalize(records, _mapping(_INTERVAL_MAPPING))
+
+    session = result.sessions[0]
+    assert session.interval.started_at.isoformat() == "2026-01-01T08:00:00+00:00"  # mappé
+    assert session.interval.ended_at.isoformat() == "2026-01-01T09:30:00+00:00"  # déduit
+
+
+def test_backfill_laisse_null_sans_appel_horodate() -> None:
+    record = _record(0, {"sid": "s1", "calls": [{"seq": 0, "model": "gpt"}]})
+
+    result = Normalizer().normalize([record], _mapping(_INTERVAL_MAPPING))
+
+    assert result.sessions[0].interval.started_at is None
+    assert result.sessions[0].interval.ended_at is None
+
+
+def test_from_path_index_hors_bornes_est_absent() -> None:
+    mapping = {
+        "name": "demo",
+        "version": 1,
+        "source_format": "jsonl",
+        "constants": {"source_name": "Demo"},
+        "entities": {
+            "session": {
+                "iterate": {"path": ""},
+                "identity": {"key_fields": ["sid"]},
+                "fields": {
+                    "external_id": {"from": "sid", "required": True, "on_error": "reject"},
+                    "started_at": {"from": "events.5.ts"},
+                },
+            }
+        },
+    }
+    record = _record(0, {"sid": "s1", "events": [{"ts": "2026-01-01T00:00:00Z"}]})
+
+    result = Normalizer().normalize([record], _mapping(mapping))
+
+    assert result.rejects == ()
+    assert result.sessions[0].interval.started_at is None
+    assert result.missing_info.get("session.started_at") == 1
