@@ -22,10 +22,25 @@ from agentscope.domain import RetentionMode
 _BACKEND_DIR = Path(__file__).resolve().parents[3]
 _REPO_ROOT = _BACKEND_DIR.parent
 
+# Emplacement du `.env` du dépôt dans le conteneur (montage `docker-compose.yml`,
+# même convention que `/docs` pour le schéma de mapping). Hors Docker le chemin
+# n'existe pas et le filtre ci-dessous l'écarte.
+_DOCKER_ENV_FILE = Path("/config/.env")
+
 # Du moins au plus spécifique : pydantic-settings donne la priorité au dernier
-# fichier trouvé, et l'environnement réel l'emporte de toute façon sur tous
-# (c'est ce qui fait que la stack Docker reste pilotée par Compose).
-_ENV_FILES = (_REPO_ROOT / ".env", _BACKEND_DIR / ".env", Path(".env"))
+# fichier trouvé, et une variable d'environnement réelle l'emporte sur tous.
+_ENV_FILE_CANDIDATES = (
+    _DOCKER_ENV_FILE,
+    _REPO_ROOT / ".env",
+    _BACKEND_DIR / ".env",
+    Path(".env"),
+)
+
+# `is_file()` et pas seulement `exists()` : `docker compose` crée un DOSSIER à la
+# place d'un montage `./.env:/app/.env` quand le fichier hôte manque (clone sans
+# `cp .env.example .env`). Le laisser passer ferait planter la lecture au
+# démarrage ; on l'ignore et l'application repart sur ses valeurs par défaut.
+_ENV_FILES = tuple(path for path in _ENV_FILE_CANDIDATES if path.is_file())
 
 
 class Settings(BaseSettings):
