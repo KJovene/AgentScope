@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { render, screen } from "@testing-library/react";
 import { describe, it, expect } from "vitest";
-import { SessionTimeline } from "../../../src/features/session-detail/ui/SessionDetailPage";
+import { SessionTimeline } from "../../../src/features/session-detail/ui/SessionTimeline";
 import type { SessionDetails } from "../../../src/features/session-detail/types";
 
 describe("SessionTimeline UI", () => {

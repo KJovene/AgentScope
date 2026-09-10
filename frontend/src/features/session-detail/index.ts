@@ -1,4 +1,5 @@
-export { SessionTimeline } from './ui/SessionDetailPage';
+export { SessionDetailPage } from './ui/SessionDetailPage';
+export { SessionTimeline } from './ui/SessionTimeline';
 export { SessionListPage } from './ui/SessionListPage';
 
 export type {

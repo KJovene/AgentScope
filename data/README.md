@@ -13,8 +13,8 @@ redistribution avec attribution — voir le `NOTICE.md` qui l'accompagne.
 | Source | Référence | Format(s) | Version / date de récupération | Méthode de récupération | Sélection de l'extrait |
 | --- | --- | --- | --- | --- | --- |
 | TraceLab | https://github.com/uw-syfi/TraceLab | JSONL (`.jsonl.gz`) | release **`v0.0.1`**, publiée le 2026-06-22 · récupérée le **2026-09-07** | `make data-tracelab` → `scripts/tracelab_extract.py --fetch`, SHA256 vérifié contre l'empreinte publiée | 1 session sur 32, sessions entières, par provider (voir ci-dessous) |
-| SWE-chat | https://huggingface.co/datasets/SALT-NLP/SWE-chat | _à renseigner_ | _à renseigner (I2.12)_ | _à renseigner_ | _à renseigner_ |
-| Trace Commons | https://huggingface.co/datasets/trace-commons/agent-traces | formats natifs variés | _à renseigner (I6.11)_ | _à renseigner_ | test « structure inconnue » (I6.11) |
+| SWE-chat | https://huggingface.co/datasets/SALT-NLP/SWE-chat | Parquet multi-tables (`conversations` 1,3 Gio, `sessions`, `repositories`, `checkpoints`, `commits`) + transcripts bruts `transcripts/{session_id}.jsonl` | dataset **gated** (accès à accepter) · licence **ODC-BY** | `make data-swe-chat` → `scripts/swe_chat_extract.py` : `urllib` + `pyarrow`, petites tables en entier, `conversations` lu row-group par row-group en HTTP Range ; nécessite `$HF_TOKEN` | 1 session sur 64, session entière, par agent, **hors fragments dégénérés** (sessions sans aucun tour `assistant_response` ni `tool_use`) — aplati en JSONL (1 ligne = 1 tour de `conversations`) |
+| Trace Commons | https://huggingface.co/datasets/trace-commons/agent-traces | `sessions/{harness}/*.jsonl` (formats natifs Claude Code / Codex / …), vue Parquet « 1 ligne = 1 session » avec `trace[]` jusqu'à ~2 500 éléments | _n/a_ | **pas d'intégration** : sert le test « structure inconnue » (I6.11) | _n/a_ |
 
 ---
 

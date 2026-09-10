@@ -66,6 +66,7 @@ class Indicators:
     completion_tokens: int | None
     cached_tokens: int | None
     total_cost_usd: float | None
+    cost_is_estimated: bool  # un coût du périmètre a été estimé (pas déclaré par la source)
     error_rate: float | None
     cache_hit_ratio: float | None
     median_session_duration_ms: float | None

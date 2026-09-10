@@ -132,7 +132,8 @@ class SqlMetricsQueryService:
                 SUM(prompt_tokens)       AS prompt_tokens,
                 SUM(completion_tokens)   AS completion_tokens,
                 SUM(cached_tokens)       AS cached_tokens,
-                SUM(total_cost_usd)      AS total_cost_usd
+                SUM(total_cost_usd)      AS total_cost_usd,
+                COALESCE(MAX(cost_is_estimated), 0) AS cost_is_estimated
             FROM v_session_metrics
             WHERE {where}
             """,
@@ -163,6 +164,7 @@ class SqlMetricsQueryService:
             completion_tokens=_opt_int(row.completion_tokens),
             cached_tokens=cached,
             total_cost_usd=_opt_float(row.total_cost_usd),
+            cost_is_estimated=bool(row.cost_is_estimated),
             error_rate=_ratio(errors, total_calls) if total_calls else None,
             cache_hit_ratio=_ratio(cached, prompt),
             median_session_duration_ms=(

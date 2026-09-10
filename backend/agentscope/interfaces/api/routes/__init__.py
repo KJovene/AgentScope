@@ -8,6 +8,7 @@ from agentscope.interfaces.api.routes import (
     imports,
     mappings,
     metrics,
+    model_pricing,
     sessions,
     sources,
 )
@@ -19,6 +20,7 @@ __all__ = [
     "imports",
     "mappings",
     "metrics",
+    "model_pricing",
     "sessions",
     "sources",
 ]

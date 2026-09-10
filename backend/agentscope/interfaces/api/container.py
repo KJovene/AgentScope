@@ -7,10 +7,10 @@ d'infrastructure. Créé une fois par process dans le *lifespan* de l'app
 
 from __future__ import annotations
 
+import uuid
 from collections.abc import Iterator
 from contextlib import contextmanager
-from datetime import datetime, timezone
-import uuid
+from datetime import UTC, datetime
 
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session, sessionmaker
@@ -21,10 +21,10 @@ from agentscope.application.ports.imports import (
     ImportRejectItem,
     ImportService,
 )
-from agentscope.application.ports.metrics import MetricsQueryService, Page, Paginated
-from agentscope.application.ports.imports import ImportService
 from agentscope.application.ports.mapping_crud import MappingCrudService
-from agentscope.application.ports.metrics import MetricsQueryService
+from agentscope.application.ports.metrics import MetricsQueryService, Page, Paginated
+from agentscope.application.ports.pricing_registry import PricingRegistryService
+from agentscope.application.ports.repository_registry import RepositoryRegistryService
 from agentscope.application.ports.sources import SourcesQueryService
 from agentscope.application.ports.workbench import MappingWorkbenchService
 from agentscope.infrastructure.config.settings import Settings
@@ -48,7 +48,7 @@ class DefaultImportService(ImportService):
             duplicate_count=0,
             rejected_count=0,
             missing_info_count=0,
-            imported_at=datetime.now(timezone.utc),
+            imported_at=datetime.now(UTC),
         )
 
     def list_imports(self, page: Page) -> Paginated[ImportBatchItem]:
@@ -61,7 +61,7 @@ class DefaultImportService(ImportService):
             duplicate_count=1,
             rejected_count=0,
             missing_info_count=0,
-            imported_at=datetime.now(timezone.utc),
+            imported_at=datetime.now(UTC),
         )
         return Paginated(items=(item,), total=1, limit=page.limit, offset=page.offset)
 
@@ -75,7 +75,7 @@ class DefaultImportService(ImportService):
             duplicate_count=1,
             rejected_count=0,
             missing_info_count=0,
-            imported_at=datetime.now(timezone.utc),
+            imported_at=datetime.now(UTC),
         )
 
     def list_rejects(
@@ -182,6 +182,24 @@ class Container:
         )
 
         return SqlMappingService(session)
+
+    def make_repository_registry_service(
+        self, session: Session
+    ) -> RepositoryRegistryService:
+        from agentscope.infrastructure.persistence.services.repository_registry_service import (  # noqa: E501
+            SqlRepositoryRegistryService,
+        )
+
+        return SqlRepositoryRegistryService(session)
+
+    def make_pricing_registry_service(
+        self, session: Session
+    ) -> PricingRegistryService:
+        from agentscope.infrastructure.persistence.services.pricing_registry_service import (  # noqa: E501
+            SqlPricingRegistryService,
+        )
+
+        return SqlPricingRegistryService(session)
 
     def make_workbench_service(self) -> MappingWorkbenchService:
         """Atelier de mapping (I4.3) : analyse + prévisualisation, sans persistance."""

@@ -16,6 +16,10 @@ class IndicatorsResponse(BaseModel):
     completion_tokens: int | None = Field(default=None)
     cached_tokens: int | None = Field(default=None)
     total_cost_usd: float | None = Field(default=None)
+    cost_is_estimated: bool = Field(
+        default=False,
+        description="true si un coût du périmètre est estimé (tarif) et non déclaré par la source",
+    )
     error_rate: float | None = Field(default=None)
     cache_hit_ratio: float | None = Field(default=None)
     median_session_duration_ms: float | None = Field(default=None)

@@ -8,14 +8,16 @@
   "unmapped_fields": [
     "project",
     "round_id",
-    "timing_events",
     "user",
     "store",
     "trace_key",
     "tool_call_id",
-    "emitted_at",
-    "result_at",
-    "tool_internal_wait_ms"
+    "tool_internal_wait_ms",
+    "reasoning_output_tokens",
+    "prefix_tokens",
+    "newly_append_tokens",
+    "claude_uncached_input_tokens",
+    "claude_cache_creation_input_tokens"
   ],
   "entities": {
     "session": {
@@ -72,6 +74,16 @@
         "completion_tokens": {
           "from": "output_tokens",
           "transform": "to_int"
+        },
+        "cached_tokens": {
+          "from": "claude_cache_read_input_tokens",
+          "transform": "to_int"
+        },
+        "started_at": {
+          "from": "timing_events.0.timestamp"
+        },
+        "ended_at": {
+          "from": "timing_events.-1.timestamp"
         }
       }
     },
@@ -91,10 +103,6 @@
         ]
       },
       "fields": {
-        "sequence": {
-          "from": "tool_index",
-          "transform": "to_int"
-        },
         "tool_name": {
           "from": "tool_name",
           "required": true,
@@ -130,6 +138,12 @@
         "output_bytes": {
           "from": "result_chars",
           "transform": "to_int"
+        },
+        "started_at": {
+          "from": "emitted_at"
+        },
+        "ended_at": {
+          "from": "result_at"
         }
       }
     }
