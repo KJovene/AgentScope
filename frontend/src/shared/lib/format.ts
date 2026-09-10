@@ -34,14 +34,24 @@ export function formatPercent(ratio: Maybe): string {
   return isMissing(ratio) ? UNAVAILABLE : percentFmt.format(ratio);
 }
 
-/** Milliseconds -> "1 min 12 s" / "820 ms". */
+/** Milliseconds -> "2 j 3 h" / "1 h 05 min" / "1 min 12 s" / "820 ms". */
 export function formatDuration(ms: Maybe): string {
   if (isMissing(ms)) return UNAVAILABLE;
   if (ms < 1000) return `${decimal.format(ms)} ms`;
+
   const totalSeconds = Math.round(ms / 1000);
-  const minutes = Math.floor(totalSeconds / 60);
   const seconds = totalSeconds % 60;
-  return minutes > 0 ? `${minutes} min ${seconds} s` : `${seconds} s`;
+  const totalMinutes = Math.floor(totalSeconds / 60);
+  const minutes = totalMinutes % 60;
+  const totalHours = Math.floor(totalMinutes / 60);
+  const hours = totalHours % 24;
+  const days = Math.floor(totalHours / 24);
+
+  // Two units are enough to read a duration; more is noise.
+  if (days > 0) return `${days} j ${hours} h`;
+  if (totalHours > 0) return `${totalHours} h ${String(minutes).padStart(2, '0')} min`;
+  if (totalMinutes > 0) return `${totalMinutes} min ${seconds} s`;
+  return `${seconds} s`;
 }
 
 const dateTimeFmt = new Intl.DateTimeFormat('fr-FR', { dateStyle: 'medium', timeStyle: 'short' });

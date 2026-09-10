@@ -15,6 +15,7 @@ from agentscope.application.ports.metrics import (
 )
 from agentscope.interfaces.api.dependencies import MetricsServiceDep
 from agentscope.interfaces.api.schemas.metrics import (
+    FilterDimensionsResponse,
     IndicatorsResponse,
     TimeseriesPointResponse,
     TimeseriesResponse,
@@ -105,6 +106,16 @@ async def get_timeseries(
         granularity=granularity,
         points=[TimeseriesPointResponse(**_to_dict_safe(pt)) for pt in points],
     )
+
+
+@router.get("/dimensions", response_model=FilterDimensionsResponse)
+async def get_filter_dimensions(
+    service: MetricsServiceDep,
+) -> FilterDimensionsResponse:
+    """Agents et modèles distincts présents en base — alimente les menus déroulants
+    de filtre du dashboard, qui n'acceptent que des valeurs existantes."""
+    dims = service.dimensions()
+    return FilterDimensionsResponse(agents=list(dims.agents), models=list(dims.models))
 
 
 @router.get("/tool-usage", response_model=list[ToolUsageResponseItem])

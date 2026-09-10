@@ -73,6 +73,17 @@ class Indicators:
 
 
 @dataclass(frozen=True, slots=True)
+class FilterDimensions:
+    """Valeurs distinctes réellement présentes en base, pour alimenter les menus
+    déroulants du dashboard. Sans portée : la liste reste complète quels que
+    soient les filtres actifs, sinon une valeur sélectionnée pourrait disparaître
+    de son propre menu."""
+
+    agents: tuple[str, ...] = ()
+    models: tuple[str, ...] = ()
+
+
+@dataclass(frozen=True, slots=True)
 class TimeseriesPoint:
     period: str  # 'YYYY-MM-DD' pour granularity=day
     value: float | None
@@ -145,3 +156,5 @@ class MetricsQueryService(Protocol):
 
     def tool_usage(self, f: MetricFilter) -> list[dict[str, Any]]:
         ...
+
+    def dimensions(self) -> FilterDimensions: ...

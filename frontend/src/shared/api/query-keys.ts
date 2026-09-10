@@ -30,6 +30,7 @@ export const queryKeys = {
     timeseries: (filters: Record<string, unknown>, metric: string, granularity: string) =>
       ['metrics', 'timeseries', metric, granularity, filters] as const,
     toolUsage: (filters: Record<string, unknown>) => ['metrics', 'tool-usage', filters] as const,
+    dimensions: () => ['metrics', 'dimensions'] as const,
   },
   sessions: {
     all: ['sessions'] as const,

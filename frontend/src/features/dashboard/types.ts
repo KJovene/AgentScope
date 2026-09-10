@@ -1,46 +1,9 @@
-export interface IndicatorsResponse {
-  session_count: number;
-  model_call_count: number;
-  tool_call_count: number;
-  error_count: number;
-  total_tokens: number | null;
-  prompt_tokens: number | null;
-  completion_tokens: number | null;
-  cached_tokens: number | null;
-  total_cost_usd: number | null;
-  error_rate: number | null;
-  cache_hit_ratio: number | null;
-  median_session_duration_ms: number | null;
-}
-
 export interface MetricDefinition {
   label: string;
   calculation: string;
   unit: string;
   scope: string;
   nullMeaning: string;
-}
-
-export interface MissingFieldStat {
-  field: string;
-  emptyCount: number;
-  percentage: number; // Pourcentage de vide (0 - 100)
-}
-
-export interface SourceQuality {
-  id: string;
-  sourceName: string;
-  totalRows: number;
-  validRows: number;
-  rejectedRows: number;
-  completeness: number; // Taux de complétude global de la source (0 - 100)
-  missingFields: MissingFieldStat[];
-}
-
-export interface DataQualityMetrics {
-  globalCompleteness: number; // Moyenne pondérée globale (0 - 100)
-  globalRejectionRate: number; // Taux de rejet global (0 - 100)
-  sources: SourceQuality[];
 }
 
 export const METRIC_DEFINITIONS: Record<string, MetricDefinition> = {
@@ -71,5 +34,33 @@ export const METRIC_DEFINITIONS: Record<string, MetricDefinition> = {
     unit: "%",
     scope: "Ensemble des appels modèles et outils",
     nullMeaning: "Aucun appel enregistré dans la période sélectionnée",
+  },
+  modelCalls: {
+    label: "Appels modèles",
+    calculation: "COUNT(model_call)",
+    unit: "Appels",
+    scope: "Tous les appels modèles du périmètre filtré",
+    nullMeaning: "Jamais NULL (0 par défaut)",
+  },
+  toolCalls: {
+    label: "Appels outils",
+    calculation: "COUNT(tool_call)",
+    unit: "Appels",
+    scope: "Tous les appels d'outils du périmètre filtré",
+    nullMeaning: "Jamais NULL (0 par défaut)",
+  },
+  medianDuration: {
+    label: "Durée médiane",
+    calculation: "MEDIAN(ended_at - started_at) par session",
+    unit: "Durée",
+    scope: "Sessions disposant d'un horodatage de début et de fin",
+    nullMeaning: "Aucune session horodatée dans le périmètre filtré",
+  },
+  cacheHit: {
+    label: "Taux de cache",
+    calculation: "(cached_tokens / prompt_tokens) * 100",
+    unit: "%",
+    scope: "Appels modèles dont la source remonte les tokens mis en cache",
+    nullMeaning: "La source ne fournit pas le décompte de tokens mis en cache",
   },
 };

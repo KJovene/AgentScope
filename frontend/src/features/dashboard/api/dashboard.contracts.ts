@@ -16,6 +16,8 @@ export const indicatorsResponseSchema = z.object({
   completion_tokens: z.number().nullable(),
   cached_tokens: z.number().nullable(),
   total_cost_usd: z.number().nullable(),
+  /** True when the cost comes from the pricing grid rather than the source itself. */
+  cost_is_estimated: z.boolean().default(false),
   error_rate: z.number().nullable(),
   cache_hit_ratio: z.number().nullable(),
   median_session_duration_ms: z.number().nullable(),

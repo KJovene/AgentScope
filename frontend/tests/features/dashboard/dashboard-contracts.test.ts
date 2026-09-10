@@ -18,6 +18,7 @@ const validIndicators = {
   completion_tokens: 300,
   cached_tokens: null,
   total_cost_usd: 0.5,
+  cost_is_estimated: true,
   error_rate: 0.1,
   cache_hit_ratio: null,
   median_session_duration_ms: 1200,

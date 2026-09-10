@@ -15,6 +15,7 @@ from sqlalchemy.engine import Row
 from sqlalchemy.orm import Session
 
 from agentscope.application.ports import (
+    FilterDimensions,
     Granularity,
     Indicators,
     MetricFilter,
@@ -331,6 +332,38 @@ class SqlMetricsQueryService:
             }
             for r in rows
         ]
+
+    # -- valeurs de filtre disponibles -------------------------------------------
+
+    def dimensions(self) -> FilterDimensions:
+        """Agents et modèles distincts réellement présents en base.
+
+        Volontairement non filtré : ces listes alimentent les menus déroulants du
+        dashboard, et une valeur sélectionnée doit rester proposable même quand
+        les autres filtres actifs excluent toutes ses sessions.
+        """
+        agents = self._execute(
+            """
+            SELECT DISTINCT agent_name AS value
+            FROM v_session_metrics
+            WHERE agent_name IS NOT NULL AND agent_name <> ''
+            ORDER BY value
+            """,
+            {},
+        )
+        models = self._execute(
+            """
+            SELECT DISTINCT model_name AS value
+            FROM model_call
+            WHERE model_name IS NOT NULL AND model_name <> ''
+            ORDER BY value
+            """,
+            {},
+        )
+        return FilterDimensions(
+            agents=tuple(r.value for r in agents),
+            models=tuple(r.value for r in models),
+        )
 
 
 def _timeline_entry(r: Row[Any]) -> TimelineEntry:

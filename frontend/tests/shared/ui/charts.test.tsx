@@ -94,7 +94,9 @@ describe('buildDurationHistogram', () => {
   });
 
   it('puts every value in a single bucket when they are all equal', () => {
-    expect(buildDurationHistogram([500, 500, 500])).toEqual([{ range: '500ms', count: 3 }]);
+    expect(buildDurationHistogram([500, 500, 500])).toEqual([
+      { range: '500 ms', label: '500 ms', count: 3 },
+    ]);
   });
 
   it('bins values into the requested bucket count, min and max both included', () => {
@@ -106,12 +108,16 @@ describe('buildDurationHistogram', () => {
     expect(buckets[3]?.count).toBeGreaterThan(0);
   });
 
-  it('formats sub-second durations in ms and longer ones in seconds', () => {
-    const buckets = buildDurationHistogram([100, 100], 1);
-    expect(buckets[0]?.range).toBe('100ms');
+  it('labels a bucket with one unit and no decimals, so an axis tick always fits', () => {
+    expect(buildDurationHistogram([100, 100], 1)[0]?.label).toBe('100 ms');
+    expect(buildDurationHistogram([1500, 1500], 1)[0]?.label).toBe('2 s');
+    expect(buildDurationHistogram([7_200_000, 7_200_000], 1)[0]?.label).toBe('2 h');
+    expect(buildDurationHistogram([259_200_000, 259_200_000], 1)[0]?.label).toBe('3 j');
+  });
 
-    const secondBuckets = buildDurationHistogram([1500, 1500], 1);
-    expect(secondBuckets[0]?.range).toBe('1.5s');
+  it('keeps the full span in `range` for the tooltip', () => {
+    const buckets = buildDurationHistogram([0, 120_000], 2);
+    expect(buckets[0]?.range).toBe('0 ms – 1 min');
   });
 });
 
