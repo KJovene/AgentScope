@@ -9,3 +9,11 @@ export function useSessionsQuery(params: SessionListParams) {
     queryFn: ({ signal }) => sessionsApi.list(params, signal),
   });
 }
+
+export function useSessionDetailQuery(sessionId: string) {
+  return useQuery({
+    queryKey: queryKeys.sessions.detail(sessionId),
+    queryFn: ({ signal }) => sessionsApi.detail(sessionId, signal),
+    enabled: sessionId.length > 0,
+  });
+}
