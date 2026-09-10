@@ -6,13 +6,17 @@ import { ApiError } from "@shared/api/api-error";
 import type { ProblemDetails } from "@shared/api/types";
 import {
   BreakdownBarChart,
+  BreakdownBarChart,
   Button,
+  CHART_COLORS,
+  CHART_SERIES_COLORS,
   CHART_COLORS,
   CHART_SERIES_COLORS,
   ChartFrame,
   ChartSkeleton,
   CyberScope,
   DistributionChart,
+  ProportionBar,
   ProportionBar,
   Skeleton,
   TimeSeriesChart,
@@ -22,7 +26,17 @@ import { FilterBar } from "@shared/components/filters";
 import { useSessionsQuery } from "@shared/api/sessions.queries";
 import { formatDuration, formatNumber, formatPercent, formatTokens, formatUsd } from "@shared/lib/format";
 import { DataQualityPanel } from "@features/data-quality";
+import { formatDuration, formatNumber, formatPercent, formatTokens, formatUsd } from "@shared/lib/format";
+import { DataQualityPanel } from "@features/data-quality";
 import { IndicatorCard } from "./IndicatorCard";
+import { ToolUsagePanel } from "./ToolUsagePanel";
+import { TopSessionsTable } from "./TopSessionsTable";
+import {
+  useIndicatorsQuery,
+  usePreviousIndicatorsQuery,
+  useTimeseriesQuery,
+  useToolUsageQuery,
+} from "../api/dashboard.queries";
 import { ToolUsagePanel } from "./ToolUsagePanel";
 import { TopSessionsTable } from "./TopSessionsTable";
 import {
@@ -40,6 +54,12 @@ import {
   relativeDelta,
   resolveCurrentPeriod,
 } from "../model/period-comparison";
+import { breakdownBy, topSessionsByCost } from "../model/breakdown";
+import {
+  previousPeriod,
+  relativeDelta,
+  resolveCurrentPeriod,
+} from "../model/period-comparison";
 import { METRIC_DEFINITIONS } from "../types";
 
 const ACTIVITY_METRICS: { value: TimeseriesMetric; label: string }[] = [
@@ -49,7 +69,13 @@ const ACTIVITY_METRICS: { value: TimeseriesMetric; label: string }[] = [
   { value: "tool_calls", label: "Appels outils" },
   { value: "cost", label: "Coût" },
   { value: "errors", label: "Erreurs" },
+  { value: "model_calls", label: "Appels modèles" },
+  { value: "tool_calls", label: "Appels outils" },
+  { value: "cost", label: "Coût" },
+  { value: "errors", label: "Erreurs" },
 ];
+
+const SESSION_PAGE_SIZE = 200;
 
 const SESSION_PAGE_SIZE = 200;
 
@@ -64,6 +90,12 @@ function toProblemDetails(error: unknown, fallbackDetail: string): ProblemDetail
     };
   }
   return { title: "Erreur réseau", status: 500, detail: fallbackDetail };
+}
+
+/** Safe ratio: null unless both operands are present and the denominator is non-zero. */
+function ratio(numerator: number | null | undefined, denominator: number | null | undefined) {
+  if (numerator == null || denominator == null || denominator === 0) return null;
+  return numerator / denominator;
 }
 
 /** Safe ratio: null unless both operands are present and the denominator is non-zero. */
@@ -100,6 +132,21 @@ export const DashboardScreen: React.FC = () => {
   const hasComparisonData = (previous?.session_count ?? 0) > 0;
 
   const totalCalls = (current?.model_call_count ?? 0) + (current?.tool_call_count ?? 0);
+  // Period comparison (lot 3): an explicit date filter wins, otherwise the window
+  // is inferred from the span the activity series covers.
+  const currentPeriod = resolveCurrentPeriod(filters, points);
+  const comparisonPeriod = currentPeriod ? previousPeriod(currentPeriod) : null;
+  const previousIndicators = usePreviousIndicatorsQuery(filters, comparisonPeriod);
+
+  const current = indicators.data;
+  const previous = previousIndicators.data;
+  const delta = (pick: (d: NonNullable<typeof current>) => number | null | undefined) =>
+    current && previous ? relativeDelta(pick(current), pick(previous)) : null;
+  // An empty preceding window is a valid answer, not a baseline — say so rather
+  // than claiming variations that no card can show.
+  const hasComparisonData = (previous?.session_count ?? 0) > 0;
+
+  const totalCalls = (current?.model_call_count ?? 0) + (current?.tool_call_count ?? 0);
 
   const toolUsageItems = toolUsage.data ?? [];
 
@@ -109,6 +156,13 @@ export const DashboardScreen: React.FC = () => {
     .map((s) => s.duration_ms)
     .filter((d): d is number => d != null);
   const missingTimingCount = sessionItems.length - durations.length;
+
+  // Breakdowns and the top-cost table reuse the page fetched for the duration
+  // distribution — no extra request.
+  const sessionsByAgent = breakdownBy(sessionItems, "agent_name");
+  const costBySource = breakdownBy(sessionItems, "source_name", (s) => s.total_cost_usd);
+  const topSessions = topSessionsByCost(sessionItems);
+  const isPartialPage = sessions.data != null && sessions.data.total > sessionItems.length;
 
   // Breakdowns and the top-cost table reuse the page fetched for the duration
   // distribution — no extra request.
@@ -169,11 +223,13 @@ export const DashboardScreen: React.FC = () => {
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {Array.from({ length: 8 }).map((_, i) => (
             <Skeleton key={i} className="h-[132px]" />
+          {Array.from({ length: 8 }).map((_, i) => (
+            <Skeleton key={i} className="h-[132px]" />
           ))}
         </div>
       ) : (
         <>
-          <div className="stagger relative z-20 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="stagger grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
             <IndicatorCard
               definition={METRIC_DEFINITIONS.sessions!}
               value={current?.session_count ?? null}
@@ -360,8 +416,10 @@ export const DashboardScreen: React.FC = () => {
         <ChartFrame
           title="Répartition des outils"
           isEmpty={!toolUsage.isLoading && toolUsageItems.length === 0}
+          isEmpty={!toolUsage.isLoading && toolUsageItems.length === 0}
           emptyDescription="Aucun appel d'outil ne correspond aux filtres actifs."
         >
+          <ToolUsagePanel items={toolUsageItems} isLoading={toolUsage.isLoading} />
           <ToolUsagePanel items={toolUsageItems} isLoading={toolUsage.isLoading} />
         </ChartFrame>
 
@@ -382,6 +440,58 @@ export const DashboardScreen: React.FC = () => {
               <DistributionChart values={durations} />
             </>
           )}
+        </ChartFrame>
+
+        <ChartFrame
+          title="Sessions par agent"
+          isEmpty={!sessions.isLoading && sessionsByAgent.length === 0}
+          emptyDescription="Aucune session ne correspond aux filtres actifs."
+        >
+          {sessions.isLoading ? (
+            <ChartSkeleton />
+          ) : (
+            <>
+              <BreakdownBarChart
+                data={sessionsByAgent}
+                valueLabel="Sessions"
+                valueFormatter={formatNumber}
+              />
+              {isPartialPage && (
+                <p className="mt-2 text-[11px] text-foreground-muted">
+                  Calculé sur les {SESSION_PAGE_SIZE} sessions les plus récentes du périmètre.
+                </p>
+              )}
+            </>
+          )}
+        </ChartFrame>
+
+        <ChartFrame
+          title="Coût par source"
+          isEmpty={!sessions.isLoading && costBySource.length === 0}
+          emptyDescription="Aucun coût n'est disponible pour les filtres actifs."
+        >
+          {sessions.isLoading ? (
+            <ChartSkeleton />
+          ) : (
+            <BreakdownBarChart
+              data={costBySource}
+              valueLabel="Coût"
+              valueFormatter={formatUsd}
+              color={CHART_SERIES_COLORS[1]}
+            />
+          )}
+        </ChartFrame>
+
+        <ChartFrame
+          title="Sessions les plus coûteuses"
+          isEmpty={!sessions.isLoading && topSessions.length === 0}
+          emptyDescription="Aucune session avec un coût connu ne correspond aux filtres actifs."
+        >
+          {sessions.isLoading ? <ChartSkeleton /> : <TopSessionsTable sessions={topSessions} />}
+        </ChartFrame>
+
+        <ChartFrame title="Qualité des données" isEmpty={false}>
+          <DataQualityPanel />
         </ChartFrame>
 
         <ChartFrame
