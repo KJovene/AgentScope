@@ -22,17 +22,7 @@ import { FilterBar } from "@shared/components/filters";
 import { useSessionsQuery } from "@shared/api/sessions.queries";
 import { formatDuration, formatNumber, formatPercent, formatTokens, formatUsd } from "@shared/lib/format";
 import { DataQualityPanel } from "@features/data-quality";
-import { formatDuration, formatNumber, formatPercent, formatTokens, formatUsd } from "@shared/lib/format";
-import { DataQualityPanel } from "@features/data-quality";
 import { IndicatorCard } from "./IndicatorCard";
-import { ToolUsagePanel } from "./ToolUsagePanel";
-import { TopSessionsTable } from "./TopSessionsTable";
-import {
-  useIndicatorsQuery,
-  usePreviousIndicatorsQuery,
-  useTimeseriesQuery,
-  useToolUsageQuery,
-} from "../api/dashboard.queries";
 import { ToolUsagePanel } from "./ToolUsagePanel";
 import { TopSessionsTable } from "./TopSessionsTable";
 import {
@@ -50,21 +40,11 @@ import {
   relativeDelta,
   resolveCurrentPeriod,
 } from "../model/period-comparison";
-import { breakdownBy, topSessionsByCost } from "../model/breakdown";
-import {
-  previousPeriod,
-  relativeDelta,
-  resolveCurrentPeriod,
-} from "../model/period-comparison";
 import { METRIC_DEFINITIONS } from "../types";
 
 const ACTIVITY_METRICS: { value: TimeseriesMetric; label: string }[] = [
   { value: "sessions", label: "Sessions" },
   { value: "tokens", label: "Tokens" },
-  { value: "model_calls", label: "Appels modèles" },
-  { value: "tool_calls", label: "Appels outils" },
-  { value: "cost", label: "Coût" },
-  { value: "errors", label: "Erreurs" },
   { value: "model_calls", label: "Appels modèles" },
   { value: "tool_calls", label: "Appels outils" },
   { value: "cost", label: "Coût" },
@@ -84,12 +64,6 @@ function toProblemDetails(error: unknown, fallbackDetail: string): ProblemDetail
     };
   }
   return { title: "Erreur réseau", status: 500, detail: fallbackDetail };
-}
-
-/** Safe ratio: null unless both operands are present and the denominator is non-zero. */
-function ratio(numerator: number | null | undefined, denominator: number | null | undefined) {
-  if (numerator == null || denominator == null || denominator === 0) return null;
-  return numerator / denominator;
 }
 
 /** Safe ratio: null unless both operands are present and the denominator is non-zero. */
