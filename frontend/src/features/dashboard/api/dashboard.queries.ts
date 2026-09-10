@@ -15,6 +15,23 @@ export function useIndicatorsQuery(filters: MetricFilters) {
   });
 }
 
+/**
+ * Same indicators over the window immediately preceding the one on screen, so
+ * every card can show a variation. Disabled while no comparable window is
+ * resolved — the dashboard then shows the values with no delta.
+ */
+export function usePreviousIndicatorsQuery(
+  filters: MetricFilters,
+  period: { from: string; to: string } | null,
+) {
+  const previousFilters: MetricFilters = { ...filters, from: period?.from, to: period?.to };
+  return useQuery({
+    queryKey: queryKeys.metrics.indicators({ ...previousFilters, comparison: 'previous' }),
+    queryFn: ({ signal }) => dashboardApi.getIndicators(previousFilters, signal),
+    enabled: period !== null,
+  });
+}
+
 export function useTimeseriesQuery(
   filters: MetricFilters,
   metric: TimeseriesMetric,

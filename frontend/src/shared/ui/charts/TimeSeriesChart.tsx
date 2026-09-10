@@ -48,7 +48,7 @@ export function TimeSeriesChart({
     <ResponsiveContainer width="100%" height={height}>
       <AreaChart
         data={data}
-        margin={{ top: 8, right: 16, bottom: 0, left: 0 }}
+        margin={{ top: 8, right: 44, bottom: 0, left: 0 }}
         onClick={onPointClick ? handleClick : undefined}
       >
         <defs>
@@ -58,7 +58,16 @@ export function TimeSeriesChart({
           </linearGradient>
         </defs>
         <CartesianGrid {...CHART_GRID_PROPS} />
-        <XAxis dataKey="period" {...CHART_AXIS_PROPS} tickMargin={8} />
+        {/* A dense daily series must thin its ticks, or the last date collides
+            with the card edge and neighbouring labels overlap. */}
+        <XAxis
+          dataKey="period"
+          {...CHART_AXIS_PROPS}
+          tickMargin={8}
+          height={28}
+          minTickGap={48}
+          interval="preserveStartEnd"
+        />
         <YAxis {...CHART_AXIS_PROPS} allowDecimals={false} tickMargin={8} width={44} />
         <Tooltip
           content={<ChartTooltip />}

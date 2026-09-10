@@ -4,49 +4,77 @@ import { describe, expect, it } from 'vitest';
 
 import { metricFiltersSchema } from '@shared/lib/metric-filters';
 import { FilterBar } from '@shared/components/filters';
-import { TagMultiSelect } from '@shared/components/filters/TagMultiSelect';
+import { OptionMultiSelect } from '@shared/components/filters/OptionMultiSelect';
 import { DateRangeFilter } from '@shared/components/filters/DateRangeFilter';
 
 import { server } from '../../msw/server';
 import { renderRouted } from '../../utils';
 
-describe('TagMultiSelect', () => {
-  it('adds a value on Enter and calls onChange, clearing the draft', () => {
-    let values: string[] = [];
-    const { rerender } = render(
-      <TagMultiSelect label="Agents" values={values} onChange={(next) => (values = next)} />,
+describe('OptionMultiSelect', () => {
+  const OPTIONS = ['claude', 'codex', 'OpenCode'];
+
+  function setup(values: string[], onChange: (next: string[]) => void) {
+    return render(
+      <OptionMultiSelect
+        label="Agents"
+        options={OPTIONS}
+        values={values}
+        onChange={onChange}
+        placeholder="Choisir un agent..."
+        emptyMessage="Aucun agent enregistré."
+      />,
     );
+  }
 
-    const input = screen.getByLabelText('Agents');
-    fireEvent.change(input, { target: { value: 'claude' } });
-    fireEvent.keyDown(input, { key: 'Enter' });
+  it('offers only the values that exist, and adds the picked one', () => {
+    let values: string[] = [];
+    setup(values, (next) => (values = next));
 
-    expect(values).toEqual(['claude']);
-    rerender(<TagMultiSelect label="Agents" values={values} onChange={() => {}} />);
+    const select = screen.getByLabelText('Agents');
+    expect(screen.getByRole('option', { name: 'claude' })).toBeInTheDocument();
+    // Free text is impossible: the control is a closed list.
+    expect(select.tagName).toBe('SELECT');
+
+    fireEvent.change(select, { target: { value: 'codex' } });
+    expect(values).toEqual(['codex']);
+  });
+
+  it('drops an already-selected value from the options and shows it as a chip', () => {
+    setup(['claude'], () => {});
+
     expect(screen.getByText('claude')).toBeInTheDocument();
+    expect(screen.queryByRole('option', { name: 'claude' })).not.toBeInTheDocument();
+    expect(screen.getByRole('option', { name: 'codex' })).toBeInTheDocument();
   });
 
   it('removes a value when its × button is clicked', () => {
     let values = ['claude'];
-    render(
-      <TagMultiSelect label="Agents" values={values} onChange={(next) => (values = next)} />,
-    );
+    setup(values, (next) => (values = next));
 
     fireEvent.click(screen.getByLabelText('Retirer claude'));
 
     expect(values).toEqual([]);
   });
 
-  it('never adds an empty or duplicate value', () => {
-    const onChange = () => {
-      throw new Error('should not be called');
-    };
-    render(<TagMultiSelect label="Agents" values={['claude']} onChange={onChange} />);
+  it('disables the dropdown once every value is selected', () => {
+    setup(OPTIONS, () => {});
 
-    const input = screen.getByLabelText('Agents');
-    fireEvent.keyDown(input, { key: 'Enter' }); // empty draft
-    fireEvent.change(input, { target: { value: 'claude' } });
-    fireEvent.keyDown(input, { key: 'Enter' }); // duplicate
+    expect(screen.getByLabelText('Agents')).toBeDisabled();
+  });
+
+  it('says so when the dimension has no value at all', () => {
+    render(
+      <OptionMultiSelect
+        label="Agents"
+        options={[]}
+        values={[]}
+        onChange={() => {}}
+        placeholder="Choisir un agent..."
+        emptyMessage="Aucun agent enregistré."
+      />,
+    );
+
+    expect(screen.getByText('Aucun agent enregistré.')).toBeInTheDocument();
   });
 });
 
@@ -81,7 +109,7 @@ describe('FilterBar', () => {
     });
   });
 
-  it('adds an agent tag and resets all filters', async () => {
+  it('counts an agent coming from the URL and resets every filter', async () => {
     renderRouted(<FilterBar />, {
       validateSearch: metricFiltersSchema,
       initialSearch: '?agents=claude',
@@ -92,5 +120,22 @@ describe('FilterBar', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Réinitialiser' }));
 
     await waitFor(() => expect(screen.getByText('Filtres')).toBeInTheDocument());
+  });
+
+  it('picks an agent from the dropdown into the URL filters', async () => {
+    server.use(
+      http.get('/api/metrics/dimensions', () =>
+        HttpResponse.json({ agents: ['claude', 'codex'], models: [] }),
+      ),
+    );
+
+    const { router } = renderRouted(<FilterBar />, { validateSearch: metricFiltersSchema });
+
+    const select = await screen.findByLabelText('Agents');
+    fireEvent.change(select, { target: { value: 'codex' } });
+
+    await waitFor(() => {
+      expect(router.state.location.search).toMatchObject({ agents: ['codex'] });
+    });
   });
 });

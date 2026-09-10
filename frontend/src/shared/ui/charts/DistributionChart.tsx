@@ -22,10 +22,12 @@ export function DistributionChart({
 }) {
   const data = buildDurationHistogram(values, bucketCount);
   const gradientId = useId();
+  // The tick is a lower bound; the tooltip restores the full span.
+  const spanByLabel = new Map(data.map((bucket) => [bucket.label, bucket.range]));
 
   return (
     <ResponsiveContainer width="100%" height={height}>
-      <BarChart data={data} margin={{ top: 8, right: 16, bottom: 24, left: 0 }} barCategoryGap="20%">
+      <BarChart data={data} margin={{ top: 8, right: 20, bottom: 0, left: 0 }} barCategoryGap="20%">
         <defs>
           <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
             <stop offset="0%" stopColor={CHART_COLORS.primary} stopOpacity={0.95} />
@@ -34,16 +36,18 @@ export function DistributionChart({
         </defs>
         <CartesianGrid {...CHART_GRID_PROPS} />
         <XAxis
-          dataKey="range"
+          dataKey="label"
           {...CHART_AXIS_PROPS}
-          interval={0}
-          angle={-30}
-          textAnchor="end"
-          height={50}
+          interval="preserveStartEnd"
+          minTickGap={4}
+          height={28}
           tickMargin={8}
         />
         <YAxis {...CHART_AXIS_PROPS} allowDecimals={false} tickMargin={8} width={44} />
-        <Tooltip content={<ChartTooltip />} cursor={{ fill: CHART_COLORS.border, opacity: 0.35 }} />
+        <Tooltip
+          content={<ChartTooltip labelFormatter={(l) => spanByLabel.get(String(l)) ?? l} />}
+          cursor={{ fill: CHART_COLORS.border, opacity: 0.35 }}
+        />
         <Bar
           dataKey="count"
           name="Sessions"

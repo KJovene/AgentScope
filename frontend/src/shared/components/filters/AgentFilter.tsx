@@ -1,6 +1,8 @@
-import { TagMultiSelect } from './TagMultiSelect';
+import { useFilterDimensionsQuery } from '@shared/api/dimensions.queries';
 
-/** No `GET /agents` endpoint exists — free-text entry (see `TagMultiSelect`). */
+import { OptionMultiSelect } from './OptionMultiSelect';
+
+/** Closed choice over the agents present in the data (`GET /metrics/dimensions`). */
 export function AgentFilter({
   values,
   onChange,
@@ -8,12 +10,17 @@ export function AgentFilter({
   values: string[];
   onChange: (next: string[]) => void;
 }) {
+  const { data, isLoading } = useFilterDimensionsQuery();
+
   return (
-    <TagMultiSelect
+    <OptionMultiSelect
       label="Agents"
+      options={data?.agents ?? []}
       values={values}
       onChange={onChange}
-      placeholder="Ajouter un agent..."
+      isLoading={isLoading}
+      placeholder="Choisir un agent..."
+      emptyMessage="Aucun agent enregistré."
     />
   );
 }

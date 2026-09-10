@@ -41,3 +41,10 @@ class ToolUsageResponseItem(BaseModel):
     n_calls: int
     n_errors: int
     avg_duration_ms: float | None = Field(default=None)
+
+
+class FilterDimensionsResponse(BaseModel):
+    """Valeurs distinctes disponibles pour les filtres à choix fermé du dashboard."""
+
+    agents: list[str] = Field(default_factory=list)
+    models: list[str] = Field(default_factory=list)

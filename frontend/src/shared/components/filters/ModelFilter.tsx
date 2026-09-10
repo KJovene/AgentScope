@@ -1,6 +1,8 @@
-import { TagMultiSelect } from './TagMultiSelect';
+import { useFilterDimensionsQuery } from '@shared/api/dimensions.queries';
 
-/** No `GET /models` endpoint exists — free-text entry (see `TagMultiSelect`). */
+import { OptionMultiSelect } from './OptionMultiSelect';
+
+/** Closed choice over the models present in the data (`GET /metrics/dimensions`). */
 export function ModelFilter({
   values,
   onChange,
@@ -8,12 +10,17 @@ export function ModelFilter({
   values: string[];
   onChange: (next: string[]) => void;
 }) {
+  const { data, isLoading } = useFilterDimensionsQuery();
+
   return (
-    <TagMultiSelect
+    <OptionMultiSelect
       label="Modèles"
+      options={data?.models ?? []}
       values={values}
       onChange={onChange}
-      placeholder="Ajouter un modèle..."
+      isLoading={isLoading}
+      placeholder="Choisir un modèle..."
+      emptyMessage="Aucun modèle enregistré."
     />
   );
 }
