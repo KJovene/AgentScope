@@ -1,7 +1,7 @@
 import { http } from '@shared/api/http-client';
 import { metricFiltersToQuery, type MetricFilters } from '@shared/lib/metric-filters';
 
-import { sessionListResponseSchema } from './sessions.contracts';
+import { sessionDetailSchema, sessionListResponseSchema } from './sessions.contracts';
 
 export type SessionListParams = MetricFilters & { limit: number; offset: number };
 
@@ -12,4 +12,7 @@ export const sessionsApi = {
       query: { ...metricFiltersToQuery(params), limit: params.limit, offset: params.offset },
       signal,
     }),
+
+  detail: (sessionId: string, signal?: AbortSignal) =>
+    http.get(`/sessions/${encodeURIComponent(sessionId)}`, sessionDetailSchema, { signal }),
 };
