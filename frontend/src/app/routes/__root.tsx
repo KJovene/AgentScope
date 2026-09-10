@@ -7,7 +7,7 @@ import {
 } from '@tanstack/react-router';
 
 import { AccessibilityPanel } from '@features/accessibility';
-import { FloatingChat } from '@features/chat';
+import { FloatingAssistant } from '@features/mapping-agent';
 import { cn } from '@shared/lib/cn';
 import { useUiStore } from '@shared/stores/ui-store';
 
@@ -87,8 +87,9 @@ function RootLayout() {
         </div>
       </main>
 
-      {/* Assistant flottant (bas-droite) */}
-      <FloatingChat />
+      {/* Assistant flottant (bas-droite) — la page « Ajouter une source »
+          affiche déjà la conversation en pleine largeur, pas de doublon. */}
+      {pathname !== '/sources/new' && <FloatingAssistant />}
     </div>
   );
 }
