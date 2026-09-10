@@ -97,40 +97,45 @@ export const ChatScreen: React.FC<{ sessionId?: string }> = ({
   };
 
   return (
-    <div className="mx-auto flex h-[80vh] max-w-4xl flex-col rounded-xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
-      <div className="flex items-center justify-between border-b border-slate-200 p-4 dark:border-slate-800">
+    <div className="flex h-full min-h-0 w-full flex-col border border-border bg-surface">
+      <div className="flex items-center justify-between border-b border-border bg-surface-raised px-4 py-3">
         <div>
-          <h2 className="text-lg font-bold text-slate-900 dark:text-slate-100">Assistant AgentScope</h2>
-          <p className="text-xs text-slate-500">Session : {sessionId}</p>
+          <h2 className="cyber-heading text-sm text-neon-cyan neon-text-cyan">
+            Assistant AgentScope
+          </h2>
+          <p className="text-[11px] text-foreground-muted">Session : {sessionId}</p>
         </div>
+        <span className="border border-neon-green/60 px-2 py-0.5 text-[10px] uppercase tracking-widest text-neon-green">
+          online
+        </span>
       </div>
 
       <ApiErrorBanner error={error} onDismiss={() => setError(null)} />
 
-      <div className="flex-1 overflow-y-auto p-4 space-y-6">
+      <div className="flex-1 space-y-5 overflow-y-auto p-4">
         {messages.map((msg) => (
           <div
             key={msg.id}
             className={`flex w-full ${msg.role === "user" ? "justify-end" : "justify-start"}`}
           >
             <div
-              className={`max-w-[75%] rounded-2xl p-4 text-sm ${
+              className={`max-w-[80%] border p-3 text-sm ${
                 msg.role === "user"
-                  ? "bg-indigo-600 text-white"
-                  : "bg-slate-100 text-slate-800 dark:bg-slate-900 dark:text-slate-200"
+                  ? "border-neon-cyan/70 bg-neon-cyan/10 text-foreground"
+                  : "border-border bg-surface-muted text-foreground"
               }`}
             >
               <div className="whitespace-pre-wrap">{msg.content}</div>
 
               {msg.ambiguity_alerts && msg.ambiguity_alerts.length > 0 && (
-                <div className="mt-3 rounded-lg border border-amber-200 bg-amber-50 p-3 text-amber-900 dark:border-amber-900/50 dark:bg-amber-950/30 dark:text-amber-200">
-                  <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider">
+                <div className="mt-3 border border-warning/60 bg-warning/10 p-3 text-foreground">
+                  <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-warning">
                     <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                     </svg>
                     Précision requise
                   </div>
-                  <ul className="mt-2 list-inside list-disc text-xs space-y-1">
+                  <ul className="mt-2 list-inside list-disc space-y-1 text-xs">
                     {msg.ambiguity_alerts.map((alert, idx) => (
                       <li key={idx}>{alert}</li>
                     ))}
@@ -143,17 +148,17 @@ export const ChatScreen: React.FC<{ sessionId?: string }> = ({
 
         {isSending && (
           <div className="flex justify-start">
-            <div className="flex space-x-1 rounded-2xl bg-slate-100 p-4 dark:bg-slate-900">
-              <div className="h-2 w-2 animate-bounce rounded-full bg-slate-400"></div>
-              <div className="h-2 w-2 animate-bounce rounded-full bg-slate-400" style={{ animationDelay: "0.2s" }}></div>
-              <div className="h-2 w-2 animate-bounce rounded-full bg-slate-400" style={{ animationDelay: "0.4s" }}></div>
+            <div className="flex space-x-1 border border-border bg-surface-muted p-4">
+              <div className="h-2 w-2 animate-bounce rounded-full bg-neon-cyan"></div>
+              <div className="h-2 w-2 animate-bounce rounded-full bg-neon-cyan" style={{ animationDelay: "0.2s" }}></div>
+              <div className="h-2 w-2 animate-bounce rounded-full bg-neon-cyan" style={{ animationDelay: "0.4s" }}></div>
             </div>
           </div>
         )}
         <div ref={messagesEndRef} />
       </div>
 
-      <div className="border-t border-slate-200 p-4 dark:border-slate-800">
+      <div className="border-t border-border p-3">
         <form onSubmit={handleSendMessage} className="flex gap-2">
           <input
             type="text"
@@ -161,12 +166,12 @@ export const ChatScreen: React.FC<{ sessionId?: string }> = ({
             onChange={(e) => setInputText(e.target.value)}
             disabled={isSending}
             placeholder="Posez votre question à l'agent..."
-            className="flex-1 rounded-lg border border-slate-300 bg-transparent px-4 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 disabled:opacity-50 dark:border-slate-700 dark:text-slate-100"
+            className="flex-1 border border-border bg-surface-muted px-3 py-2 text-sm text-foreground placeholder:text-foreground-muted focus:border-neon-cyan focus:outline-none disabled:opacity-50"
           />
           <button
             type="submit"
             disabled={!inputText.trim() || isSending}
-            className="flex items-center justify-center rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-indigo-700 disabled:opacity-50 dark:bg-indigo-500 dark:hover:bg-indigo-600"
+            className="border border-neon-cyan bg-neon-cyan/10 px-4 py-2 text-sm font-semibold uppercase tracking-wider text-neon-cyan transition hover:bg-neon-cyan/20 disabled:opacity-40"
           >
             Envoyer
           </button>

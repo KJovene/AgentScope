@@ -1,6 +1,8 @@
+import { useId } from 'react';
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 
-import { CHART_COLORS } from './chart-colors';
+import { CHART_ANIM, CHART_AXIS_PROPS, CHART_COLORS, CHART_GRID_PROPS } from './chart-colors';
+import { ChartTooltip } from './ChartTooltip';
 import { buildDurationHistogram } from './duration-histogram';
 
 /**
@@ -19,23 +21,38 @@ export function DistributionChart({
   height?: number;
 }) {
   const data = buildDurationHistogram(values, bucketCount);
+  const gradientId = useId();
 
   return (
     <ResponsiveContainer width="100%" height={height}>
-      <BarChart data={data} margin={{ top: 8, right: 16, bottom: 24, left: 0 }}>
-        <CartesianGrid strokeDasharray="3 3" stroke={CHART_COLORS.border} />
+      <BarChart data={data} margin={{ top: 8, right: 16, bottom: 24, left: 0 }} barCategoryGap="20%">
+        <defs>
+          <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor={CHART_COLORS.primary} stopOpacity={0.95} />
+            <stop offset="100%" stopColor={CHART_COLORS.primary} stopOpacity={0.35} />
+          </linearGradient>
+        </defs>
+        <CartesianGrid {...CHART_GRID_PROPS} />
         <XAxis
           dataKey="range"
-          stroke={CHART_COLORS.foregroundMuted}
-          fontSize={11}
+          {...CHART_AXIS_PROPS}
           interval={0}
           angle={-30}
           textAnchor="end"
           height={50}
+          tickMargin={8}
         />
-        <YAxis stroke={CHART_COLORS.foregroundMuted} fontSize={12} allowDecimals={false} />
-        <Tooltip />
-        <Bar dataKey="count" name="Sessions" fill={CHART_COLORS.primary} />
+        <YAxis {...CHART_AXIS_PROPS} allowDecimals={false} tickMargin={8} width={44} />
+        <Tooltip content={<ChartTooltip />} cursor={{ fill: CHART_COLORS.border, opacity: 0.35 }} />
+        <Bar
+          dataKey="count"
+          name="Sessions"
+          fill={`url(#${gradientId})`}
+          radius={[3, 3, 0, 0]}
+          maxBarSize={64}
+          className="chart-glow"
+          {...CHART_ANIM}
+        />
       </BarChart>
     </ResponsiveContainer>
   );

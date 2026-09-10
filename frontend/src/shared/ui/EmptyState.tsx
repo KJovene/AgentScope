@@ -16,12 +16,12 @@ export function EmptyState({
   return (
     <div
       className={cn(
-        'flex flex-col items-center justify-center rounded-card border border-dashed border-border',
+        'flex flex-col items-center justify-center border border-dashed border-border-strong',
         'bg-surface-muted/40 p-6 text-center',
         className,
       )}
     >
-      <p className="text-sm font-medium text-foreground-muted">{title}</p>
+      <p className="text-sm font-medium uppercase tracking-wider text-foreground-muted">{title}</p>
       {description && <p className="mt-1 text-xs text-foreground-muted">{description}</p>}
     </div>
   );

@@ -1,7 +1,8 @@
+import { useId } from 'react';
 import {
+  Area,
+  AreaChart,
   CartesianGrid,
-  Line,
-  LineChart,
   ResponsiveContainer,
   Tooltip,
   XAxis,
@@ -9,7 +10,8 @@ import {
   type MouseHandlerDataParam,
 } from 'recharts';
 
-import { CHART_COLORS } from './chart-colors';
+import { CHART_ANIM, CHART_AXIS_PROPS, CHART_COLORS, CHART_GRID_PROPS } from './chart-colors';
+import { ChartTooltip } from './ChartTooltip';
 
 export interface TimeSeriesPoint {
   period: string;
@@ -17,7 +19,7 @@ export interface TimeSeriesPoint {
 }
 
 /**
- * Line chart for activity/tokens per day (I5.10). Takes already-shaped data
+ * Area/line chart for activity/tokens per day (I5.10). Takes already-shaped data
  * from the feature's `api` layer — never fetches, never formats units itself.
  * `onPointClick` powers drill-down (I5.14): click a point, get its datum back.
  */
@@ -34,6 +36,8 @@ export function TimeSeriesChart({
   color?: string;
   onPointClick?: (point: TimeSeriesPoint) => void;
 }) {
+  const gradientId = useId();
+
   function handleClick(state: MouseHandlerDataParam) {
     const period = state?.activeLabel;
     const point = typeof period === 'string' ? data.find((d) => d.period === period) : undefined;
@@ -42,26 +46,38 @@ export function TimeSeriesChart({
 
   return (
     <ResponsiveContainer width="100%" height={height}>
-      <LineChart
+      <AreaChart
         data={data}
         margin={{ top: 8, right: 16, bottom: 0, left: 0 }}
         onClick={onPointClick ? handleClick : undefined}
       >
-        <CartesianGrid strokeDasharray="3 3" stroke={CHART_COLORS.border} />
-        <XAxis dataKey="period" stroke={CHART_COLORS.foregroundMuted} fontSize={12} />
-        <YAxis stroke={CHART_COLORS.foregroundMuted} fontSize={12} allowDecimals={false} />
-        <Tooltip />
-        <Line
+        <defs>
+          <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor={color} stopOpacity={0.35} />
+            <stop offset="100%" stopColor={color} stopOpacity={0.02} />
+          </linearGradient>
+        </defs>
+        <CartesianGrid {...CHART_GRID_PROPS} />
+        <XAxis dataKey="period" {...CHART_AXIS_PROPS} tickMargin={8} />
+        <YAxis {...CHART_AXIS_PROPS} allowDecimals={false} tickMargin={8} width={44} />
+        <Tooltip
+          content={<ChartTooltip />}
+          cursor={{ stroke: CHART_COLORS.borderStrong, strokeDasharray: '3 3' }}
+        />
+        <Area
           type="monotone"
           dataKey="value"
           name={valueLabel}
           stroke={color}
           strokeWidth={2}
+          fill={`url(#${gradientId})`}
           dot={false}
+          activeDot={{ r: 4, strokeWidth: 2, stroke: CHART_COLORS.surface }}
           connectNulls={false}
-          className={onPointClick ? 'cursor-pointer' : undefined}
+          className={onPointClick ? 'chart-glow cursor-pointer' : 'chart-glow'}
+          {...CHART_ANIM}
         />
-      </LineChart>
+      </AreaChart>
     </ResponsiveContainer>
   );
 }
