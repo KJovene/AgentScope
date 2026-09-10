@@ -6,5 +6,9 @@ export const Route = createFileRoute('/chat')({
 })
 
 function ChatRouteComponent() {
-  return <ChatScreen sessionId="session-test" />
+  return (
+    <div className="mx-auto h-[78vh] max-w-4xl">
+      <ChatScreen sessionId="session-test" />
+    </div>
+  )
 }

@@ -1,9 +1,17 @@
 import React, { useEffect, useState } from "react";
-import { apiClient } from "../../../shared/api/client";
-import { ApiError } from "../../../shared/api/types";
-import type { ProblemDetails } from "../../../shared/api/types";
-import { ApiErrorBanner } from "../../../shared/components/ApiErrorBanner";
+import { apiClient } from "@shared/api/client";
+import { ApiError } from "@shared/api/types";
+import type { ProblemDetails } from "@shared/api/types";
+import { ApiErrorBanner } from "@shared/components/ApiErrorBanner";
 import type { ImportReport, PaginatedResponse, RejectRecord } from "../types.ts";
+
+const STATUS_STYLES = {
+  completed: { label: "Réussi", cls: "border-neon-green/60 text-neon-green" },
+  partial: { label: "Partiel", cls: "border-warning/60 text-warning" },
+  failed: { label: "Échec", cls: "border-danger/60 text-danger" },
+} as const;
+
+type KnownStatus = keyof typeof STATUS_STYLES;
 
 export const ImportHistoryScreen: React.FC = () => {
   const [imports, setImports] = useState<ImportReport[]>([]);
@@ -58,14 +66,14 @@ export const ImportHistoryScreen: React.FC = () => {
   };
 
   const getStatusBadge = (status: string) => {
-    switch (status) {
-      case "completed":
-        return <span className="rounded bg-green-100 px-2 py-0.5 text-xs font-semibold text-green-800 dark:bg-green-950 dark:text-green-300">Réussi</span>;
-      case "partial":
-        return <span className="rounded bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-800 dark:bg-amber-950 dark:text-amber-300">Partiel</span>;
-      default:
-        return <span className="rounded bg-red-100 px-2 py-0.5 text-xs font-semibold text-red-800 dark:bg-red-950 dark:text-red-300">Échec</span>;
-    }
+    const s = STATUS_STYLES[status as KnownStatus] ?? STATUS_STYLES.failed;
+    return (
+      <span
+        className={`shrink-0 border px-2 py-0.5 text-xs font-semibold uppercase tracking-wider ${s.cls}`}
+      >
+        {s.label}
+      </span>
+    );
   };
 
   const getMissingCount = (missing: number | Record<string, number>): number => {
@@ -74,10 +82,10 @@ export const ImportHistoryScreen: React.FC = () => {
   };
 
   return (
-    <div className="mx-auto max-w-6xl space-y-6">
+    <section className="space-y-5">
       <div>
-        <h1 className="text-2xl font-bold tracking-tight">Historique des imports</h1>
-        <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
+        <h2 className="cyber-title text-neon-cyan">Historique des imports</h2>
+        <p className="mt-1 text-sm text-foreground-muted">
           Consultez l'ensemble des lots téléversés et le détail des rejets d'importation.
         </p>
       </div>
@@ -85,123 +93,130 @@ export const ImportHistoryScreen: React.FC = () => {
       <ApiErrorBanner error={error} onDismiss={() => setError(null)} />
 
       {loading ? (
-        <div className="p-8 text-center text-sm text-slate-500">Chargement de l'historique…</div>
+        <div className="cyber-inset p-8 text-center text-sm text-foreground-muted">
+          Chargement de l'historique…
+        </div>
       ) : (
-        <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-          {/* Liste des imports */}
-          <div className="lg:col-span-1 space-y-3">
-            <h2 className="text-sm font-semibold uppercase tracking-wider text-slate-500">
-              Lots récents ({imports.length})
-            </h2>
-            {imports.length === 0 ? (
-              <div className="rounded-lg border border-slate-200 bg-white p-4 text-center text-sm text-slate-500 dark:border-slate-800 dark:bg-slate-950">
-                Aucun import enregistré.
-              </div>
-            ) : (
-              <div className="space-y-2">
-                {imports.map((item) => (
-                  <button
-                    key={item.id}
-                    onClick={() => handleSelectImport(item)}
-                    className={`w-full text-left rounded-lg border p-4 transition-colors ${
-                      selectedImport?.id === item.id
-                        ? "border-indigo-600 bg-indigo-50/50 dark:border-indigo-500 dark:bg-indigo-950/30"
-                        : "border-slate-200 bg-white hover:border-slate-300 dark:border-slate-800 dark:bg-slate-950 dark:hover:border-slate-700"
-                    }`}
-                  >
-                    <div className="flex items-center justify-between">
-                      <span className="font-mono text-xs font-semibold">{item.id}</span>
-                      {getStatusBadge(item.status)}
-                    </div>
-                    <div className="mt-2 text-xs text-slate-500 space-y-1">
-                      <p>Mapping : <span className="font-mono text-slate-700 dark:text-slate-300">{item.mapping_id}</span></p>
-                      <p>Date : {new Date(item.imported_at).toLocaleString()}</p>
-                    </div>
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
-
-          {/* Panneau de détail du bilan */}
-          <div className="lg:col-span-2">
-            {selectedImport ? (
-              <div className="space-y-6 rounded-lg border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-950">
-                <div className="flex items-center justify-between border-b border-slate-200 pb-4 dark:border-slate-800">
-                  <div>
-                    <h2 className="text-lg font-bold">Bilan : {selectedImport.id}</h2>
-                    <p className="text-xs text-slate-500">Source : {selectedImport.source_id || "N/A"}</p>
-                  </div>
-                  {getStatusBadge(selectedImport.status)}
-                </div>
-
-                {/* Métriques d'import */}
-                <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-                  <div className="rounded-md bg-slate-50 p-3 text-center dark:bg-slate-900">
-                    <p className="text-xs text-slate-500">Importés</p>
-                    <p className="mt-1 text-2xl font-bold text-green-600 dark:text-green-400">
-                      {selectedImport.imported_count}
-                    </p>
-                  </div>
-                  <div className="rounded-md bg-slate-50 p-3 text-center dark:bg-slate-900">
-                    <p className="text-xs text-slate-500">Doublons</p>
-                    <p className="mt-1 text-2xl font-bold text-amber-600 dark:text-amber-400">
-                      {selectedImport.duplicate_count}
-                    </p>
-                  </div>
-                  <div className="rounded-md bg-slate-50 p-3 text-center dark:bg-slate-900">
-                    <p className="text-xs text-slate-500">Rejets</p>
-                    <p className="mt-1 text-2xl font-bold text-red-600 dark:text-red-400">
-                      {selectedImport.rejected_count}
-                    </p>
-                  </div>
-                  <div className="rounded-md bg-slate-50 p-3 text-center dark:bg-slate-900">
-                    <p className="text-xs text-slate-500">Champs manquants</p>
-                    <p className="mt-1 text-2xl font-bold text-slate-700 dark:text-slate-300">
-                      {getMissingCount(selectedImport.missing_info_count)}
-                    </p>
-                  </div>
-                </div>
-
-                {/* Table des rejets */}
-                {selectedImport.rejected_count > 0 && (
-                  <div className="space-y-3 border-t border-slate-200 pt-4 dark:border-slate-800">
-                    <h3 className="text-sm font-semibold">Détail des lignes rejetées</h3>
-                    {loadingRejects ? (
-                      <p className="text-xs text-slate-500">Chargement des rejets…</p>
-                    ) : (
-                      <div className="overflow-x-auto rounded-md border border-slate-200 dark:border-slate-800">
-                        <table className="w-full text-left text-xs">
-                          <thead className="bg-slate-50 text-slate-500 dark:bg-slate-900">
-                            <tr>
-                              <th className="p-2.5">Ligne</th>
-                              <th className="p-2.5">Code</th>
-                              <th className="p-2.5">Raison</th>
-                            </tr>
-                          </thead>
-                          <tbody className="divide-y divide-slate-200 dark:divide-slate-800">
-                            {rejects.map((rej, idx) => (
-                              <tr key={idx}>
-                                <td className="p-2.5 font-mono">{rej.record_index}</td>
-                                <td className="p-2.5 font-semibold text-red-600 dark:text-red-400">{rej.reason_code}</td>
-                                <td className="p-2.5">{rej.reason_detail}</td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
+        <div className="space-y-4">
+          {/* Liste des lots */}
+          <h3 className="text-xs font-semibold uppercase tracking-wider text-foreground-muted">
+            Lots récents ({imports.length})
+          </h3>
+          {imports.length === 0 ? (
+            <div className="cyber-inset p-4 text-center text-sm text-foreground-muted">
+              Aucun import enregistré.
+            </div>
+          ) : (
+            <ul className="stagger space-y-2">
+              {imports.map((item) => {
+                const selected = selectedImport?.id === item.id;
+                return (
+                  <li key={item.id}>
+                    <button
+                      onClick={() => handleSelectImport(item)}
+                      aria-pressed={selected}
+                      className={`w-full border p-4 text-left transition ${
+                        selected
+                          ? "border-neon-cyan bg-neon-cyan/10 text-foreground neon-cyan"
+                          : "border-border bg-surface hover:border-border-strong"
+                      }`}
+                    >
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="truncate text-xs font-semibold">{item.id}</span>
+                        {getStatusBadge(item.status)}
                       </div>
-                    )}
-                  </div>
-                )}
+                      <div className="mt-2 space-y-1 text-xs text-foreground-muted">
+                        <p>
+                          Mapping : <span className="text-foreground">{item.mapping_id}</span>
+                        </p>
+                        <p>Date : {new Date(item.imported_at).toLocaleString()}</p>
+                      </div>
+                    </button>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+
+          {/* Détail du bilan sélectionné */}
+          {selectedImport ? (
+            <div className="cyber-card animate-fade-in space-y-5">
+              <div className="flex items-center justify-between gap-3 border-b border-border pb-4">
+                <div className="min-w-0">
+                  <h3 className="truncate text-base font-bold">Bilan : {selectedImport.id}</h3>
+                  <p className="text-xs text-foreground-muted">
+                    Source : {selectedImport.source_id || "N/A"}
+                  </p>
+                </div>
+                {getStatusBadge(selectedImport.status)}
               </div>
-            ) : (
-              <div className="flex h-64 items-center justify-center rounded-lg border border-dashed border-slate-300 p-6 text-sm text-slate-400 dark:border-slate-800">
-                Sélectionnez un lot dans la liste pour afficher le détail du bilan.
+
+              <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+                <div className="cyber-inset p-3 text-center">
+                  <p className="text-xs text-foreground-muted">Importés</p>
+                  <p className="mt-1 text-2xl font-bold tabular-nums text-neon-green">
+                    {selectedImport.imported_count}
+                  </p>
+                </div>
+                <div className="cyber-inset p-3 text-center">
+                  <p className="text-xs text-foreground-muted">Doublons</p>
+                  <p className="mt-1 text-2xl font-bold tabular-nums text-warning">
+                    {selectedImport.duplicate_count}
+                  </p>
+                </div>
+                <div className="cyber-inset p-3 text-center">
+                  <p className="text-xs text-foreground-muted">Rejets</p>
+                  <p className="mt-1 text-2xl font-bold tabular-nums text-danger">
+                    {selectedImport.rejected_count}
+                  </p>
+                </div>
+                <div className="cyber-inset p-3 text-center">
+                  <p className="text-xs text-foreground-muted">Champs manquants</p>
+                  <p className="mt-1 text-2xl font-bold tabular-nums text-foreground">
+                    {getMissingCount(selectedImport.missing_info_count)}
+                  </p>
+                </div>
               </div>
-            )}
-          </div>
+
+              {selectedImport.rejected_count > 0 && (
+                <div className="space-y-3 border-t border-border pt-4">
+                  <h4 className="text-sm font-semibold">Détail des lignes rejetées</h4>
+                  {loadingRejects ? (
+                    <p className="text-xs text-foreground-muted">Chargement des rejets…</p>
+                  ) : (
+                    <div className="overflow-x-auto border border-border">
+                      <table className="w-full text-left text-xs">
+                        <thead className="bg-surface-muted uppercase text-foreground-muted">
+                          <tr>
+                            <th className="p-2.5">Ligne</th>
+                            <th className="p-2.5">Code</th>
+                            <th className="p-2.5">Raison</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-border">
+                          {rejects.map((rej, idx) => (
+                            <tr key={idx}>
+                              <td className="p-2.5 tabular-nums">{rej.record_index}</td>
+                              <td className="p-2.5 font-semibold text-danger">{rej.reason_code}</td>
+                              <td className="p-2.5">{rej.reason_detail}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          ) : (
+            imports.length > 0 && (
+              <div className="flex h-40 items-center justify-center border border-dashed border-border-strong p-6 text-center text-sm text-foreground-muted">
+                Sélectionnez un lot pour afficher le détail du bilan.
+              </div>
+            )
+          )}
         </div>
       )}
-    </div>
+    </section>
   );
 };

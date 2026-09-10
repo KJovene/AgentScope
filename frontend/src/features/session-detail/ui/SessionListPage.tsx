@@ -46,7 +46,7 @@ export function SessionListPage() {
   const total = sessions.data?.total ?? 0;
 
   return (
-    <>
+    <div className="stagger space-y-6">
       <PageHeader title="Sessions" description="Liste des sessions correspondant aux filtres actifs." />
 
       <FilterBar />
@@ -60,7 +60,7 @@ export function SessionListPage() {
       />
 
       {sessions.isLoading ? (
-        <div className="p-8 text-center text-sm text-slate-500">Chargement des sessions...</div>
+        <div className="p-8 text-center text-sm text-foreground-muted">Chargement des sessions...</div>
       ) : items.length === 0 ? (
         <EmptyState
           title="Aucune session"
@@ -68,9 +68,9 @@ export function SessionListPage() {
         />
       ) : (
         <>
-          <div className="overflow-x-auto rounded-card border border-border">
+          <div className="overflow-x-auto border border-border bg-surface shadow-elev">
             <table className="w-full text-sm">
-              <thead className="bg-surface-muted text-left text-xs uppercase text-foreground-muted">
+              <thead className="bg-surface-muted text-left text-xs uppercase tracking-wider text-foreground-muted">
                 <tr>
                   <th className="px-3 py-2">Source</th>
                   <th className="px-3 py-2">Agent</th>
@@ -141,6 +141,6 @@ export function SessionListPage() {
           </div>
         </>
       )}
-    </>
+    </div>
   );
 }

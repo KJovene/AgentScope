@@ -24,15 +24,16 @@ export function SourceFilter({
       ) : !sources || sources.length === 0 ? (
         <span className="text-xs text-foreground-muted">Aucune source enregistrée.</span>
       ) : (
-        <div className="flex flex-wrap gap-x-3 gap-y-1">
+        <div className="flex min-w-0 flex-wrap gap-x-3 gap-y-1">
           {sources.map((source) => (
             <label key={source.id} className="flex items-center gap-1.5 text-sm">
               <input
                 type="checkbox"
+                className="accent-primary"
                 checked={values.includes(source.name)}
                 onChange={() => toggle(source.name)}
               />
-              {source.name}
+              <span className="truncate">{source.name}</span>
             </label>
           ))}
         </div>

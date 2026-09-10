@@ -18,25 +18,24 @@ export function DateRangeFilter({
   onChange: (next: { from?: string; to?: string }) => void;
 }) {
   return (
-    <div className="flex flex-col gap-1">
+    <div className="flex min-w-0 flex-col gap-1">
       <span className="text-xs font-medium uppercase tracking-wide text-foreground-muted">
         Période
       </span>
-      <div className="flex items-center gap-2">
+      <div className="flex min-w-0 flex-col gap-2">
         <input
           type="date"
           aria-label="Date de début"
           value={toDateInputValue(from)}
           onChange={(e) => onChange({ from: fromDateInputValue(e.target.value, false), to })}
-          className="rounded-md border border-border bg-surface px-2 py-1 text-sm"
+          className="cyber-field"
         />
-        <span className="text-xs text-foreground-muted">à</span>
         <input
           type="date"
           aria-label="Date de fin"
           value={toDateInputValue(to)}
           onChange={(e) => onChange({ from, to: fromDateInputValue(e.target.value, true) })}
-          className="rounded-md border border-border bg-surface px-2 py-1 text-sm"
+          className="cyber-field"
         />
       </div>
     </div>

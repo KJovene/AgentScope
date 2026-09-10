@@ -9,6 +9,13 @@ interface ImportScreenProps {
   onImportCompleted?: (report: ImportReport) => void;
 }
 
+const METRIC_TONES = {
+  imported: "text-neon-green",
+  duplicate: "text-warning",
+  rejected: "text-danger",
+  missing: "text-foreground",
+} as const;
+
 export const ImportScreen: React.FC<ImportScreenProps> = ({ onImportCompleted }) => {
   const [mappingId, setMappingId] = useState<string>("tracelab-jsonl");
   const [files, setFiles] = useState<File[]>([]);
@@ -65,135 +72,143 @@ export const ImportScreen: React.FC<ImportScreenProps> = ({ onImportCompleted })
   };
 
   return (
-    <div className="mx-auto max-w-4xl space-y-6">
-    <div>
-    <h1 className="text-2xl font-bold tracking-tight">Importer des traces</h1>
-    <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-    Téléversez vos fichiers JSONL, CSV ou Parquet et appliquez une configuration de mapping.
-    </p>
-    </div>
-
-    <ApiErrorBanner error={error} onDismiss={() => setError(null)} />
-
-    <form onSubmit={handleSubmit} className="space-y-6 rounded-lg border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-950">
-    {/* Choix du mapping */}
-    <div>
-    <label htmlFor="mapping-id" className="block text-sm font-medium">
-    Identifiant du mapping <span className="text-red-500">*</span>
-    </label>
-    <input
-    id="mapping-id"
-    type="text"
-    value={mappingId}
-    onChange={(e) => setMappingId(e.target.value)}
-    placeholder="ex. tracelab-jsonl"
-    required
-    className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none dark:border-slate-700 dark:bg-slate-900"
-    />
-    </div>
-
-    {/* Dépôt de fichiers */}
-    <div>
-    <label htmlFor="file-upload" className="block text-sm font-medium">
-    Fichiers sources <span className="text-red-500">*</span>
-    </label>
-    <div className="mt-1 flex justify-center rounded-md border-2 border-dashed border-slate-300 px-6 py-8 dark:border-slate-700">
-    <div className="space-y-2 text-center">
-    <input
-    id="file-upload"
-    type="file"
-    multiple
-    accept=".jsonl,.csv,.parquet,.json"
-    onChange={handleFileChange}
-    className="hidden"
-    />
-    <span className="inline-block cursor-pointer rounded-md bg-indigo-50 px-4 py-2 text-sm font-semibold text-indigo-600 hover:bg-indigo-100 dark:bg-indigo-950 dark:text-indigo-300">
-    Parcourir les fichiers
-    </span>
-    <p className="text-xs text-slate-500">Formats supportés : JSONL, CSV, Parquet</p>
-    </div>
-    </div>
-    </div>
-
-    {/* Aperçu des fichiers */}
-    {files.length > 0 && (
-      <div className="space-y-2">
-      <h3 className="text-sm font-medium">Fichiers sélectionnés ({files.length}) :</h3>
-      <ul className="divide-y divide-slate-200 rounded-md border border-slate-200 dark:divide-slate-800 dark:border-slate-800">
-      {files.map((file, idx) => (
-        <li key={`${file.name}-${idx}`} className="flex items-center justify-between p-3 text-sm">
-        <div className="flex items-center space-x-2 truncate">
-        <span className="font-mono text-xs text-slate-500">{file.name}</span>
-        <span className="text-xs text-slate-400">({formatFileSize(file.size)})</span>
-        </div>
-        <button
-        type="button"
-        onClick={() => removeFile(idx)}
-        className="text-xs text-red-600 hover:underline dark:text-red-400"
-        >
-        Supprimer
-        </button>
-        </li>
-      ))}
-      </ul>
+    <section className="space-y-5">
+      <div>
+        <h2 className="cyber-title text-neon-cyan">Importer des traces</h2>
+        <p className="mt-1 text-sm text-foreground-muted">
+          Téléversez vos fichiers JSONL, CSV ou Parquet et appliquez une configuration de mapping.
+        </p>
       </div>
-    )}
 
-    <button
-    type="submit"
-    disabled={loading || files.length === 0 || !mappingId.trim()}
-    className="w-full rounded-md bg-indigo-600 py-2,5 text-sm font-semibold text-white shadow hover:bg-indigo-500 disabled:cursor-not-allowed disabled:opacity-50"
-    >
-    {loading ? "Importation en cours…" : "Lancer l'import"}
-    </button>
-    </form>
+      <ApiErrorBanner error={error} onDismiss={() => setError(null)} />
 
-    {/* Bilan d'import */}
-    {report && (
-      <div className="rounded-lg border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-950">
-      <div className="flex items-center justify-between border-b border-slate-200 pb-3 dark:border-slate-800">
-      <h2 className="text-lg font-bold">Bilan de l'importation</h2>
-      <span
-      className={`rounded px-2,5 py-1 text-xs font-semibold ${
-        report.status === "completed"
-        ? "bg-green-100 text-green-800 dark:bg-green-950 dark:text-green-300"
-        : "bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300"
-        }`}
+      <form onSubmit={handleSubmit} className="cyber-card space-y-6">
+        {/* Choix du mapping */}
+        <div>
+          <label htmlFor="mapping-id" className="block text-sm font-medium">
+            Identifiant du mapping <span className="text-danger">*</span>
+          </label>
+          <input
+            id="mapping-id"
+            type="text"
+            value={mappingId}
+            onChange={(e) => setMappingId(e.target.value)}
+            placeholder="ex. tracelab-jsonl"
+            required
+            className="cyber-field mt-1"
+          />
+        </div>
+
+        {/* Dépôt de fichiers */}
+        <div>
+          <label htmlFor="file-upload" className="block text-sm font-medium">
+            Fichiers sources <span className="text-danger">*</span>
+          </label>
+          <div className="mt-1 flex justify-center border-2 border-dashed border-border-strong bg-surface-muted/50 px-6 py-8 transition hover:border-neon-cyan">
+            <div className="space-y-2 text-center">
+              <input
+                id="file-upload"
+                type="file"
+                multiple
+                accept=".jsonl,.csv,.parquet,.json"
+                onChange={handleFileChange}
+                className="hidden"
+              />
+              <span className="inline-block cursor-pointer border border-neon-cyan bg-neon-cyan/10 px-4 py-2 text-sm font-semibold uppercase tracking-wider text-neon-cyan transition hover:bg-neon-cyan/20">
+                Parcourir les fichiers
+              </span>
+              <p className="text-xs text-foreground-muted">Formats supportés : JSONL, CSV, Parquet</p>
+            </div>
+          </div>
+        </div>
+
+        {/* Aperçu des fichiers */}
+        {files.length > 0 && (
+          <div className="space-y-2">
+            <h3 className="text-sm font-medium">Fichiers sélectionnés ({files.length}) :</h3>
+            <ul className="divide-y divide-border border border-border">
+              {files.map((file, idx) => (
+                <li
+                  key={`${file.name}-${idx}`}
+                  className="flex items-center justify-between gap-2 p-3 text-sm"
+                >
+                  <div className="flex min-w-0 items-center gap-2">
+                    <span className="truncate text-xs text-foreground">{file.name}</span>
+                    <span className="shrink-0 text-xs text-foreground-muted">
+                      ({formatFileSize(file.size)})
+                    </span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => removeFile(idx)}
+                    className="shrink-0 text-xs uppercase tracking-wider text-danger hover:underline"
+                  >
+                    Supprimer
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+
+        <button
+          type="submit"
+          disabled={loading || files.length === 0 || !mappingId.trim()}
+          className="w-full border border-neon-cyan bg-neon-cyan/15 py-2.5 text-sm font-semibold uppercase tracking-wider text-neon-cyan transition hover:bg-neon-cyan/25 hover:shadow-neon-cyan disabled:cursor-not-allowed disabled:opacity-40"
         >
-        {report.status}
-        </span>
-        </div>
+          {loading ? "Importation en cours…" : "Lancer l'import"}
+        </button>
+      </form>
 
-        <div className="mt-4 grid grid-cols-2 gap-4 sm:grid-cols-4">
-        <div className="rounded-md bg-slate-50 p-3 text-center dark:bg-slate-900">
-        <p className="text-xs text-slate-500">Importés</p>
-        <p className="mt-1 text-xl font-bold text-slate-900 dark:text-slate-100">
-        {report.imported_count}
-        </p>
-        </div>
-        <div className="rounded-md bg-slate-50 p-3 text-center dark:bg-slate-900">
-        <p className="text-xs text-slate-500">Doublons</p>
-        <p className="mt-1 text-xl font-bold text-slate-900 dark:text-slate-100">
-        {report.duplicate_count}
-        </p>
-        </div>
-        <div className="rounded-md bg-slate-50 p-3 text-center dark:bg-slate-900">
-        <p className="text-xs text-slate-500">Rejets</p>
-        <p className="mt-1 text-xl font-bold text-slate-900 dark:text-slate-100">
-        {report.rejected_count}
-        </p>
-        </div>
-        <div className="rounded-md bg-slate-50 p-3 text-center dark:bg-slate-900">
-        <p className="text-xs text-slate-500">Infos manquantes</p>
-        <p className="mt-1 text-xl font-bold text-slate-900 dark:text-slate-100">
-        {typeof report.missing_info_count === "number"
-          ? report.missing_info_count
-          : JSON.stringify(report.missing_info_count)}
-        </p>
-        </div>
-        </div>
+      {/* Bilan d'import */}
+      {report && (
+        <div className="cyber-card animate-fade-in space-y-4">
+          <div className="flex items-center justify-between gap-3 border-b border-border pb-3">
+            <h2 className="cyber-title">Bilan de l'importation</h2>
+            <span
+              className={`border px-2.5 py-1 text-xs font-semibold uppercase tracking-wider ${
+                report.status === "completed"
+                  ? "border-neon-green/60 text-neon-green"
+                  : "border-warning/60 text-warning"
+              }`}
+            >
+              {report.status}
+            </span>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+            <ReportStat label="Importés" value={report.imported_count} tone={METRIC_TONES.imported} />
+            <ReportStat label="Doublons" value={report.duplicate_count} tone={METRIC_TONES.duplicate} />
+            <ReportStat label="Rejets" value={report.rejected_count} tone={METRIC_TONES.rejected} />
+            <ReportStat
+              label="Infos manquantes"
+              value={
+                typeof report.missing_info_count === "number"
+                  ? report.missing_info_count
+                  : JSON.stringify(report.missing_info_count)
+              }
+              tone={METRIC_TONES.missing}
+            />
+          </div>
         </div>
       )}
-      </div>
-    );
-  };
+    </section>
+  );
+};
+
+function ReportStat({
+  label,
+  value,
+  tone,
+}: {
+  label: string;
+  value: React.ReactNode;
+  tone: string;
+}) {
+  return (
+    <div className="cyber-inset p-3 text-center">
+      <p className="text-xs text-foreground-muted">{label}</p>
+      <p className={`mt-1 text-xl font-bold tabular-nums ${tone}`}>{value}</p>
+    </div>
+  );
+}

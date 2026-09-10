@@ -31,22 +31,22 @@ export function TagMultiSelect({
   }
 
   return (
-    <div className="flex flex-col gap-1">
+    <div className="flex min-w-0 flex-col gap-1">
       <span className="text-xs font-medium uppercase tracking-wide text-foreground-muted">
         {label}
       </span>
-      <div className="flex flex-wrap items-center gap-1">
+      <div className="flex min-w-0 flex-wrap items-center gap-1">
         {values.map((value) => (
           <span
             key={value}
-            className="inline-flex items-center gap-1 rounded-full bg-surface-muted px-2 py-0.5 text-xs"
+            className="inline-flex max-w-full items-center gap-1 border border-neon-cyan/50 bg-neon-cyan/10 px-2 py-0.5 text-xs text-foreground"
           >
-            {value}
+            <span className="truncate">{value}</span>
             <button
               type="button"
               aria-label={`Retirer ${value}`}
               onClick={() => remove(value)}
-              className="text-foreground-muted hover:text-foreground"
+              className="shrink-0 text-foreground-muted hover:text-neon-magenta"
             >
               ×
             </button>
@@ -65,10 +65,7 @@ export function TagMultiSelect({
           onBlur={commit}
           placeholder={placeholder}
           aria-label={label}
-          className={cn(
-            'min-w-32 flex-1 rounded-md border border-border bg-surface px-2 py-1 text-sm',
-            'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary',
-          )}
+          className={cn('cyber-field w-full min-w-0 flex-1 basis-24')}
         />
       </div>
     </div>

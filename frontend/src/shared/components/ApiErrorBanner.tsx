@@ -12,11 +12,11 @@ export const ApiErrorBanner: React.FC<ApiErrorBannerProps> = ({ error, onDismiss
   return (
     <div
       role="alert"
-      className="mb-4 rounded-md border border-red-300 bg-red-50 p-4 text-red-800 shadow-sm dark:border-red-800 dark:bg-red-950 dark:text-red-200"
+      className="mb-4 border border-danger/60 bg-danger/10 p-4 text-foreground"
     >
       <div className="flex items-start justify-between">
         <div>
-          <h3 className="font-semibold">{error.title}</h3>
+          <h3 className="font-semibold uppercase tracking-wider text-danger">{error.title}</h3>
           {error.detail && <p className="mt-1 text-sm">{error.detail}</p>}
           {error.errors && error.errors.length > 0 && (
             <ul className="mt-2 list-disc pl-5 text-xs">
@@ -31,7 +31,7 @@ export const ApiErrorBanner: React.FC<ApiErrorBannerProps> = ({ error, onDismiss
         {onDismiss && (
           <button
             onClick={onDismiss}
-            className="ml-4 text-sm font-bold text-red-600 hover:text-red-800 dark:text-red-400"
+            className="ml-4 text-sm font-bold text-foreground-muted hover:text-danger"
             aria-label="Fermer"
           >
             ✕

@@ -29,8 +29,8 @@ export function FilterBar() {
 
   return (
     <Card className="flex flex-col gap-4">
-      <div className="flex items-center justify-between">
-        <h2 className="text-sm font-semibold">Filtres{count > 0 ? ` (${count})` : ''}</h2>
+      <div className="flex items-center justify-between gap-3">
+        <h2 className="cyber-title text-neon-cyan">Filtres{count > 0 ? ` (${count})` : ''}</h2>
         <Button
           type="button"
           variant="ghost"
@@ -41,15 +41,23 @@ export function FilterBar() {
           Réinitialiser
         </Button>
       </div>
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <SourceFilter values={filters.sources} onChange={(sources) => setFilters({ sources })} />
-        <AgentFilter values={filters.agents} onChange={(agents) => setFilters({ agents })} />
-        <ModelFilter values={filters.models} onChange={(models) => setFilters({ models })} />
-        <DateRangeFilter
-          from={filters.from}
-          to={filters.to}
-          onChange={(range) => setFilters(range)}
-        />
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <div className="min-w-0">
+          <SourceFilter values={filters.sources} onChange={(sources) => setFilters({ sources })} />
+        </div>
+        <div className="min-w-0">
+          <AgentFilter values={filters.agents} onChange={(agents) => setFilters({ agents })} />
+        </div>
+        <div className="min-w-0">
+          <ModelFilter values={filters.models} onChange={(models) => setFilters({ models })} />
+        </div>
+        <div className="min-w-0">
+          <DateRangeFilter
+            from={filters.from}
+            to={filters.to}
+            onChange={(range) => setFilters(range)}
+          />
+        </div>
       </div>
     </Card>
   );
