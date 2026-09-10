@@ -101,6 +101,28 @@ body {
   letter-spacing: 0.01em;
 }
 
+/* ── Cyberpunk cursors ─────────────────────────────────────────────────────
+ * Neon angular pointer + a violet targeting reticle over interactive elements.
+ * Reverts to the system cursors under "Mode contraste pur" ([data-fx="off"]).
+ * Text fields keep the I-beam; disabled controls keep not-allowed. */
+:root:not([data-fx='off']) {
+  cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpath d='M3 2 3 18 7.5 14 10.5 21 13.5 19.6 10.5 13 16.5 13Z' fill='%2334e0ff' stroke='%230a0e17' stroke-width='1.6' stroke-linejoin='round'/%3E%3C/svg%3E") 3 2, auto;
+}
+:root:not([data-fx='off'])
+  :is(a[href], button, [role='button'], summary, label, select, [type='checkbox'], [type='radio'], .cursor-pointer):not(
+    :disabled
+  ):not([aria-disabled='true']) {
+  cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='28' height='28' viewBox='0 0 28 28'%3E%3Cg fill='none' stroke='%23b98cff' stroke-width='2'%3E%3Cpath d='M4 9V4h5M19 4h5v5M24 19v5h-5M9 24H4v-5'/%3E%3C/g%3E%3Ccircle cx='14' cy='14' r='2.2' fill='%23b98cff'/%3E%3C/svg%3E") 14 14, pointer;
+}
+:root:not([data-fx='off'])
+  :is(input:not([type='checkbox']):not([type='radio']):not([type='button']):not([type='submit']), textarea, [contenteditable='true']) {
+  cursor: text;
+}
+:root:not([data-fx='off']) :is(button, a, input, select, textarea):disabled,
+:root:not([data-fx='off']) [aria-disabled='true'] {
+  cursor: not-allowed;
+}
+
 /* Ambient backdrop — blueprint grid + a blue/violet glow that drifts slowly */
 body::before {
   content: '';
@@ -122,9 +144,39 @@ body::before {
   animation: grid-drift 60s linear infinite;
 }
 
+/* Always-moving aurora — soft blue/violet blobs drifting behind every page.
+ * Alphas are fixed (not scaled by --glow) so it stays visible in light mode;
+ * "Mode contraste pur" hides it via display:none below. */
+body::after {
+  content: '';
+  position: fixed;
+  inset: -30%;
+  z-index: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(38% 46% at 18% 26%, hsl(var(--accent-1) / 0.22), transparent 60%),
+    radial-gradient(34% 42% at 84% 16%, hsl(var(--accent-2) / 0.22), transparent 60%),
+    radial-gradient(48% 46% at 64% 90%, hsl(var(--accent-2) / 0.18), transparent 60%),
+    radial-gradient(32% 36% at 40% 58%, hsl(var(--accent-1) / 0.16), transparent 60%);
+  filter: blur(34px);
+  animation: aurora 34s ease-in-out infinite alternate;
+}
+
 #root {
   position: relative;
   z-index: 1;
+}
+
+@keyframes aurora {
+  0% {
+    transform: translate3d(-3%, -2%, 0) scale(1.05) rotate(0deg);
+  }
+  50% {
+    transform: translate3d(3%, 2%, 0) scale(1.16) rotate(4deg);
+  }
+  100% {
+    transform: translate3d(-2%, 3%, 0) scale(1.08) rotate(-3deg);
+  }
 }
 
 /* Recharts inherits the monospace stack on axes / tooltips / legends */
@@ -435,6 +487,59 @@ body::before {
   }
 }
 
+/* ── Assistant mascot : bar-eyes on the FloatingChat button ─────────────────── */
+.robot-eyes {
+  color: currentColor;
+  filter: drop-shadow(0 0 4px hsl(var(--accent-1) / calc(0.7 * var(--glow, 1))));
+}
+.robot-eye {
+  animation: robot-blink 5.2s ease-in-out infinite;
+}
+.robot-eye:nth-child(2) {
+  animation-delay: 0.06s;
+}
+@keyframes robot-blink {
+  0%,
+  92%,
+  100% {
+    transform: scaleY(1);
+  }
+  95% {
+    transform: scaleY(0.12);
+  }
+}
+
+/* ── Jarvis HUD behind the assistant conversation ──────────────────────────── */
+.chat-hud-spin-slow {
+  animation: hud-spin 46s linear infinite reverse;
+}
+.chat-hud-spin-mid {
+  animation: hud-spin 18s linear infinite;
+}
+.chat-hud-spin-rev {
+  animation: hud-spin 30s linear infinite;
+}
+.chat-hud-core {
+  animation: hud-core 3.4s ease-in-out infinite;
+  transform-origin: 100px 100px;
+}
+@keyframes hud-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+@keyframes hud-core {
+  0%,
+  100% {
+    opacity: 0.4;
+    transform: scale(0.9);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.25);
+  }
+}
+
 /*
  * ─────────────────────────────────────────────────────────────────────────────
  * ACCESSIBILITY MODES (driven by <html data-*> from the AccessibilityPanel)
@@ -466,7 +571,8 @@ body::before {
 }
 [data-fx='off'] .cyber-scanline::after,
 [data-fx='off'] .skeleton::after,
-[data-fx='off'] body::before {
+[data-fx='off'] body::before,
+[data-fx='off'] body::after {
   display: none !important;
 }
 [data-fx='off'] .chart-glow,

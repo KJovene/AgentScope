@@ -38,7 +38,7 @@ function RootLayout() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
 
   return (
-    <div className="flex min-h-screen bg-surface-muted text-foreground">
+    <div className="flex min-h-screen text-foreground">
       {/* Menu principal — barre verticale latérale */}
       <nav
         aria-label="Navigation principale"

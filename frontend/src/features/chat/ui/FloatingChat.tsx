@@ -3,6 +3,7 @@ import { useEffect, useId, useState } from 'react';
 import { cn } from '@shared/lib/cn';
 
 import { ChatScreen } from './ChatScreen';
+import { RobotEyes } from './RobotEyes';
 
 /**
  * The Assistant Chat as a fixed floating widget, bottom-right. Collapsed it is a
@@ -53,7 +54,7 @@ export function FloatingChat({ sessionId = 'session-assistant' }: { sessionId?: 
             : 'border-neon-cyan text-neon-cyan neon-cyan animate-pulse-neon hover:animate-none',
         )}
       >
-        <span aria-hidden="true">{open ? '×' : '▮▮'}</span>
+        {open ? <span aria-hidden="true">×</span> : <RobotEyes className="h-9 w-9" />}
       </button>
     </div>
   );

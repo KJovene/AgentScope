@@ -4,6 +4,8 @@ import { ApiError } from "@shared/api/types";
 import type { ProblemDetails } from "@shared/api/types";
 import { ApiErrorBanner } from "@shared/components/ApiErrorBanner";
 import type { ChatMessage } from "../types";
+import { ChatBackdrop } from "./ChatBackdrop";
+import { RobotAvatar } from "./RobotAvatar";
 
 export const ChatScreen: React.FC<{ sessionId?: string }> = ({
   sessionId = "session-default"
@@ -97,22 +99,31 @@ export const ChatScreen: React.FC<{ sessionId?: string }> = ({
   };
 
   return (
-    <div className="flex h-full min-h-0 w-full flex-col border border-border bg-surface">
-      <div className="flex items-center justify-between border-b border-border bg-surface-raised px-4 py-3">
-        <div>
-          <h2 className="cyber-heading text-sm text-neon-cyan neon-text-cyan">
-            Assistant AgentScope
-          </h2>
-          <p className="text-[11px] text-foreground-muted">Session : {sessionId}</p>
+    <div className="relative flex h-full min-h-0 w-full flex-col border border-border bg-surface">
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-0 z-0 overflow-hidden"
+      >
+        <ChatBackdrop className="absolute left-1/2 top-1/2 h-[125%] w-[125%] -translate-x-1/2 -translate-y-1/2 opacity-[0.16]" />
+      </div>
+      <div className="relative z-10 flex items-center justify-between gap-3 border-b border-border bg-surface-raised px-4 py-3">
+        <div className="flex min-w-0 items-center gap-3">
+          <RobotAvatar className="h-9 w-9" />
+          <div className="min-w-0">
+            <h2 className="cyber-heading text-sm text-neon-cyan neon-text-cyan">
+              Assistant AgentScope
+            </h2>
+            <p className="truncate text-[11px] text-foreground-muted">Session : {sessionId}</p>
+          </div>
         </div>
-        <span className="border border-neon-green/60 px-2 py-0.5 text-[10px] uppercase tracking-widest text-neon-green">
+        <span className="shrink-0 border border-neon-green/60 px-2 py-0.5 text-[10px] uppercase tracking-widest text-neon-green">
           online
         </span>
       </div>
 
       <ApiErrorBanner error={error} onDismiss={() => setError(null)} />
 
-      <div className="flex-1 space-y-5 overflow-y-auto p-4">
+      <div className="relative z-10 flex-1 space-y-5 overflow-y-auto p-4">
         {messages.map((msg) => (
           <div
             key={msg.id}
@@ -158,7 +169,7 @@ export const ChatScreen: React.FC<{ sessionId?: string }> = ({
         <div ref={messagesEndRef} />
       </div>
 
-      <div className="border-t border-border p-3">
+      <div className="relative z-10 border-t border-border bg-surface/80 p-3 backdrop-blur-sm">
         <form onSubmit={handleSendMessage} className="flex gap-2">
           <input
             type="text"
