@@ -14,6 +14,21 @@ export interface ValidationError {
   message: string;
 }
 
+export interface PreviewRow {
+  rowIndex: number;
+  sourceData: Record<string, string>;
+  transformedData: Record<string, string>;
+  isValid: boolean;
+  rejectReason?: string;
+}
+
+export interface DryRunResult {
+  totalRows: number;
+  validRowsCount: number;
+  rejectedRowsCount: number;
+  rows: PreviewRow[];
+}
+
 export const validateMappings = (rows: MappingRow[], requiredTargetFields: string[] = []): ValidationError[] => {
   const errors: ValidationError[] = [];
   const targetCounts = new Map<string, number>();
