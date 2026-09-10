@@ -51,6 +51,7 @@ Object.defineProperty(globalThis, 'ResizeObserver', {
 // jsdom doesn't implement scrollTo; TanStack Router's scroll restoration calls it on navigation.
 window.scrollTo = () => {};
 
+
 /**
  * jsdom installs its own `AbortController`/`AbortSignal`, but `fetch` here is
  * Node's (undici), which rejects any signal that is not an instance of ITS
@@ -80,11 +81,7 @@ function patchFetchSignal() {
 // jsdom doesn't implement scrollIntoView either; chat-style views call it to follow new messages.
 window.HTMLElement.prototype.scrollIntoView = () => {};
 
-// jsdom doesn't implement scrollIntoView either; chat-style views call it to follow new messages.
-window.HTMLElement.prototype.scrollIntoView = () => {};
 
-// jsdom doesn't implement scrollIntoView either; chat-style views call it to follow new messages.
-window.HTMLElement.prototype.scrollIntoView = () => {};
 
 // The machine running CI-less coverage can be slow; give async utils room.
 configure({ asyncUtilTimeout: 3000 });
