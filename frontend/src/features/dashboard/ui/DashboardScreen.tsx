@@ -6,17 +6,13 @@ import { ApiError } from "@shared/api/api-error";
 import type { ProblemDetails } from "@shared/api/types";
 import {
   BreakdownBarChart,
-  BreakdownBarChart,
   Button,
-  CHART_COLORS,
-  CHART_SERIES_COLORS,
   CHART_COLORS,
   CHART_SERIES_COLORS,
   ChartFrame,
   ChartSkeleton,
   CyberScope,
   DistributionChart,
-  ProportionBar,
   ProportionBar,
   Skeleton,
   TimeSeriesChart,
@@ -77,8 +73,6 @@ const ACTIVITY_METRICS: { value: TimeseriesMetric; label: string }[] = [
 
 const SESSION_PAGE_SIZE = 200;
 
-const SESSION_PAGE_SIZE = 200;
-
 function toProblemDetails(error: unknown, fallbackDetail: string): ProblemDetails {
   if (error instanceof ApiError && error.problem) {
     return {
@@ -132,25 +126,7 @@ export const DashboardScreen: React.FC = () => {
   const hasComparisonData = (previous?.session_count ?? 0) > 0;
 
   const totalCalls = (current?.model_call_count ?? 0) + (current?.tool_call_count ?? 0);
-  // Period comparison (lot 3): an explicit date filter wins, otherwise the window
-  // is inferred from the span the activity series covers.
-  const currentPeriod = resolveCurrentPeriod(filters, points);
-  const comparisonPeriod = currentPeriod ? previousPeriod(currentPeriod) : null;
-  const previousIndicators = usePreviousIndicatorsQuery(filters, comparisonPeriod);
 
-  const current = indicators.data;
-  const previous = previousIndicators.data;
-  const delta = (pick: (d: NonNullable<typeof current>) => number | null | undefined) =>
-    current && previous ? relativeDelta(pick(current), pick(previous)) : null;
-  // An empty preceding window is a valid answer, not a baseline — say so rather
-  // than claiming variations that no card can show.
-  const hasComparisonData = (previous?.session_count ?? 0) > 0;
-
-  const totalCalls = (current?.model_call_count ?? 0) + (current?.tool_call_count ?? 0);
-
-  const toolUsageItems = toolUsage.data ?? [];
-
-  const sessions = useSessionsQuery({ ...filters, limit: SESSION_PAGE_SIZE, offset: 0 });
   const toolUsageItems = toolUsage.data ?? [];
 
   const sessions = useSessionsQuery({ ...filters, limit: SESSION_PAGE_SIZE, offset: 0 });
@@ -159,13 +135,6 @@ export const DashboardScreen: React.FC = () => {
     .map((s) => s.duration_ms)
     .filter((d): d is number => d != null);
   const missingTimingCount = sessionItems.length - durations.length;
-
-  // Breakdowns and the top-cost table reuse the page fetched for the duration
-  // distribution — no extra request.
-  const sessionsByAgent = breakdownBy(sessionItems, "agent_name");
-  const costBySource = breakdownBy(sessionItems, "source_name", (s) => s.total_cost_usd);
-  const topSessions = topSessionsByCost(sessionItems);
-  const isPartialPage = sessions.data != null && sessions.data.total > sessionItems.length;
 
   // Breakdowns and the top-cost table reuse the page fetched for the duration
   // distribution — no extra request.
@@ -224,8 +193,6 @@ export const DashboardScreen: React.FC = () => {
 
       {indicators.isLoading ? (
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          {Array.from({ length: 8 }).map((_, i) => (
-            <Skeleton key={i} className="h-[132px]" />
           {Array.from({ length: 8 }).map((_, i) => (
             <Skeleton key={i} className="h-[132px]" />
           ))}
@@ -388,7 +355,6 @@ export const DashboardScreen: React.FC = () => {
             emptyDescription="Aucune session ne correspond aux filtres actifs."
             actions={
               <div className="flex flex-wrap justify-end gap-1">
-              <div className="flex flex-wrap justify-end gap-1">
                 {ACTIVITY_METRICS.map((m) => (
                   <Button
                     key={m.value}
@@ -411,7 +377,6 @@ export const DashboardScreen: React.FC = () => {
                 data={points}
                 valueLabel={activeMetricLabel}
                 color={activityMetric === "errors" ? CHART_COLORS.danger : CHART_COLORS.primary}
-                color={activityMetric === "errors" ? CHART_COLORS.danger : CHART_COLORS.primary}
                 onPointClick={handleActivityPointClick}
               />
             )}
@@ -421,10 +386,8 @@ export const DashboardScreen: React.FC = () => {
         <ChartFrame
           title="Répartition des outils"
           isEmpty={!toolUsage.isLoading && toolUsageItems.length === 0}
-          isEmpty={!toolUsage.isLoading && toolUsageItems.length === 0}
           emptyDescription="Aucun appel d'outil ne correspond aux filtres actifs."
         >
-          <ToolUsagePanel items={toolUsageItems} isLoading={toolUsage.isLoading} />
           <ToolUsagePanel items={toolUsageItems} isLoading={toolUsage.isLoading} />
         </ChartFrame>
 
@@ -445,58 +408,6 @@ export const DashboardScreen: React.FC = () => {
               <DistributionChart values={durations} />
             </>
           )}
-        </ChartFrame>
-
-        <ChartFrame
-          title="Sessions par agent"
-          isEmpty={!sessions.isLoading && sessionsByAgent.length === 0}
-          emptyDescription="Aucune session ne correspond aux filtres actifs."
-        >
-          {sessions.isLoading ? (
-            <ChartSkeleton />
-          ) : (
-            <>
-              <BreakdownBarChart
-                data={sessionsByAgent}
-                valueLabel="Sessions"
-                valueFormatter={formatNumber}
-              />
-              {isPartialPage && (
-                <p className="mt-2 text-[11px] text-foreground-muted">
-                  Calculé sur les {SESSION_PAGE_SIZE} sessions les plus récentes du périmètre.
-                </p>
-              )}
-            </>
-          )}
-        </ChartFrame>
-
-        <ChartFrame
-          title="Coût par source"
-          isEmpty={!sessions.isLoading && costBySource.length === 0}
-          emptyDescription="Aucun coût n'est disponible pour les filtres actifs."
-        >
-          {sessions.isLoading ? (
-            <ChartSkeleton />
-          ) : (
-            <BreakdownBarChart
-              data={costBySource}
-              valueLabel="Coût"
-              valueFormatter={formatUsd}
-              color={CHART_SERIES_COLORS[1]}
-            />
-          )}
-        </ChartFrame>
-
-        <ChartFrame
-          title="Sessions les plus coûteuses"
-          isEmpty={!sessions.isLoading && topSessions.length === 0}
-          emptyDescription="Aucune session avec un coût connu ne correspond aux filtres actifs."
-        >
-          {sessions.isLoading ? <ChartSkeleton /> : <TopSessionsTable sessions={topSessions} />}
-        </ChartFrame>
-
-        <ChartFrame title="Qualité des données" isEmpty={false}>
-          <DataQualityPanel />
         </ChartFrame>
 
         <ChartFrame
