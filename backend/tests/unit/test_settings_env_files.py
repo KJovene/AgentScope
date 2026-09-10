@@ -14,6 +14,8 @@ import pytest
 
 from agentscope.infrastructure.config.settings import (
     _BACKEND_DIR,
+    _DOCKER_ENV_FILE,
+    _ENV_FILE_CANDIDATES,
     _ENV_FILES,
     _REPO_ROOT,
     Settings,
@@ -38,12 +40,25 @@ def test_repo_root_is_the_directory_holding_the_compose_file() -> None:
 
 
 def test_repo_root_env_is_a_candidate_before_the_more_specific_ones() -> None:
-    """pydantic-settings donne la priorité au dernier fichier : la racine passe
-    donc en premier, `backend/` puis le répertoire courant peuvent l'affiner."""
+    """pydantic-settings donne la priorité au dernier fichier : le montage
+    Docker et la racine passent en premier, `backend/` puis le répertoire
+    courant peuvent les affiner."""
     # Ruff (SIM300) veut la constante à gauche.
-    expected = (_REPO_ROOT / ".env", _BACKEND_DIR / ".env", Path(".env"))
-    assert expected[0] == _ENV_FILES[0]
-    assert expected == _ENV_FILES
+    expected = (
+        _DOCKER_ENV_FILE,
+        _REPO_ROOT / ".env",
+        _BACKEND_DIR / ".env",
+        Path(".env"),
+    )
+    assert expected[-1] == _ENV_FILE_CANDIDATES[-1]
+    assert expected == _ENV_FILE_CANDIDATES
+
+
+def test_only_real_files_are_handed_to_pydantic() -> None:
+    """`docker compose` crée un dossier à la place d'un montage de fichier
+    absent : un tel chemin doit être écarté, sinon la lecture plante."""
+    assert all(path.is_file() for path in _ENV_FILES)
+    assert set(_ENV_FILES) <= set(_ENV_FILE_CANDIDATES)
 
 
 def test_env_file_is_read_when_the_process_environment_says_nothing(

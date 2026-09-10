@@ -26,10 +26,11 @@ services:
       AGENTSCOPE_DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-agentscope}:${POSTGRES_PASSWORD:-agentscope}@db:5432/${POSTGRES_DB:-agentscope}
       AGENTSCOPE_CORS_ORIGINS: http://localhost:${FRONTEND_PORT:-5173}
       AGENTSCOPE_RAW_RECORD_RETENTION: ${AGENTSCOPE_RAW_RECORD_RETENTION:-full}
-      AGENTSCOPE_LLM_PROVIDER: ${AGENTSCOPE_LLM_PROVIDER:-fake}
-      AGENTSCOPE_LLM_MODEL: ${AGENTSCOPE_LLM_MODEL:-}
-      AGENTSCOPE_LLM_BASE_URL: ${AGENTSCOPE_LLM_BASE_URL:-}
-      AGENTSCOPE_LLM_API_KEY: ${AGENTSCOPE_LLM_API_KEY:-}
+      # Les `AGENTSCOPE_LLM_*` ne sont VOLONTAIREMENT pas injectées ici : elles
+      # arrivent par le `.env` monté ci-dessous. Une variable injectée l'emporte
+      # sur le fichier, donc un conteneur créé avant que le `.env` soit rempli
+      # gardait `fake` gravé jusqu'à sa recréation — même après correction du
+      # fichier. Le fichier reste la source unique, relu à chaque démarrage.
     ports:
       - "${BACKEND_PORT:-8000}:8000"
     volumes:
@@ -37,6 +38,10 @@ services:
       - ./backend:/app
       # Le validateur de mappings lit le schéma partagé depuis /docs.
       - ./docs:/docs:ro
+      # Configuration IA : `cp .env.example .env` avant le premier `up`.
+      # Monté hors de /app : Docker refuse un montage de fichier imbriqué dans
+      # un bind mount existant quand la cible n'existe pas côté hôte.
+      - ./.env:/config/.env:ro
     depends_on:
       db:
         condition: service_healthy
