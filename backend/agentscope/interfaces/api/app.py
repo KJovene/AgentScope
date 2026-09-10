@@ -21,6 +21,7 @@ from agentscope.interfaces.api.routes import (
     imports,
     mappings,
     metrics,
+    model_pricing,
     sessions,
     sources,
 )
@@ -36,6 +37,7 @@ _ROUTE_MODULES = (
     sessions,
     sources,
     data_quality,
+    model_pricing,
 )
 
 

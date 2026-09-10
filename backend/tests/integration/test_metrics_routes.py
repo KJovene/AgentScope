@@ -20,6 +20,7 @@ class DummyMetricsService:
             completion_tokens=500 if "no_tokens" not in f.sources else None,
             cached_tokens=None,
             total_cost_usd=None,
+            cost_is_estimated=False,
             error_rate=0.05,
             cache_hit_ratio=None,
             median_session_duration_ms=4500.0,

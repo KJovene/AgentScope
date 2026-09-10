@@ -69,6 +69,7 @@ def _map_indicators(obj: Any) -> dict[str, Any]:
         "completion_tokens": d.get("completion_tokens"),
         "cached_tokens": d.get("cached_tokens"),
         "total_cost_usd": d.get("total_cost_usd"),
+        "cost_is_estimated": bool(d.get("cost_is_estimated", False)),
         "error_rate": d.get("error_rate"),
         "cache_hit_ratio": d.get("cache_hit_ratio"),
         "median_session_duration_ms": d.get("median_session_duration_ms"),

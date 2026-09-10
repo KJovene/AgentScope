@@ -16,6 +16,8 @@ from agentscope.application.ports.data_quality import DataQualityQueryService
 from agentscope.application.ports.imports import ImportService
 from agentscope.application.ports.mapping_crud import MappingCrudService
 from agentscope.application.ports.metrics import MetricsQueryService
+from agentscope.application.ports.pricing_registry import PricingRegistryService
+from agentscope.application.ports.repository_registry import RepositoryRegistryService
 from agentscope.application.ports.sources import SourcesQueryService
 from agentscope.application.ports.workbench import MappingWorkbenchService
 from agentscope.infrastructure.config.settings import Settings
@@ -82,6 +84,18 @@ def get_workbench_service(container: ContainerDep) -> MappingWorkbenchService:
     return container.make_workbench_service()
 
 
+def get_repository_registry_service(
+    container: ContainerDep, session: DbSessionDep
+) -> RepositoryRegistryService:
+    return container.make_repository_registry_service(session)
+
+
+def get_pricing_registry_service(
+    container: ContainerDep, session: DbSessionDep
+) -> PricingRegistryService:
+    return container.make_pricing_registry_service(session)
+
+
 MetricsServiceDep = Annotated[MetricsQueryService, Depends(get_metrics_service)]
 SourcesServiceDep = Annotated[SourcesQueryService, Depends(get_sources_service)]
 DataQualityServiceDep = Annotated[
@@ -91,4 +105,10 @@ ImportServiceDep = Annotated[ImportService, Depends(get_import_service)]
 MappingServiceDep = Annotated[MappingCrudService, Depends(get_mapping_service)]
 WorkbenchServiceDep = Annotated[
     MappingWorkbenchService, Depends(get_workbench_service)
+]
+RepositoryRegistryServiceDep = Annotated[
+    RepositoryRegistryService, Depends(get_repository_registry_service)
+]
+PricingRegistryServiceDep = Annotated[
+    PricingRegistryService, Depends(get_pricing_registry_service)
 ]
