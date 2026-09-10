@@ -6,6 +6,7 @@ dans le conteneur de composition.
 """
 
 from agentscope.application.ports.metrics import (
+    FilterDimensions,
     Granularity,
     Indicators,
     MetricFilter,
@@ -54,6 +55,7 @@ __all__ = [
     "Page",
     "Paginated",
     "Indicators",
+    "FilterDimensions",
     "TimeseriesPoint",
     "TimeseriesMetric",
     "Granularity",

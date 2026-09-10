@@ -43,16 +43,36 @@ function renderDashboard() {
 }
 
 describe("DashboardScreen UI (I5.1 / I5.10)", () => {
-  it("affiche les 4 cartes d'indicateurs avec les valeurs réelles", async () => {
+  it("affiche les 8 cartes d'indicateurs avec les valeurs réelles", async () => {
     server.use(http.get("/api/metrics/indicators", () => HttpResponse.json(INDICATORS)));
 
     renderDashboard();
 
     await waitFor(() => {
       expect(screen.getByText("42")).toBeDefined();
-      expect(screen.getByText(/154[\s\u00a0,]?000/)).toBeDefined();
-      expect(screen.getByText("$1.25")).toBeDefined();
+      // Les tokens passent en notation compacte au-del\u00e0 de 10 000.
+      expect(screen.getByText(/154\s?k/)).toBeDefined();
+      expect(screen.getByText(/1[.,]25/)).toBeDefined();
       expect(screen.getByText("1.6 %")).toBeDefined();
+      // Champs déjà renvoyés par l'API, désormais exposés (lot 1). Ciblés par
+      // leur bouton de définition : le libellé seul est aussi un bouton de
+      // métrique du graphe d'activité.
+      expect(screen.getByLabelText("Définition de Appels modèles")).toBeDefined();
+      expect(screen.getByLabelText("Définition de Appels outils")).toBeDefined();
+      expect(screen.getByLabelText("Définition de Durée médiane")).toBeDefined();
+      expect(screen.getByLabelText("Définition de Taux de cache")).toBeDefined();
+    });
+  });
+
+  it("expose la part prompt/complétion des tokens", async () => {
+    server.use(http.get("/api/metrics/indicators", () => HttpResponse.json(INDICATORS)));
+
+    renderDashboard();
+
+    // 100 000 / 154 000 = 64,9 % de prompt, 35,1 % de complétion.
+    await waitFor(() => {
+      expect(screen.getByText("64.9 %")).toBeDefined();
+      expect(screen.getByText("35.1 %")).toBeDefined();
     });
   });
 
@@ -90,9 +110,10 @@ describe("DashboardScreen UI (I5.1 / I5.10)", () => {
     renderDashboard();
 
     await waitFor(() => {
-      // Le graphe d'activité, la répartition des outils ET la distribution
-      // des durées sont vides.
-      expect(screen.getAllByText("Aucune donnée disponible")).toHaveLength(3);
+      // Activité, répartition des outils, distribution des durées, sessions par
+      // agent, coût par source et sessions les plus coûteuses sont vides. Le
+      // panneau qualité porte son propre état vide ("Aucun bilan d'import").
+      expect(screen.getAllByText("Aucune donnée disponible")).toHaveLength(6);
     });
   });
 
