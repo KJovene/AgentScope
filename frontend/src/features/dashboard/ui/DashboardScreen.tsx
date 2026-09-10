@@ -176,7 +176,7 @@ export const DashboardScreen: React.FC = () => {
         </div>
       ) : (
         <>
-          <div className="stagger grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="stagger relative z-20 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
             <IndicatorCard
               definition={METRIC_DEFINITIONS.sessions!}
               value={current?.session_count ?? null}
