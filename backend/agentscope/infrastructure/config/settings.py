@@ -8,6 +8,7 @@ via l'injection de dépendances (I0.5 / I4.10).
 from __future__ import annotations
 
 from functools import lru_cache
+from pathlib import Path
 from typing import Annotated
 
 from pydantic import Field, field_validator
@@ -15,11 +16,22 @@ from pydantic_settings import BaseSettings, NoDecode, SettingsConfigDict
 
 from agentscope.domain import RetentionMode
 
+# ``backend/`` puis la racine du dépôt, déduits du fichier lui-même : hors Docker
+# le backend se lance depuis ``backend/``, et un ``.env`` relatif ne trouverait
+# jamais celui de la racine — celui que `docker compose` utilise.
+_BACKEND_DIR = Path(__file__).resolve().parents[3]
+_REPO_ROOT = _BACKEND_DIR.parent
+
+# Du moins au plus spécifique : pydantic-settings donne la priorité au dernier
+# fichier trouvé, et l'environnement réel l'emporte de toute façon sur tous
+# (c'est ce qui fait que la stack Docker reste pilotée par Compose).
+_ENV_FILES = (_REPO_ROOT / ".env", _BACKEND_DIR / ".env", Path(".env"))
+
 
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(
         env_prefix="AGENTSCOPE_",
-        env_file=".env",
+        env_file=_ENV_FILES,
         env_file_encoding="utf-8",
         extra="ignore",
     )
