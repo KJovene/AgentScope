@@ -30,7 +30,7 @@ describe('analyzeApi transport', () => {
   it('analyze() POSTs the file to /analyze and parses the result', async () => {
     let method: string | undefined;
     server.use(
-      mswHttp.post('/api/v1/analyze', ({ request }) => {
+      mswHttp.post('/api/analyze', ({ request }) => {
         method = request.method;
         return HttpResponse.json(analyzeResponse);
       }),
@@ -46,7 +46,7 @@ describe('analyzeApi transport', () => {
 
   it('analyze() raises an http ApiError on a malformed file', async () => {
     server.use(
-      mswHttp.post('/api/v1/analyze', () =>
+      mswHttp.post('/api/analyze', () =>
         HttpResponse.json(
           { title: 'Fichier illisible', status: 422, detail: 'JSON invalide' },
           { status: 422 },

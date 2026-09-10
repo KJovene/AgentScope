@@ -22,11 +22,11 @@ export const fieldProfileSetSchema = z.object({
 export type FieldProfileSet = z.infer<typeof fieldProfileSetSchema>;
 
 /**
- * Not rendered yet — the mapping proposal is built on by I5.6 (chat) and
- * I5.7 (mapping edition). Kept loose on purpose: just enough to type-check
- * and round-trip, not to display.
+ * The proposal `/analyze` returns and `/chat` discusses (I5.6). `definition` is
+ * an object, never a string — the backend rejects anything else. Kept loose on
+ * its inner shape on purpose: the mapping definition is opaque to the UI.
  */
-const mappingProposalSchema = z.object({
+export const mappingProposalSchema = z.object({
   definition: z.record(z.string(), z.unknown()),
   explanations: z.array(
     z.object({
