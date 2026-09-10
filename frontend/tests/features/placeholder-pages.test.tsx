@@ -2,7 +2,7 @@ import { render, screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 
 import { DataQualityPanel } from '@features/data-quality/ui/DataQualityPanel';
-import { SessionDetailPage } from '@features/session-detail/ui/SessionDetailPage';
+import { SessionDetailPage } from '@/features/session-detail/ui/SessionTimeline';
 
 // AddSourcePage is no longer a placeholder (I5.5) — see AddSourcePage.test.tsx.
 describe('placeholder feature pages', () => {

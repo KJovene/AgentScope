@@ -21,6 +21,28 @@ export interface MetricDefinition {
   nullMeaning: string;
 }
 
+export interface MissingFieldStat {
+  field: string;
+  emptyCount: number;
+  percentage: number; // Pourcentage de vide (0 - 100)
+}
+
+export interface SourceQuality {
+  id: string;
+  sourceName: string;
+  totalRows: number;
+  validRows: number;
+  rejectedRows: number;
+  completeness: number; // Taux de complétude global de la source (0 - 100)
+  missingFields: MissingFieldStat[];
+}
+
+export interface DataQualityMetrics {
+  globalCompleteness: number; // Moyenne pondérée globale (0 - 100)
+  globalRejectionRate: number; // Taux de rejet global (0 - 100)
+  sources: SourceQuality[];
+}
+
 export const METRIC_DEFINITIONS: Record<string, MetricDefinition> = {
   sessions: {
     label: "Sessions totales",
