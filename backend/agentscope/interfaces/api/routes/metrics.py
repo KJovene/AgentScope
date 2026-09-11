@@ -1,8 +1,8 @@
 from __future__ import annotations
 
 import dataclasses
-from datetime import datetime
 import logging
+from datetime import datetime
 from typing import Annotated, Any
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
@@ -10,7 +10,6 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 from agentscope.application.ports.metrics import (
     Granularity,
     MetricFilter,
-    MetricsQueryService,
     TimeseriesMetric,
 )
 from agentscope.interfaces.api.dependencies import MetricsServiceDep
@@ -61,10 +60,18 @@ def _to_dict_safe(obj: Any) -> dict[str, Any]:
 def _map_indicators(obj: Any) -> dict[str, Any]:
     d = _to_dict_safe(obj)
     return {
-        "session_count": d.get("session_count") if d.get("session_count") is not None else d.get("n_sessions", 0),
-        "model_call_count": d.get("model_call_count") if d.get("model_call_count") is not None else d.get("n_model_calls", 0),
-        "tool_call_count": d.get("tool_call_count") if d.get("tool_call_count") is not None else d.get("n_tool_calls", 0),
-        "error_count": d.get("error_count") if d.get("error_count") is not None else d.get("n_errors", 0),
+        "session_count": d.get("session_count")
+        if d.get("session_count") is not None
+        else d.get("n_sessions", 0),
+        "model_call_count": d.get("model_call_count")
+        if d.get("model_call_count") is not None
+        else d.get("n_model_calls", 0),
+        "tool_call_count": d.get("tool_call_count")
+        if d.get("tool_call_count") is not None
+        else d.get("n_tool_calls", 0),
+        "error_count": d.get("error_count")
+        if d.get("error_count") is not None
+        else d.get("n_errors", 0),
         "total_tokens": d.get("total_tokens"),
         "prompt_tokens": d.get("prompt_tokens"),
         "completion_tokens": d.get("completion_tokens"),
@@ -90,7 +97,7 @@ async def get_indicators(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Erreur métriques [{type(exc).__name__}]: {exc}",
-        )
+        ) from None
 
 
 @router.get("/timeseries", response_model=TimeseriesResponse)

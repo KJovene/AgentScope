@@ -56,6 +56,10 @@ select = ["E", "F", "I", "B", "UP", "N", "SIM", "TID"]
 [tool.ruff.lint.isort]
 known-first-party = ["agentscope"]
 
+[tool.ruff.lint.per-file-ignores]
+"agentscope/interfaces/api/routes/*.py" = ["B008"]
+"tests/unit/test_parquet_reader.py" = ["E402"]
+
 [tool.mypy]
 python_version = "3.12"
 strict = true

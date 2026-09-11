@@ -51,9 +51,7 @@ class CsvReader:
                     index=index,
                     payload={},
                     sha256=record_hash,
-                    parse_error=(
-                        f"CSV row has {len(row)} values but expected {len(headers)}"
-                    ),
+                    parse_error=(f"CSV row has {len(row)} values but expected {len(headers)}"),
                 )
                 continue
             payload = dict(zip(headers, row, strict=True))

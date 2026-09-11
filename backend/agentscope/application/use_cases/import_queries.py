@@ -83,9 +83,7 @@ class ListRejects:
                 f"Import introuvable pour la source `{source_name}` et le fichier `{file_sha256}`."
             )
         return Page(
-            items=tuple(
-                self.rejects.list_for_import(source_name, file_sha256, limit, offset)
-            ),
+            items=tuple(self.rejects.list_for_import(source_name, file_sha256, limit, offset)),
             total=self.rejects.count_for_import(source_name, file_sha256),
             limit=limit,
             offset=offset,

@@ -1,14 +1,15 @@
 """Schémas transverses : pagination par offset et erreurs problem+json (contrat §5.3)."""
+
 from __future__ import annotations
 
-from typing import Generic, TypeVar
+from typing import TypeVar
 
 from pydantic import BaseModel, Field
 
 T = TypeVar("T")
 
 
-class Paginated(BaseModel, Generic[T]):
+class Paginated[T](BaseModel):
     items: list[T]
     total: int
     limit: int

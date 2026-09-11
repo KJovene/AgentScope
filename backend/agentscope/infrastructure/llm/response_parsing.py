@@ -36,7 +36,7 @@ from agentscope.domain import InvalidMappingError, LLMError
 RESPONSE_FORMAT_INSTRUCTION = (
     "Réponds uniquement avec un objet JSON valide (sans texte autour, sans bloc "
     "markdown) de la forme exacte :\n"
-    '{\n'
+    "{\n"
     '  "definition": { ... contrat de mapping conforme au schéma cible ... },\n'
     '  "explanations": [\n'
     '    {"target_field": "...", "source_field": "..." ou null, "rationale": "...", '

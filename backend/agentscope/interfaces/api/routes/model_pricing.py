@@ -35,9 +35,7 @@ async def list_model_pricing(
     ]
 
 
-@router.post(
-    "/model-pricing", response_model=PricingUpsertResult, status_code=201
-)
+@router.post("/model-pricing", response_model=PricingUpsertResult, status_code=201)
 async def upsert_model_pricing(
     prices: list[ModelPriceInput], service: PricingRegistryServiceDep
 ) -> PricingUpsertResult:

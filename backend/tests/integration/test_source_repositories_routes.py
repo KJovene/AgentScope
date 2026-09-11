@@ -86,6 +86,5 @@ def test_register_is_idempotent(client: TestClient) -> None:
 def test_unknown_source_is_404(client: TestClient) -> None:
     assert client.get("/api/v1/sources/Nope/repositories").status_code == 404
     assert (
-        client.post("/api/v1/sources/Nope/repositories", json=[{"name": "a/b"}]).status_code
-        == 404
+        client.post("/api/v1/sources/Nope/repositories", json=[{"name": "a/b"}]).status_code == 404
     )

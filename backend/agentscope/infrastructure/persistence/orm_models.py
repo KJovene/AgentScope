@@ -180,8 +180,7 @@ class ModelCallRow(Base):
             name="error_type_vocab",
         ),
         CheckConstraint(
-            "cached_tokens IS NULL OR prompt_tokens IS NULL "
-            "OR cached_tokens <= prompt_tokens",
+            "cached_tokens IS NULL OR prompt_tokens IS NULL OR cached_tokens <= prompt_tokens",
             name="cached_le_prompt",
         ),
         CheckConstraint(

@@ -78,9 +78,7 @@ class DefaultImportService(ImportService):
             imported_at=datetime.now(UTC),
         )
 
-    def list_rejects(
-        self, import_id: str, page: Page
-    ) -> Paginated[ImportRejectItem]:
+    def list_rejects(self, import_id: str, page: Page) -> Paginated[ImportRejectItem]:
         return Paginated(items=(), total=0, limit=page.limit, offset=page.offset)
 
 
@@ -183,18 +181,14 @@ class Container:
 
         return SqlMappingService(session)
 
-    def make_repository_registry_service(
-        self, session: Session
-    ) -> RepositoryRegistryService:
+    def make_repository_registry_service(self, session: Session) -> RepositoryRegistryService:
         from agentscope.infrastructure.persistence.services.repository_registry_service import (  # noqa: E501
             SqlRepositoryRegistryService,
         )
 
         return SqlRepositoryRegistryService(session)
 
-    def make_pricing_registry_service(
-        self, session: Session
-    ) -> PricingRegistryService:
+    def make_pricing_registry_service(self, session: Session) -> PricingRegistryService:
         from agentscope.infrastructure.persistence.services.pricing_registry_service import (  # noqa: E501
             SqlPricingRegistryService,
         )

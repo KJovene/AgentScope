@@ -310,6 +310,7 @@ class FieldProfileSet:
 
 # ---------------------------------------------------------------------------
 
+
 def _check_status_consistency(
     entity: str, status: CallStatus, error_type: ErrorType | None
 ) -> None:

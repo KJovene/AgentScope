@@ -5,7 +5,7 @@ from typing import Annotated, Any
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 
-from agentscope.application.ports.metrics import MetricFilter, MetricsQueryService, Page
+from agentscope.application.ports.metrics import MetricFilter, Page
 from agentscope.interfaces.api.dependencies import MetricsServiceDep
 from agentscope.interfaces.api.routes.metrics import parse_metric_filter
 from agentscope.interfaces.api.schemas.common import Paginated

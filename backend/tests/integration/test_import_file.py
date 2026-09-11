@@ -58,12 +58,33 @@ MAPPING_DEF = {
 }
 
 ROWS = [
-    {"sid": "s1", "agent": "claude", "model": "m-1", "round": 0, "tokens_in": 100,
-     "tokens_out": 10, "tools": [{"ti": 0, "name": "bash"}]},
-    {"sid": "s1", "agent": "claude", "model": "m-1", "round": 1, "tokens_in": 200,
-     "tokens_out": 20, "tools": []},
-    {"sid": "s2", "agent": "codex", "model": "m-2", "round": 0, "tokens_in": 50,
-     "tokens_out": 5, "tools": [{"ti": 0, "name": "grep"}, {"ti": 1, "name": "read"}]},
+    {
+        "sid": "s1",
+        "agent": "claude",
+        "model": "m-1",
+        "round": 0,
+        "tokens_in": 100,
+        "tokens_out": 10,
+        "tools": [{"ti": 0, "name": "bash"}],
+    },
+    {
+        "sid": "s1",
+        "agent": "claude",
+        "model": "m-1",
+        "round": 1,
+        "tokens_in": 200,
+        "tokens_out": 20,
+        "tools": [],
+    },
+    {
+        "sid": "s2",
+        "agent": "codex",
+        "model": "m-2",
+        "round": 0,
+        "tokens_in": 50,
+        "tokens_out": 5,
+        "tools": [{"ti": 0, "name": "grep"}, {"ti": 1, "name": "read"}],
+    },
     {"agent": "orphan", "model": "m-3", "round": 0},  # pas de `sid` -> rejet
 ]
 

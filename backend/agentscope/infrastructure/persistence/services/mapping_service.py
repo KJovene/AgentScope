@@ -30,9 +30,7 @@ class MissingSourceNameError(DomainError):
 
 
 class SqlMappingService:
-    def __init__(
-        self, session: Session, clock: Callable[[], datetime] | None = None
-    ) -> None:
+    def __init__(self, session: Session, clock: Callable[[], datetime] | None = None) -> None:
         self._s = session
         self._clock = clock or (lambda: datetime.now(UTC))
         self._repo = SqlMappingRepository(session)
@@ -47,9 +45,7 @@ class SqlMappingService:
     ) -> SourceMapping:
         source_name = str(definition.get("constants", {}).get("source_name") or "").strip()
         if not source_name:
-            raise MissingSourceNameError(
-                "La définition doit déclarer `constants.source_name`."
-            )
+            raise MissingSourceNameError("La définition doit déclarer `constants.source_name`.")
         self._ensure_source(source_name)
 
         mapping = SaveMapping(self._repo, self._clock).execute(

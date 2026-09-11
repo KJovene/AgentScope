@@ -1,4 +1,5 @@
 """Routes HTTP (une par ressource)."""
+
 from __future__ import annotations
 
 from agentscope.interfaces.api.routes import (

@@ -31,6 +31,4 @@ async def get_data_quality(
 ) -> DataQualityResponse:
     """Panneau de qualité des données : bilans d'import et ratios de complétude."""
     batches = service.get_quality_metrics(source_id=source_id)
-    return DataQualityResponse(
-        batches=[DataQualityBatchMetrics(**_to_dict(b)) for b in batches]
-    )
+    return DataQualityResponse(batches=[DataQualityBatchMetrics(**_to_dict(b)) for b in batches])

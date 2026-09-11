@@ -2,8 +2,9 @@ from __future__ import annotations
 
 from datetime import datetime
 from io import BytesIO
-from fastapi.testclient import TestClient
+
 import pytest
+from fastapi.testclient import TestClient
 
 from agentscope.application.ports.imports import ImportBatchItem, ImportRejectItem
 from agentscope.application.ports.metrics import Page, Paginated
@@ -12,7 +13,6 @@ from agentscope.interfaces.api.dependencies import get_import_service
 
 
 class DummyImportService:
-
     async def process_import(self, mapping_id: str, files: list[tuple[str, bytes]]):
         return ImportBatchItem(
             id="batch-123",

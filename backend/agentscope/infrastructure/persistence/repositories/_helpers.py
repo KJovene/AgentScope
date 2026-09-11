@@ -22,18 +22,14 @@ from agentscope.infrastructure.persistence.repositories.errors import UnknownRef
 
 
 def source_id(session: Session, name: str) -> int:
-    value = session.execute(
-        select(SourceRow.id).where(SourceRow.name == name)
-    ).scalar_one_or_none()
+    value = session.execute(select(SourceRow.id).where(SourceRow.name == name)).scalar_one_or_none()
     if value is None:
         raise UnknownReferenceError(f"source inconnue : {name!r}")
     return value
 
 
 def source_id_or_none(session: Session, name: str) -> int | None:
-    return session.execute(
-        select(SourceRow.id).where(SourceRow.name == name)
-    ).scalar_one_or_none()
+    return session.execute(select(SourceRow.id).where(SourceRow.name == name)).scalar_one_or_none()
 
 
 def latest_mapping_id(session: Session, name: str) -> int | None:
@@ -71,18 +67,14 @@ def raw_record_ids_by_index(session: Session, batch_id: int) -> dict[int, int]:
 
 def code_repository_ids_by_name(session: Session, source_id_: int) -> dict[str, int]:
     rows = session.execute(
-        select(RepositoryRow.name, RepositoryRow.id).where(
-            RepositoryRow.source_id == source_id_
-        )
+        select(RepositoryRow.name, RepositoryRow.id).where(RepositoryRow.source_id == source_id_)
     ).all()
     return {name: rid for name, rid in rows}
 
 
 def session_ids_by_external_id(session: Session, source_id_: int) -> dict[str, int]:
     rows = session.execute(
-        select(SessionRow.external_id, SessionRow.id).where(
-            SessionRow.source_id == source_id_
-        )
+        select(SessionRow.external_id, SessionRow.id).where(SessionRow.source_id == source_id_)
     ).all()
     return {external_id: sid for external_id, sid in rows}
 

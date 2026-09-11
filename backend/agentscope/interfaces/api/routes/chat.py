@@ -15,7 +15,11 @@ from fastapi import APIRouter
 
 from agentscope.application.ports.llm_provider import (
     ChatMessage,
+)
+from agentscope.application.ports.llm_provider import (
     FieldExplanation as PortFieldExplanation,
+)
+from agentscope.application.ports.llm_provider import (
     MappingProposal as PortMappingProposal,
 )
 from agentscope.interfaces.api.dependencies import WorkbenchServiceDep

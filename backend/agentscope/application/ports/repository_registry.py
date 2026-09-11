@@ -30,8 +30,6 @@ class RepositoryRegistryService(Protocol):
         """Dépôts déclarés pour une source. ``LookupError`` si la source est inconnue."""
         ...
 
-    def register(
-        self, source_name: str, repositories: list[RepositoryEntry]
-    ) -> RegisterOutcome:
+    def register(self, source_name: str, repositories: list[RepositoryEntry]) -> RegisterOutcome:
         """Déclare (idempotent) des dépôts. ``LookupError`` si la source est inconnue."""
         ...

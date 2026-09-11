@@ -1,8 +1,9 @@
 from __future__ import annotations
 
 from datetime import datetime
-from fastapi.testclient import TestClient
+
 import pytest
+from fastapi.testclient import TestClient
 
 from agentscope.application.ports.metrics import (
     Page,

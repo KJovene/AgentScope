@@ -133,9 +133,7 @@ def test_update_cree_une_nouvelle_version() -> None:
         "transform": "lower",
     }
 
-    updated = UpdateMapping(repo, clock=_clock).execute(
-        name="tracelab-jsonl", definition=revised
-    )
+    updated = UpdateMapping(repo, clock=_clock).execute(name="tracelab-jsonl", definition=revised)
 
     assert updated.version == 2
     assert GetMapping(repo).execute(name="tracelab-jsonl") == updated

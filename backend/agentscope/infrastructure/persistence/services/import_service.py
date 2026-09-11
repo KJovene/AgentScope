@@ -33,7 +33,6 @@ from agentscope.infrastructure.persistence.repositories.sql import (
     SqlRejectRepository,
 )
 
-
 _STATUS_MAP = {
     ImportStatus.FAILED: "failed",
     ImportStatus.PENDING: "partial",
@@ -94,9 +93,7 @@ class SqlImportService:
         ]
         return self._aggregate(reports, mapping_id)
 
-    def _aggregate(
-        self, reports: list[ImportReport], mapping_id: str
-    ) -> ImportBatchItem:
+    def _aggregate(self, reports: list[ImportReport], mapping_id: str) -> ImportBatchItem:
         rejected = sum(r.rejected_count for r in reports)
         statuses = {r.status for r in reports}
         if ImportStatus.FAILED in statuses:
@@ -134,9 +131,7 @@ class SqlImportService:
         batch = SqlImportRepository(self._s).get_by_sha256(import_id)
         return _batch_to_item(batch) if batch is not None else None
 
-    def list_rejects(
-        self, import_id: str, page: Page
-    ) -> Paginated[ImportRejectItem]:
+    def list_rejects(self, import_id: str, page: Page) -> Paginated[ImportRejectItem]:
         batch = SqlImportRepository(self._s).get_by_sha256(import_id)
         if batch is None:
             return Paginated(items=(), total=0, limit=page.limit, offset=page.offset)

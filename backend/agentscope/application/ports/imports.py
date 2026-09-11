@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from datetime import datetime
 from typing import Protocol, runtime_checkable
 
@@ -32,7 +32,6 @@ class ImportRejectItem:
 
 @runtime_checkable
 class ImportService(Protocol):
-
     async def process_import(
         self, mapping_id: str, files: list[tuple[str, bytes]]
     ) -> ImportBatchItem: ...
@@ -41,6 +40,4 @@ class ImportService(Protocol):
 
     def get_import_detail(self, import_id: str) -> ImportBatchItem | None: ...
 
-    def list_rejects(
-        self, import_id: str, page: Page
-    ) -> Paginated[ImportRejectItem]: ...
+    def list_rejects(self, import_id: str, page: Page) -> Paginated[ImportRejectItem]: ...

@@ -19,7 +19,7 @@ def test_csv_reader_detects_comma_delimiter_and_headers() -> None:
 
 
 def test_csv_reader_detects_semicolon_delimiter() -> None:
-    source = BytesIO("id;message\n1;Bonjour\n".encode("utf-8"))
+    source = BytesIO(b"id;message\n1;Bonjour\n")
 
     records = list(CsvReader().read(source))
 
@@ -27,7 +27,7 @@ def test_csv_reader_detects_semicolon_delimiter() -> None:
 
 
 def test_csv_reader_decodes_utf8_bom_and_quoted_values() -> None:
-    source = BytesIO("\ufeffname,description\nZoé,\"a,b\"\n".encode("utf-8"))
+    source = BytesIO('\ufeffname,description\nZoé,"a,b"\n'.encode("utf-8"))
 
     records = list(CsvReader().read(source))
 

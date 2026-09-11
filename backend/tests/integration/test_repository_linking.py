@@ -142,9 +142,7 @@ def test_dashboard_can_filter_by_repository(seeded: Database) -> None:
     assert only_api.total == 2
     assert {i.repository_name for i in only_api.items} == {"octo/api"}
 
-    api_or_web = svc.sessions(
-        MetricFilter(repositories=("octo/api", "octo/web")), Page()
-    )
+    api_or_web = svc.sessions(MetricFilter(repositories=("octo/api", "octo/web")), Page())
     assert api_or_web.total == 3
 
 
@@ -156,9 +154,7 @@ def test_session_list_and_detail_expose_repository_name(seeded: Database) -> Non
     assert any(i.repository_name is None for i in by_ext.values())  # s4 / s5
 
     with seeded.engine.connect() as conn:
-        sid = conn.execute(
-            text("SELECT id FROM session WHERE external_id = 's3'")
-        ).scalar_one()
+        sid = conn.execute(text("SELECT id FROM session WHERE external_id = 's3'")).scalar_one()
     detail = svc.session_detail(sid)
     assert detail is not None
     assert detail.repository_name == "octo/web"

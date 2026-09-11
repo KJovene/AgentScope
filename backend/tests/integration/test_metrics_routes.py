@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from fastapi.testclient import TestClient
 import pytest
+from fastapi.testclient import TestClient
 
 from agentscope.application.ports.metrics import Indicators, TimeseriesPoint
 from agentscope.interfaces.api.app import create_app
@@ -33,9 +33,7 @@ class DummyMetricsService:
         ]
 
     def tool_usage(self, f):
-        return [
-            {"tool_name": "bash", "n_calls": 50, "n_errors": 2, "avg_duration_ms": 1200.0}
-        ]
+        return [{"tool_name": "bash", "n_calls": 50, "n_errors": 2, "avg_duration_ms": 1200.0}]
 
 
 @pytest.fixture

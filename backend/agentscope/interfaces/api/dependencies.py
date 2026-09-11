@@ -50,15 +50,11 @@ DbSessionDep = Annotated[Session, Depends(get_db_session)]
 # --- Services de lecture (CQRS) + service d'import -----------------------------
 
 
-def get_metrics_service(
-    container: ContainerDep, session: DbSessionDep
-) -> MetricsQueryService:
+def get_metrics_service(container: ContainerDep, session: DbSessionDep) -> MetricsQueryService:
     return container.make_metrics_service(session)
 
 
-def get_sources_service(
-    container: ContainerDep, session: DbSessionDep
-) -> SourcesQueryService:
+def get_sources_service(container: ContainerDep, session: DbSessionDep) -> SourcesQueryService:
     return container.make_sources_service(session)
 
 
@@ -68,15 +64,11 @@ def get_data_quality_service(
     return container.make_data_quality_service(session)
 
 
-def get_import_service(
-    container: ContainerDep, session: DbSessionDep
-) -> ImportService:
+def get_import_service(container: ContainerDep, session: DbSessionDep) -> ImportService:
     return container.make_import_service(session)
 
 
-def get_mapping_service(
-    container: ContainerDep, session: DbSessionDep
-) -> MappingCrudService:
+def get_mapping_service(container: ContainerDep, session: DbSessionDep) -> MappingCrudService:
     return container.make_mapping_service(session)
 
 
@@ -98,17 +90,11 @@ def get_pricing_registry_service(
 
 MetricsServiceDep = Annotated[MetricsQueryService, Depends(get_metrics_service)]
 SourcesServiceDep = Annotated[SourcesQueryService, Depends(get_sources_service)]
-DataQualityServiceDep = Annotated[
-    DataQualityQueryService, Depends(get_data_quality_service)
-]
+DataQualityServiceDep = Annotated[DataQualityQueryService, Depends(get_data_quality_service)]
 ImportServiceDep = Annotated[ImportService, Depends(get_import_service)]
 MappingServiceDep = Annotated[MappingCrudService, Depends(get_mapping_service)]
-WorkbenchServiceDep = Annotated[
-    MappingWorkbenchService, Depends(get_workbench_service)
-]
+WorkbenchServiceDep = Annotated[MappingWorkbenchService, Depends(get_workbench_service)]
 RepositoryRegistryServiceDep = Annotated[
     RepositoryRegistryService, Depends(get_repository_registry_service)
 ]
-PricingRegistryServiceDep = Annotated[
-    PricingRegistryService, Depends(get_pricing_registry_service)
-]
+PricingRegistryServiceDep = Annotated[PricingRegistryService, Depends(get_pricing_registry_service)]

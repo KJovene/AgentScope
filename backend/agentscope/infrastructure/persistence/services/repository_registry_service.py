@@ -32,9 +32,7 @@ class SqlRepositoryRegistryService:
             for r in self._ref.list_code_repositories(source_name)
         ]
 
-    def register(
-        self, source_name: str, repositories: list[RepositoryEntry]
-    ) -> RegisterOutcome:
+    def register(self, source_name: str, repositories: list[RepositoryEntry]) -> RegisterOutcome:
         self._require_source(source_name)
         outcome = self._ref.upsert_code_repositories(
             source_name,
