@@ -30,7 +30,7 @@ flowchart TB
 
     db[("PostgreSQL<br/>SQLite en local")]
     files["Fichiers de traces<br/>JSONL · CSV · Parquet"]
-    llm["Fournisseur IA<br/>Anthropic · OpenAI · Ollama · Fake"]
+    llm["Fournisseur IA<br/>Anthropic · OpenAI-compatible · Fake"]
 
     user --> ui
     ui -->|"HTTP · /api/v1"| api
@@ -129,11 +129,15 @@ Une entité invalide **ne peut pas exister** : les invariants sont vérifiés à
 | --- | --- | --- |
 | `SourceReader` | lire un fichier et produire des `RawRecord` | `JsonlReader`, `CsvReader`, `ParquetReader` |
 | `FieldProfiler` · `SensitiveFilter` | profiler des champs inconnus · masquer avant échantillonnage | `DefaultFieldProfiler` |
-| `LLMProvider` | `propose_mapping`, `chat` → `MappingProposal`, `ChatReply` | `FakeLLMProvider` |
+| `LLMProvider` | `propose_mapping`, `chat` → `MappingProposal`, `ChatReply` | `FakeLLMProvider`, `AnthropicProvider`, `OpenAIProvider` (choisis par `create_llm_provider`) |
 | `ReferenceRepository`, `MappingRepository`, `ImportRepository`, `RawRecordRepository`, `SessionRepository`, `ModelCallRepository`, `ToolCallRepository`, `RejectRepository`, `FieldProfileRepository` | persistance par agrégat, avec `UpsertOutcome` (insérés / ignorés) | `Sql*Repository` |
 | `UnitOfWork` | une transaction, tous les dépôts, `commit` / `rollback` | `SqlAlchemyUnitOfWork` |
 | `ProvenanceRepository` | remonter d'une ligne normalisée à son `raw_record` | `SqlProvenanceRepository` |
 | `MetricsQueryService` | indicateurs, séries, listes et détail de session | `SqlMetricsQueryService` |
+| `DataQualityQueryService` · `SourceCatalog` | complétude par lot d'import · référentiel des sources et dépôts | `SqlDataQualityQueryService`, `SqlSourceCatalog` |
+| `PricingRegistry` | grille tarifaire pour l'estimation du coût | `SqlPricingRegistryService` |
+| `MappingCrud` · `ImportQueries` | CRUD des mappings versionnés · historique et rejets | `SqlMappingService`, `SqlImportService` |
+| `MappingWorkbench` | façade des trois cas d'utilisation de l'agent, telle que la voient les routes | `MappingWorkbenchService` |
 
 **Moteur de mapping** (`application/mapping/`) — le cœur de l'ingestion, sans I/O :
 
@@ -147,11 +151,24 @@ Une entité invalide **ne peut pas exister** : les invariants sont vérifiés à
   avec la **liste des problèmes**, avant tout accès à la base.
 - `normalizer.py` — applique un mapping validé à des `RawRecord` → entités + **rejets** portant un
   `RejectReason`, sans jamais lever d'exception sur une ligne fautive.
+- `file_format.py` — reconnaissance du format à partir du nom et du contenu.
+- `prompt_builder.py` — construit le prompt de l'agent : schéma cible + profil + échantillon
+  **filtré**. Le texte des traces y est encadré comme une donnée, jamais comme une consigne.
+- `sensitive_filter.py` — `DefaultSensitiveFilter`, porté par la couche application pour qu'aucun
+  adaptateur n'ait à en dépendre d'un autre (contrat 5 d'`import-linter`).
 
 **Cas d'utilisation** (`application/use_cases/`) :
 
 - `ImportFile` — orchestre lecture → normalisation → persistance → bilan, et garantit
   l'idempotence : un fichier déjà importé (même `sha256`) ressort en `already_imported`.
+- `ImportQueries` — historique des imports, bilan d'un import, liste paginée des rejets.
+- `ManageMappings` — créer, lister, récupérer et faire évoluer un mapping **versionné**.
+- `AnalyzeUnknownFile` — profil de champs + échantillon filtré → proposition de mapping, validée
+  avant d'être renvoyée ; une proposition non conforme remonte en erreur explicite.
+- `ChatAboutMapping` — échange multi-tours sur une proposition en cours. **Sans état serveur** :
+  le client renvoie l'historique à chaque tour, et rien n'est écrit en base.
+- `PreviewMapping` — dry-run de la normalisation sur un échantillon : aperçu des lignes produites
+  et des rejets simulés, avant toute écriture.
 
 ### 3.3 `infrastructure/` — les adaptateurs
 
@@ -160,12 +177,15 @@ Une entité invalide **ne peut pas exister** : les invariants sont vérifiés à
 | `config/settings.py` | `Settings` (pydantic-settings, préfixe `AGENTSCOPE_`) — **le seul endroit qui lit l'environnement** |
 | `readers/` | `JsonlReader` (streaming), `CsvReader` (dialecte, encodage), `ParquetReader` (pyarrow) |
 | `profiling/field_profiler.py` | `DefaultFieldProfiler` — types, taux de nuls, cardinalité, exemples |
-| `llm/fake_provider.py` | `FakeLLMProvider` — déterministe, hors réseau, utilisé par les tests et la CI |
-| `persistence/orm_models.py` | tables : `source`, `repository`, `mapping`, `import_batch`, `raw_record`, `session`, `model_call`, `tool_call`, `import_reject`, `field_profile` |
-| `persistence/migrations/` | Alembic — `0001_initial`, `0002_dashboard_views`, `0003_session_metrics_repository` |
+| `llm/` | `FakeLLMProvider` (déterministe, hors réseau, utilisé par les tests), `AnthropicProvider`, `OpenAIProvider` (couvre aussi Ollama / LM Studio / OpenRouter via `base_url`), `factory.py` piloté par la configuration, `response_parsing.py` |
+| `security/sensitive_filter.py` | **réexport de compatibilité** — l'implémentation `DefaultSensitiveFilter` (masquage des adresses, clés, jetons, chemins personnels) vit dans `application/mapping/`, pour qu'aucun adaptateur ne dépende d'un autre (contrat 5) |
+| `persistence/orm_models.py` | tables : `source`, `repository`, `mapping`, `import_batch`, `raw_record`, `session`, `model_call`, `tool_call`, `import_reject`, `field_profile`, `model_pricing` |
+| `persistence/migrations/` | Alembic — `0001_initial`, `0002_dashboard_views`, `0003_session_metrics_repository`, `0004_model_pricing` |
 | `persistence/views.py` | vues agrégées `v_session_metrics`, `v_daily_activity`, `v_tool_usage`, `v_data_quality`, générées selon le dialecte |
 | `persistence/repositories/` | implémentations SQLAlchemy des ports de dépôt + `SqlProvenanceRepository` |
-| `persistence/queries/metrics.py` | `SqlMetricsQueryService` — lit les vues, applique les filtres |
+| `persistence/queries/` | `SqlMetricsQueryService` (lit `v_session_metrics`, applique les filtres), `SqlDataQualityQueryService`, `SqlSourceCatalog` |
+| `persistence/services/` | services applicatifs adossés à la base : mappings, imports, grille tarifaire, référentiel de dépôts |
+| `services/workbench_service.py` | `MappingWorkbenchService` — assemble `AnalyzeUnknownFile`, `ChatAboutMapping` et `PreviewMapping` derrière un port unique |
 | `persistence/unit_of_work.py` | `SqlAlchemyUnitOfWork` — une session SQLAlchemy = une transaction |
 
 Le mapping objet-relationnel est **explicite** : les entités du domaine ne sont pas des modèles
@@ -177,8 +197,8 @@ SQLAlchemy. La traduction se fait dans `repositories/_mappers.py`.
 | --- | --- |
 | `api/app.py` | `create_app()` — montage des routeurs sous `/api/v1`, CORS, gestion d'erreurs, `lifespan` |
 | `api/container.py` | `Container` — **le point de composition** : c'est là que les adaptateurs sont instanciés |
-| `api/dependencies.py` | dépendances FastAPI typées : `ContainerDep`, `SettingsDep`, `DbSessionDep` |
-| `api/routes/` | `imports`, `analyze`, `mappings`, `chat`, `metrics`, `sessions`, `sources` |
+| `api/dependencies.py` | dépendances FastAPI typées : `ContainerDep`, `SettingsDep`, `DbSessionDep`, `MetricsServiceDep`, `WorkbenchServiceDep`, … — les routes ne reçoivent que des **ports** |
+| `api/routes/` | `imports`, `analyze`, `mappings`, `chat`, `metrics`, `sessions`, `sources`, `data_quality`, `model_pricing` |
 | `api/schemas/` | DTO Pydantic — **frontière** entre le monde HTTP et les entités du domaine |
 | `api/errors.py` | réponses d'erreur uniformes au format `problem+json` |
 | `api/openapi.py` | export du schéma OpenAPI, source du client TypeScript |
@@ -195,7 +215,7 @@ Organisation par **feature**, contrat identique dans chacune — détail dans
 ```
 frontend/src/
 ├── app/          routeur TanStack, providers, layout, routes
-├── features/     dashboard · import · mapping-agent · session-detail · data-quality
+├── features/     dashboard · import · mapping-agent · session-detail · data-quality · accessibility
 │   └── <feature>/
 │       ├── api/      schémas zod (source de vérité), transport, hooks TanStack Query
 │       ├── model/    mappers DTO → view model, sélecteurs, store local éventuel
@@ -266,21 +286,24 @@ Le test qui doit rester vert dans tous les cas : `make arch`.
 
 ## 6. État du câblage
 
-Les couches sont livrées de bas en haut ; le raccordement final n'est pas terminé. À jour au
-**2026-09-08** :
+À jour au **2026-09-11**. Le fil route HTTP → cas d'utilisation → base est **complet** : aucune
+route ne renvoie plus de fixture.
 
 | Composant | État |
 | --- | --- |
 | `domain/`, ports, moteur de mapping, `ImportFile` | ✅ implémentés et testés |
-| Migrations, dépôts SQLAlchemy, vues, `SqlMetricsQueryService` | ✅ implémentés et testés |
-| Lecteurs JSONL / CSV / Parquet, profileur, `FakeLLMProvider` | ✅ implémentés et testés |
-| `Container` (point de composition) | 🟡 construit la base de données ; les use cases et adaptateurs n'y sont pas encore assemblés (I4.10) |
-| Routes REST | 🟡 exposées et documentées dans `/docs`, mais elles renvoient les **fixtures** de `interfaces/api/fixtures.py` (I4.1) — le câblage arrive avec I4.2 / I4.6 |
-| Adaptateurs LLM réels (Anthropic, OpenAI-compatible) | ⬜ à venir (I3.3, I3.4) |
-| Use cases de l'agent (`AnalyzeUnknownFile`, `ChatAboutMapping`, `PreviewMapping`) | ⬜ à venir (EPIC 3) |
+| Migrations (`0001` → `0004`), dépôts SQLAlchemy, 4 vues, `SqlMetricsQueryService` | ✅ implémentés et testés |
+| Lecteurs JSONL / CSV / Parquet, profileur, `DefaultSensitiveFilter` | ✅ implémentés et testés |
+| `Container` (point de composition) | ✅ assemble base, dépôts, services et fournisseur IA |
+| Routes REST (`imports`, `analyze`, `mappings`, `chat`, `metrics`, `sessions`, `sources`, `data-quality`, `model-pricing`) | ✅ branchées sur les ports — `interfaces/api/fixtures.py` n'est plus servi |
+| Adaptateurs LLM réels (`AnthropicProvider`, `OpenAIProvider`) + factory par configuration | ✅ implémentés et testés (hors réseau) |
+| Use cases de l'agent (`AnalyzeUnknownFile`, `ChatAboutMapping`, `PreviewMapping`) | ✅ implémentés, exposés via `MappingWorkbenchService` |
+| Mappings intégrés TraceLab et SWE-chat | ✅ définitions JSON + tests bout-en-bout sur fixtures réelles |
+| Frontend — dashboard, imports, sessions, agent de mapping, assistant | ✅ écrans livrés ; 🟡 `npm run typecheck` échoue sur du code mort (`src/features/chat/`, remplacé par `features/mapping-agent/`) |
 
-Conséquence pratique : les diagrammes ci-dessus décrivent la cible **et** la structure réelle du
-code ; seule la flèche « route → cas d'utilisation » passe encore par des fixtures.
+Les diagrammes ci-dessus décrivent donc la **structure réelle du code**, et plus seulement la
+cible. Vérification : `make up && make migrate && make seed`, puis
+`curl http://localhost:8000/api/v1/metrics/indicators` renvoie des compteurs issus de la base.
 
 ---
 

@@ -3,6 +3,11 @@
 > Plan opérationnel pour le sprint (Jour 1 → vendredi soir).
 > Équipe : **6+ personnes**. Stack retenue : **Python / FastAPI (backend) + React / Vite / TypeScript (frontend)**.
 > Ce document sert de source pour créer le tableau **GitHub Projects** (chaque `Ixx` = une issue).
+>
+> **Ce document est le plan tel que figé au cadrage** — il décrit ce qui était *prévu*, et il
+> n'est pas réécrit au fil de l'eau (sinon les identifiants `Ixx` ne correspondraient plus aux
+> cartes du board). Pour savoir ce qui est **réellement livré** au 2026-09-11, voir le
+> [README](../README.md#statut) ; §11 ci-dessous tient la liste des livrables cochés.
 
 ---
 
@@ -773,17 +778,22 @@ Déclenché sur chaque PR ; obligatoire vert pour fusionner.
 
 ## 11. Livrables du vendredi soir
 
-- [ ] Dépôt GitHub **public** : application, dépendances, migrations / scripts SQL, `.env.example` sans secret, tests.
-- [ ] Lien du **GitHub Projects** reflétant le travail réel (pas rempli à la fin).
+État au **2026-09-11**.
+
+- [x] Dépôt GitHub **public** : application, dépendances, migrations / scripts SQL, `.env.example` sans secret, tests.
+- [x] Lien du **GitHub Projects** reflétant le travail réel (pas rempli à la fin).
 - [ ] **Release `v0.1.0`** identifiée avec notes de version (fonctionnalités livrées + limites connues).
-- [ ] `README` de prise en main + `LICENSE` open source + `CONTRIBUTING`.
-- [ ] Doc architecture : schéma des composants + dépendances + ADR.
-- [ ] Doc données : diagramme relationnel + définitions des indicateurs + mappings de **2 sources distinctes**.
-- [ ] Doc IA : modèles testés, fournisseurs supportés, procédure de changement de modèle.
-- [ ] **3 observations chiffrées** tirées des données réelles, avec sources et filtres pour les reproduire.
-- [ ] Compte rendu de vérification du parcours d'import avec **2 modèles IA** (sans secrets ni données sensibles).
-- [ ] `data/README.md` : références des datasets, versions, dates de récupération, méthode de sélection des extraits.
-- [ ] CI qui exécute les tests à chaque PR.
+- [x] `README` de prise en main + `LICENSE` open source + `CONTRIBUTING`.
+- [x] Doc architecture : schéma des composants + dépendances + ADR — [`architecture/components.md`](architecture/components.md), [`architecture/adr/`](architecture/adr/).
+- [x] Doc données : diagramme relationnel + définitions des indicateurs + mappings de **2 sources distinctes** — [`data/`](data/).
+- [x] Doc IA : fournisseurs supportés, procédure de changement de modèle — [`ai/`](ai/). *(« modèles testés » : voir la ligne suivante.)*
+- [x] **3 observations chiffrées** tirées des données réelles, avec sources et filtres pour les reproduire — [`findings.md`](findings.md), vérifiées script **et** base.
+- [ ] Compte rendu de vérification du parcours d'import avec **2 modèles IA** (sans secrets ni données sensibles) — gabarit prêt : [`ai/verification-report.md`](ai/verification-report.md).
+- [x] `data/README.md` : références des datasets, versions, dates de récupération, méthode de sélection des extraits.
+- [ ] CI qui exécute les tests à chaque PR — `.github/workflows/e2e.yml` est entièrement commenté ; aucun workflow actif.
+
+Deux dettes qui conditionnent la release : le frontend (35 tests rouges, `npm run typecheck`
+bloqué par `src/features/chat/`, du code mort) et l'absence de CI.
 
 ---
 

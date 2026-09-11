@@ -31,7 +31,7 @@ IA et n'est pas affecté.
 
 | Variable | Rôle | Obligatoire |
 | --- | --- | --- |
-| `AGENTSCOPE_LLM_PROVIDER` | `fake` · `anthropic` · `openai` (voir note ci-dessous pour Ollama/LM Studio) | oui (défaut `fake`) |
+| `AGENTSCOPE_LLM_PROVIDER` | `fake` · `anthropic` · `openai` (voir note ci-dessous pour Ollama / LM Studio / OpenRouter) | oui (défaut `fake`) |
 | `AGENTSCOPE_LLM_MODEL` | identifiant du modèle chez ce fournisseur | oui sauf pour `fake` |
 | `AGENTSCOPE_LLM_BASE_URL` | endpoint, pour les serveurs compatibles OpenAI | pour un serveur local |
 | `AGENTSCOPE_LLM_API_KEY` | clé secrète | pour `anthropic` ; optionnelle pour `openai` (un serveur local n'en demande pas) |
@@ -77,6 +77,17 @@ AGENTSCOPE_LLM_BASE_URL=http://host.docker.internal:11434/v1
 > Depuis un conteneur, `localhost` désigne le conteneur lui-même : utiliser
 > **`host.docker.internal`** pour joindre un serveur qui tourne sur la machine hôte. En exécution
 > locale hors Docker, `http://localhost:11434/v1` convient.
+
+### Passerelle multi-modèles — OpenRouter *(clé requise)*
+
+```bash
+AGENTSCOPE_LLM_PROVIDER=openai
+AGENTSCOPE_LLM_BASE_URL=https://openrouter.ai/api/v1
+AGENTSCOPE_LLM_MODEL=<identifiant du modèle chez OpenRouter>
+AGENTSCOPE_LLM_API_KEY=<clé OpenRouter>
+```
+
+Même adaptateur que pour OpenAI : c'est une API compatible, pas un fournisseur de plus.
 
 ### Revenir au fournisseur factice
 
@@ -134,6 +145,7 @@ Ces quatre points sont exactement ce que consigne le compte rendu I3.13 / I6.9.
 | Symptôme | Cause probable |
 | --- | --- |
 | L'agent répond toujours la même chose, très mécaniquement | `AGENTSCOPE_LLM_PROVIDER` est resté à `fake` (défaut) |
+| `POST /analyze` renvoie `400` alors que tout semble configuré | Avec `fake`, c'est attendu (proposition identité non valide). Sinon : le modèle n'a pas produit de mapping conforme — voir la ligne `LLMError` |
 | Erreur d'authentification | clé absente ou invalide — vérifier que `.env` est bien pris en compte (`docker compose config` montre les variables résolues) |
 | Endpoint injoignable depuis Docker | utiliser `host.docker.internal` plutôt que `localhost` (§3) |
 | `LLMError : réponse malformée` | le modèle n'a pas produit une proposition conforme au contrat — l'application refuse proprement plutôt que d'écrire n'importe quoi. Réessayer, ou changer de modèle |
@@ -149,6 +161,9 @@ Ces quatre points sont exactement ce que consigne le compte rendu I3.13 / I6.9.
 | `FakeLLMProvider` | ✅ livré |
 | Factory pilotée par la configuration | ✅ livrée (I3.5) — la procédure ci-dessus est opérante |
 | Adaptateurs réels (Anthropic, OpenAI-compatible) | ✅ livrés (I3.3, I3.4) |
+| Routes de l'agent (`/analyze`, `/chat`, `/mappings/{id}/preview`) | ✅ branchées |
 | Deux configurations vérifiées bout en bout | ⬜ I3.13 — [`verification-report.md`](verification-report.md) |
 
-La procédure ci-dessus est celle prévue par [ADR-0005](../architecture/adr/0005-abstraction-ia.md).
+La procédure ci-dessus est celle prévue par [ADR-0005](../architecture/adr/0005-abstraction-ia.md),
+et elle est opérante : `create_llm_provider` lit la configuration au démarrage et construit
+l'adaptateur correspondant, sans qu'aucun code applicatif ne change.

@@ -5,6 +5,11 @@ COMPOSE := docker compose
 BACKEND := backend
 FRONTEND := frontend
 
+# Interpréteur de l'hôte pour les scripts de `scripts/` (stdlib seule, Python 3.12+).
+# `python3` n'existe pas sous Windows/Git Bash, `python` pas toujours sous Linux :
+# on prend le premier des deux qui répond. Surchargeable : make seed PYTHON=py.
+PYTHON ?= $(shell python3 -c "" >/dev/null 2>&1 && echo python3 || echo python)
+
 .DEFAULT_GOAL := help
 
 .PHONY: help
@@ -143,7 +148,7 @@ ci: lint typecheck arch test ## Ce que la CI exécute à chaque PR
 
 .PHONY: data-tracelab
 data-tracelab: ## Télécharge l'extrait TraceLab épinglé (SHA256 vérifié) + échantillon de dev
-	python scripts/tracelab_extract.py --fetch --modulo 32 --out data/tracelab/extract-dev.jsonl
+	$(PYTHON) scripts/tracelab_extract.py --fetch --modulo 32 --out data/tracelab/extract-dev.jsonl
 
 .PHONY: data-swe-chat
 data-swe-chat: ## Échantillon SWE-chat via hf:// (dataset gated — nécessite $$HF_TOKEN)
@@ -152,11 +157,11 @@ data-swe-chat: ## Échantillon SWE-chat via hf:// (dataset gated — nécessite 
 
 .PHONY: findings
 findings: ## Recalcule les chiffres de docs/findings.md depuis l'extrait TraceLab (I6.7)
-	python scripts/findings_tracelab.py
+	$(PYTHON) scripts/findings_tracelab.py
 
 .PHONY: fixtures
 fixtures: ## Régénère la fixture de test TraceLab commitée
-	python scripts/tracelab_extract.py --fetch --modulo 32 --max-sessions-per-provider 1 --out backend/tests/fixtures/tracelab/sample.jsonl
+	$(PYTHON) scripts/tracelab_extract.py --fetch --modulo 32 --max-sessions-per-provider 1 --out backend/tests/fixtures/tracelab/sample.jsonl
 
 # --- Branchement des données : mapping + import via l'API REST (stack `make up`) ---
 # Surcharger l'API : make seed-tracelab API=http://localhost:8000
@@ -164,22 +169,22 @@ API ?= http://localhost:8000
 
 .PHONY: seed-tracelab
 seed-tracelab: ## Importe TraceLab dans la stack en marche (fixture commitée, hors-ligne)
-	python3 scripts/seed_import.py --api $(API) --mapping docs/data/mappings/tracelab.json \
+	$(PYTHON) scripts/seed_import.py --api $(API) --mapping docs/data/mappings/tracelab.json \
 		backend/tests/fixtures/tracelab/sample.jsonl
 
 .PHONY: seed-tracelab-dev
 seed-tracelab-dev: ## Importe l'extrait TraceLab de dev (nécessite `make data-tracelab`)
-	python3 scripts/seed_import.py --api $(API) --mapping docs/data/mappings/tracelab.json \
+	$(PYTHON) scripts/seed_import.py --api $(API) --mapping docs/data/mappings/tracelab.json \
 		data/tracelab/extract-dev.jsonl
 
 .PHONY: seed-swe-chat
 seed-swe-chat: ## Importe l'extrait SWE-chat (nécessite `make data-swe-chat`)
-	python3 scripts/seed_import.py --api $(API) --mapping docs/data/mappings/swe-chat.json \
+	$(PYTHON) scripts/seed_import.py --api $(API) --mapping docs/data/mappings/swe-chat.json \
 		data/swe_chat/extract-dev.jsonl
 
 .PHONY: seed-pricing
 seed-pricing: ## Charge docs/data/model-pricing.json (coût estimé quand la source n'en fournit pas)
-	python3 scripts/seed_pricing.py --api $(API)
+	$(PYTHON) scripts/seed_pricing.py --api $(API)
 
 .PHONY: seed
 seed: seed-pricing seed-tracelab ## Peuple la base avec les sources intégrées
