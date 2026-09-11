@@ -33,6 +33,29 @@ from agentscope.domain import InvalidMappingError, LLMError
 # `PromptBuilder` (I3.6) ne dicte pas le format de sortie (il est indépendant du
 # fournisseur) ; les adaptateurs concrets (I3.3/I3.4) ajoutent cette consigne au
 # prompt utilisateur pour obtenir une réponse exploitable par ce module.
+_DEFINITION_SKELETON = """{
+  "name": "...",
+  "version": 1,
+  "source_format": "jsonl",
+  "entities": {
+    "session": {
+      "iterate": {"path": "...", "where": [["type", "eq", "session"]]},
+      "identity": {"key_fields": ["..."]},
+      "fields": {
+        "external_id": {"from": "...", "required": true, "on_error": "reject"}
+      }
+    },
+    "model_call": {
+      "iterate": {"path": "...", "where": [["type", "eq", "model_change"]]},
+      "parent": {"entity": "session", "key_from": "..."},
+      "identity": {"key_fields": ["..."]},
+      "fields": {
+        "model_name": {"from": "...", "required": true, "on_error": "reject"}
+      }
+    }
+  }
+}"""
+
 RESPONSE_FORMAT_INSTRUCTION = (
     "Réponds uniquement avec un objet JSON valide (sans texte autour, sans bloc "
     "markdown) de la forme exacte :\n"
@@ -44,7 +67,21 @@ RESPONSE_FORMAT_INSTRUCTION = (
     "  ],\n"
     '  "ambiguities": ["..."],\n'
     '  "unmapped_fields": ["..."]\n'
-    "}"
+    "}\n\n"
+    "`definition` DOIT suivre exactement ce squelette — chaque entité cible "
+    "(session, model_call, tool_call, ...) est une clé sous `entities`, jamais "
+    "une clé directe de `definition` ; `entities.session` est obligatoire.\n"
+    "Règles strictes sur les champs d'une entité :\n"
+    "- `where` est un tableau de triplets `[champ, opérateur, valeur]` — jamais "
+    "un objet `{\"field\": ..., \"equals\": ...}`. Opérateurs valides : "
+    '"eq", "ne", "in", "exists", "gt", "lt".\n'
+    '- `on_error` accepte uniquement "reject", "null" ou "skip" — jamais '
+    '"ignore" ni une autre valeur.\n'
+    "- Omets entièrement une entrée de `fields` si l'entité n'a pas de champ "
+    "source correspondant dans l'échantillon : n'écris jamais `\"from\": null`.\n"
+    '- `parent.key_from` est une chaîne unique (ex. `"parentId"`), jamais un '
+    "tableau.\n\n"
+    f"{_DEFINITION_SKELETON}"
 )
 
 _JSON_FENCE_RE = re.compile(r"```(?:json)?\s*(.*?)\s*```", re.DOTALL)

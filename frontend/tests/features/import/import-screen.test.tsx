@@ -1,3 +1,5 @@
+import type { ComponentProps } from 'react';
+
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
@@ -6,10 +8,20 @@ import { apiClient } from '@shared/api/client';
 import { ApiError } from '@shared/api/types';
 
 vi.mock('@shared/api/client', () => ({
-  apiClient: { post: vi.fn() },
+  apiClient: { get: vi.fn(), post: vi.fn() },
 }));
 
+const get = vi.mocked(apiClient.get);
 const post = vi.mocked(apiClient.post);
+
+const oneMapping = {
+  items: [
+    { mapping_id: 'tracelab-jsonl', name: 'tracelab-jsonl', source_name: 'TraceLab', source_format: 'jsonl', is_active: true },
+  ],
+  total: 1,
+  limit: 200,
+  offset: 0,
+};
 
 function selectFile(name = 'trace.jsonl', size = 20) {
   const input = screen.getByLabelText(/fichiers sources/i) as HTMLInputElement;
@@ -18,19 +30,28 @@ function selectFile(name = 'trace.jsonl', size = 20) {
   return file;
 }
 
-describe('ImportScreen UI (I5.2)', () => {
-  beforeEach(() => vi.clearAllMocks());
+/** Renders and waits for the mapping dropdown to finish loading its default option. */
+async function renderReady(props: ComponentProps<typeof ImportScreen> = {}) {
+  render(<ImportScreen {...props} />);
+  await screen.findByRole('option', { name: /tracelab-jsonl/ });
+}
 
-  it("désactive le bouton tant qu'aucun fichier n'est sélectionné", () => {
-    render(<ImportScreen />);
+describe('ImportScreen UI (I5.2)', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    get.mockResolvedValue(oneMapping);
+  });
+
+  it("désactive le bouton tant qu'aucun fichier n'est sélectionné", async () => {
+    await renderReady();
     expect(screen.getByText('Importer des traces')).toBeInTheDocument();
     expect(
       (screen.getByRole('button', { name: "Lancer l'import" }) as HTMLButtonElement).disabled,
     ).toBe(true);
   });
 
-  it("permet de sélectionner un fichier, l'afficher et activer l'envoi", () => {
-    render(<ImportScreen />);
+  it("permet de sélectionner un fichier, l'afficher et activer l'envoi", async () => {
+    await renderReady();
     selectFile();
     expect(screen.getByText('trace.jsonl')).toBeInTheDocument();
     expect(screen.getByText(/Fichiers sélectionnés \(1\)/)).toBeInTheDocument();
@@ -39,8 +60,8 @@ describe('ImportScreen UI (I5.2)', () => {
     ).toBe(false);
   });
 
-  it('retire un fichier de la sélection', () => {
-    render(<ImportScreen />);
+  it('retire un fichier de la sélection', async () => {
+    await renderReady();
     selectFile('a.jsonl');
     fireEvent.click(screen.getByRole('button', { name: 'Supprimer' }));
     expect(screen.queryByText('a.jsonl')).not.toBeInTheDocument();
@@ -49,10 +70,19 @@ describe('ImportScreen UI (I5.2)', () => {
     ).toBe(true);
   });
 
-  it("désactive l'envoi si l'identifiant de mapping est vidé", () => {
+  it("propose les mappings existants dans une liste déroulante", async () => {
     render(<ImportScreen />);
+    const select = (await screen.findByLabelText(/identifiant du mapping/i)) as HTMLSelectElement;
+    await waitFor(() => expect(select.value).toBe('tracelab-jsonl'));
+    expect(screen.getByRole('option', { name: /TraceLab \(jsonl\)/ })).toBeInTheDocument();
+  });
+
+  it("désactive l'envoi quand aucun mapping n'est disponible", async () => {
+    get.mockResolvedValue({ items: [], total: 0, limit: 200, offset: 0 });
+    render(<ImportScreen />);
+    const select = (await screen.findByLabelText(/identifiant du mapping/i)) as HTMLSelectElement;
+    await waitFor(() => expect(select.disabled).toBe(true));
     selectFile();
-    fireEvent.change(screen.getByLabelText(/identifiant du mapping/i), { target: { value: '  ' } });
     expect(
       (screen.getByRole('button', { name: "Lancer l'import" }) as HTMLButtonElement).disabled,
     ).toBe(true);
@@ -72,7 +102,7 @@ describe('ImportScreen UI (I5.2)', () => {
     };
     post.mockResolvedValueOnce(mockReport);
 
-    render(<ImportScreen onImportCompleted={onImportCompleted} />);
+    await renderReady({ onImportCompleted });
     selectFile('trace.jsonl', 5000); // KB branch of formatFileSize
     fireEvent.click(screen.getByRole('button', { name: "Lancer l'import" }));
 
@@ -96,7 +126,7 @@ describe('ImportScreen UI (I5.2)', () => {
       missing_info_count: 0,
       imported_at: '2026-09-08T10:00:00Z',
     });
-    render(<ImportScreen />);
+    await renderReady();
     selectFile('big.parquet', 2 * 1024 * 1024); // MB branch
     fireEvent.click(screen.getByRole('button', { name: "Lancer l'import" }));
     expect(await screen.findByText('partial')).toBeInTheDocument();
@@ -107,7 +137,7 @@ describe('ImportScreen UI (I5.2)', () => {
     post.mockRejectedValueOnce(
       new ApiError({ title: 'Import refusé', status: 422, detail: 'mapping inconnu' }),
     );
-    render(<ImportScreen />);
+    await renderReady();
     selectFile();
     fireEvent.click(screen.getByRole('button', { name: "Lancer l'import" }));
     expect(await screen.findByRole('alert')).toBeInTheDocument();
@@ -116,7 +146,7 @@ describe('ImportScreen UI (I5.2)', () => {
 
   it('affiche un message générique pour une erreur inattendue', async () => {
     post.mockRejectedValueOnce(new Error('network down'));
-    render(<ImportScreen />);
+    await renderReady();
     selectFile();
     fireEvent.click(screen.getByRole('button', { name: "Lancer l'import" }));
     expect(await screen.findByText('Erreur inattendue')).toBeInTheDocument();

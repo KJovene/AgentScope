@@ -1,0 +1,101 @@
+{
+  "name": "pi-session-jsonl",
+  "version": 1,
+  "source_format": "jsonl",
+  "constants": {
+    "source_name": "pi-coding-agent"
+  },
+  "unmapped_fields": [
+    "cwd",
+    "parentId",
+    "thinkingLevel",
+    "modelId",
+    "stopReason",
+    "responseId",
+    "api"
+  ],
+  "entities": {
+    "session": {
+      "iterate": {
+        "path": ""
+      },
+      "identity": {
+        "key_fields": ["session_id"]
+      },
+      "fields": {
+        "external_id": {
+          "from": "session_id",
+          "required": true,
+          "on_error": "reject"
+        }
+      }
+    },
+    "model_call": {
+      "iterate": {
+        "path": "",
+        "where": [
+          ["type", "eq", "message"],
+          ["message.role", "eq", "assistant"]
+        ]
+      },
+      "parent": {
+        "entity": "session",
+        "key_from": "session_id"
+      },
+      "identity": {
+        "key_fields": ["id"]
+      },
+      "fields": {
+        "model_name": {
+          "from": "message.model",
+          "required": true,
+          "on_error": "reject"
+        },
+        "provider": {
+          "from": "message.provider"
+        },
+        "prompt_tokens": {
+          "from": "message.usage.input",
+          "transform": "to_int"
+        },
+        "completion_tokens": {
+          "from": "message.usage.output",
+          "transform": "to_int"
+        },
+        "cost_usd": {
+          "from": "message.usage.cost.total",
+          "transform": "to_float"
+        },
+        "started_at": {
+          "from": "timestamp"
+        },
+        "ended_at": {
+          "from": "timestamp"
+        }
+      }
+    },
+    "tool_call": {
+      "iterate": {
+        "path": "message.content",
+        "where": [["type", "eq", "toolCall"]]
+      },
+      "parent": {
+        "entity": "session",
+        "key_from": "session_id"
+      },
+      "identity": {
+        "key_fields": ["id"]
+      },
+      "fields": {
+        "tool_name": {
+          "from": "name",
+          "required": true,
+          "on_error": "reject"
+        },
+        "started_at": {
+          "from": "timestamp"
+        }
+      }
+    }
+  }
+}
