@@ -103,7 +103,11 @@ async def update_mapping(
 # --- Prévisualisation (I4.3) ----------------------------------------------
 
 
-_ENTITY_ATTRS = (("session", "sessions"), ("model_call", "model_calls"), ("tool_call", "tool_calls"))
+_ENTITY_ATTRS = (
+    ("session", "sessions"),
+    ("model_call", "model_calls"),
+    ("tool_call", "tool_calls"),
+)
 
 
 def _row_dict(obj: Any) -> dict[str, Any]:

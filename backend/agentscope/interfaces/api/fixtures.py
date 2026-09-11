@@ -7,11 +7,12 @@ complète et des réponses de forme correcte, AVANT que les use cases réels
 Le câblage réel (I4.10) remplacera ces fonctions par des appels aux use cases
 via `interfaces/api/dependencies.py`.
 """
+
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
-_NOW = datetime(2026, 9, 7, 9, 30, tzinfo=timezone.utc)
+_NOW = datetime(2026, 9, 7, 9, 30, tzinfo=UTC)
 
 IMPORT_REPORT = {
     "id": "imp_0001",

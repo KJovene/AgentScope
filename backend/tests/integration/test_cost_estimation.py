@@ -81,9 +81,7 @@ def test_cost_estime_apres_seed_pricing(client: TestClient) -> None:
 
 
 def test_pricing_upsert_is_idempotent(client: TestClient) -> None:
-    body = [
-        {"model_name": "m", "input_usd_per_mtok": 1.0, "output_usd_per_mtok": 2.0}
-    ]
+    body = [{"model_name": "m", "input_usd_per_mtok": 1.0, "output_usd_per_mtok": 2.0}]
     assert client.post("/api/v1/model-pricing", json=body).json() == {"upserted": 1}
     body[0]["output_usd_per_mtok"] = 9.0
     assert client.post("/api/v1/model-pricing", json=body).json() == {"upserted": 1}

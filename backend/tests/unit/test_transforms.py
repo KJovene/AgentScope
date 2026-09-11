@@ -36,7 +36,9 @@ def test_to_iso8601_supports_epoch_ms_and_normalizes_to_utc() -> None:
 
 
 def test_to_iso8601_supports_iso_input() -> None:
-    result = apply_transform("to_iso8601", "2024-01-02 03:04", {"unit": "iso", "input_format": "%Y-%m-%d %H:%M"})
+    result = apply_transform(
+        "to_iso8601", "2024-01-02 03:04", {"unit": "iso", "input_format": "%Y-%m-%d %H:%M"}
+    )
 
     assert result == "2024-01-02T03:04:00Z"
 
@@ -70,7 +72,13 @@ def test_unknown_transform_is_rejected() -> None:
         ("const", None, {}),
         ("coalesce", None, {"fields": ["a"]}),
         ("split", "a", {"sep": "/", "index": 3}),
-        ("regex_extract", "x", {"pattern": "(",}),
+        (
+            "regex_extract",
+            "x",
+            {
+                "pattern": "(",
+            },
+        ),
     ],
 )
 def test_invalid_transform_input_is_rejected(name: str, value: object, args: dict) -> None:

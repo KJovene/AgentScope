@@ -15,9 +15,7 @@ from agentscope.domain import RawRecord
 
 @runtime_checkable
 class ProvenanceRepository(Protocol):
-    def raw_record_for_session(
-        self, source_name: str, external_id: str
-    ) -> RawRecord | None: ...
+    def raw_record_for_session(self, source_name: str, external_id: str) -> RawRecord | None: ...
 
     def raw_record_for_model_call(
         self, source_name: str, session_external_id: str, sequence: int

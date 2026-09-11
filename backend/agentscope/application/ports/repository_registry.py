@@ -7,6 +7,7 @@ pour une source — appelé après un import par ``scripts/seed_import.py``.
 
 from __future__ import annotations
 
+import builtins
 from dataclasses import dataclass
 from typing import Protocol, runtime_checkable
 
@@ -26,12 +27,12 @@ class RegisterOutcome:
 
 @runtime_checkable
 class RepositoryRegistryService(Protocol):
-    def list(self, source_name: str) -> list[RepositoryEntry]:
+    def list(self, source_name: str) -> builtins.list[RepositoryEntry]:
         """Dépôts déclarés pour une source. ``LookupError`` si la source est inconnue."""
         ...
 
     def register(
-        self, source_name: str, repositories: list[RepositoryEntry]
+        self, source_name: str, repositories: builtins.list[RepositoryEntry]
     ) -> RegisterOutcome:
         """Déclare (idempotent) des dépôts. ``LookupError`` si la source est inconnue."""
         ...

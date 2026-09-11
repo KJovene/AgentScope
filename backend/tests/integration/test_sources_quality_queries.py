@@ -100,9 +100,7 @@ def seeded(make_uow: MakeUow, database: Database) -> Database:
                     sequence=0,
                     tool_name="bash",
                     provenance=_prov(0),
-                    interval=Interval(
-                        started_at=D1, ended_at=D1 + timedelta(milliseconds=800)
-                    ),
+                    interval=Interval(started_at=D1, ended_at=D1 + timedelta(milliseconds=800)),
                     status=CallStatus.SUCCESS,
                 ),
                 ToolCall(

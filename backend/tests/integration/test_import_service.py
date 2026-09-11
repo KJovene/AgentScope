@@ -11,7 +11,7 @@ from datetime import UTC, datetime
 import pytest
 
 from agentscope.application.ports.metrics import Page
-from agentscope.domain import DomainError, FileFormat, ImportStatus, Source, SourceMapping
+from agentscope.domain import DomainError, FileFormat, Source, SourceMapping
 from agentscope.infrastructure.persistence.database import Database
 from agentscope.infrastructure.persistence.services.import_service import SqlImportService
 from agentscope.infrastructure.persistence.unit_of_work import SqlAlchemyUnitOfWork

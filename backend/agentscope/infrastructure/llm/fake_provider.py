@@ -49,9 +49,7 @@ class FakeLLMProvider:
             "entities": {
                 "record": {
                     "iterate": {"path": "", "where": []},
-                    "fields": {
-                        field: {"from": field, "transform": "identity"} for field in fields
-                    },
+                    "fields": {field: {"from": field, "transform": "identity"} for field in fields},
                 }
             },
         }

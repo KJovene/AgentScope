@@ -19,6 +19,4 @@ class DataQualityBatchItem:
 
 @runtime_checkable
 class DataQualityQueryService(Protocol):
-    def get_quality_metrics(
-        self, source_id: str | None = None
-    ) -> list[DataQualityBatchItem]: ...
+    def get_quality_metrics(self, source_id: str | None = None) -> list[DataQualityBatchItem]: ...

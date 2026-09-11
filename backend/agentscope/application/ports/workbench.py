@@ -25,7 +25,7 @@ class MappingWorkbenchService(Protocol):
         self,
         filename: str,
         content: bytes,
-        definition: dict,
+        definition: dict[str, object],
         sample_size: int = 50,
     ) -> PreviewReport:
         """Dry-run de normalisation d'un mapping sur un échantillon."""

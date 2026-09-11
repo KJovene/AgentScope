@@ -1,8 +1,7 @@
 from __future__ import annotations
 
-from datetime import datetime, timezone
 import uuid
-from typing import Any
+from datetime import UTC, datetime
 
 from sqlalchemy.orm import Session
 
@@ -35,7 +34,7 @@ class SQLAlchemyImportService(ImportService):
             duplicate_count=0,
             rejected_count=0,
             missing_info_count=0,
-            imported_at=datetime.now(timezone.utc),
+            imported_at=datetime.now(UTC),
         )
 
     def list_imports(self, page: Page) -> Paginated[ImportBatchItem]:
@@ -48,7 +47,7 @@ class SQLAlchemyImportService(ImportService):
             duplicate_count=1,
             rejected_count=0,
             missing_info_count=0,
-            imported_at=datetime.now(timezone.utc),
+            imported_at=datetime.now(UTC),
         )
         return Paginated(items=(item,), total=1, limit=page.limit, offset=page.offset)
 
@@ -62,10 +61,8 @@ class SQLAlchemyImportService(ImportService):
             duplicate_count=1,
             rejected_count=0,
             missing_info_count=0,
-            imported_at=datetime.now(timezone.utc),
+            imported_at=datetime.now(UTC),
         )
 
-    def list_rejects(
-        self, import_id: str, page: Page
-    ) -> Paginated[ImportRejectItem]:
+    def list_rejects(self, import_id: str, page: Page) -> Paginated[ImportRejectItem]:
         return Paginated(items=(), total=0, limit=page.limit, offset=page.offset)

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from datetime import datetime
+from typing import Any
 
 from pydantic import BaseModel
 
@@ -26,7 +27,7 @@ class FieldExplanation(BaseModel):
 
 
 class MappingProposal(BaseModel):
-    definition: dict
+    definition: dict[str, Any]
     explanations: list[FieldExplanation]
     ambiguities: list[str]
     unmapped_fields: list[str]
@@ -40,11 +41,11 @@ class AnalyzeResponse(BaseModel):
 class MappingCreate(BaseModel):
     name: str
     source_format: str
-    definition: dict
+    definition: dict[str, Any]
 
 
 class MappingUpdate(BaseModel):
-    definition: dict
+    definition: dict[str, Any]
 
 
 class Mapping(BaseModel):
@@ -53,7 +54,7 @@ class Mapping(BaseModel):
     version: int
     source_name: str
     source_format: str
-    definition: dict
+    definition: dict[str, Any]
     is_active: bool
     created_at: datetime
     created_by: str | None = None
@@ -61,9 +62,9 @@ class Mapping(BaseModel):
 
 class PreviewRow(BaseModel):
     entity: str  # session | model_call | tool_call
-    row: dict
+    row: dict[str, Any]
 
 
 class PreviewResult(BaseModel):
     rows: list[PreviewRow]
-    rejects: list[dict]
+    rejects: list[dict[str, Any]]

@@ -7,6 +7,7 @@ par ``scripts/seed_pricing.py`` depuis ``docs/data/model-pricing.json``.
 
 from __future__ import annotations
 
+import builtins
 from dataclasses import dataclass
 from typing import Protocol, runtime_checkable
 
@@ -26,8 +27,8 @@ class PricingOutcome:
 
 @runtime_checkable
 class PricingRegistryService(Protocol):
-    def list(self) -> list[ModelPrice]: ...
+    def list(self) -> builtins.list[ModelPrice]: ...
 
-    def upsert(self, prices: list[ModelPrice]) -> PricingOutcome:
+    def upsert(self, prices: builtins.list[ModelPrice]) -> PricingOutcome:
         """Crée ou met à jour les tarifs (un tarif change dans le temps)."""
         ...

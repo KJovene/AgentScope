@@ -109,9 +109,7 @@ def _records_full() -> list[RawRecord]:
     ]
 
 
-def test_walk_back_from_each_normalised_entity(
-    make_uow: MakeUow, database: Database
-) -> None:
+def test_walk_back_from_each_normalised_entity(make_uow: MakeUow, database: Database) -> None:
     _seed(make_uow(), _records_full())
     prov = SqlProvenanceRepository(database.create_session())
 
@@ -130,9 +128,7 @@ def test_walk_back_from_each_normalised_entity(
     assert from_tool.index == 1
 
 
-def test_walk_back_returns_none_for_unknown_keys(
-    make_uow: MakeUow, database: Database
-) -> None:
+def test_walk_back_returns_none_for_unknown_keys(make_uow: MakeUow, database: Database) -> None:
     _seed(make_uow(), _records_full())
     prov = SqlProvenanceRepository(database.create_session())
     assert prov.raw_record_for_session("tracelab", "absent") is None
@@ -151,9 +147,11 @@ def test_retention_policy_controls_payload_but_never_the_link(
     _seed(make_uow(), records)
 
     with database.engine.connect() as conn:
-        payloads = conn.execute(
-            text("SELECT payload_json FROM raw_record ORDER BY record_index")
-        ).scalars().all()
+        payloads = (
+            conn.execute(text("SELECT payload_json FROM raw_record ORDER BY record_index"))
+            .scalars()
+            .all()
+        )
         # la ligne raw_record existe toujours, seule la charge varie
         assert conn.execute(text("SELECT count(*) FROM raw_record")).scalar_one() == 2
         # le lien de provenance reste intact quelle que soit la rétention

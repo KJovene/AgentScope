@@ -39,9 +39,7 @@ async def list_sources(
     return [SourceResponse(**_to_dict(s)) for s in sources]
 
 
-@router.get(
-    "/sources/{source_name}/repositories", response_model=list[RepositoryResponse]
-)
+@router.get("/sources/{source_name}/repositories", response_model=list[RepositoryResponse])
 async def list_source_repositories(
     source_name: str, service: RepositoryRegistryServiceDep
 ) -> list[RepositoryResponse]:

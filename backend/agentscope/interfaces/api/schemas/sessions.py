@@ -1,8 +1,8 @@
 from __future__ import annotations
 
 from datetime import datetime
+
 from pydantic import BaseModel, ConfigDict, Field
-from agentscope.interfaces.api.schemas.common import Paginated
 
 
 class SessionItemResponse(BaseModel):

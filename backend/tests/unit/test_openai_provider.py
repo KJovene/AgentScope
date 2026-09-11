@@ -82,7 +82,10 @@ def _profile() -> FieldProfileSet:
         record_count=1,
         fields=(
             FieldProfile(
-                path="sid", inferred_type="string", null_ratio=0.0, distinct_count=1,
+                path="sid",
+                inferred_type="string",
+                null_ratio=0.0,
+                distinct_count=1,
                 sample_values=("s1",),
             ),
         ),

@@ -9,17 +9,19 @@ import json
 import pytest
 from fastapi.testclient import TestClient
 
+from agentscope.application.mapping.normalizer import NormalizationResult
 from agentscope.application.ports.llm_provider import (
     FieldExplanation,
     MappingProposal,
 )
 from agentscope.application.use_cases.analyze_unknown_file import AnalysisResult
 from agentscope.application.use_cases.preview_mapping import PreviewReport
-from agentscope.application.mapping.normalizer import NormalizationResult
 from agentscope.domain import (
     FieldProfile,
     FieldProfileSet,
     Provenance,
+)
+from agentscope.domain import (
     Session as SessionEntity,
 )
 from agentscope.infrastructure.config.settings import Settings

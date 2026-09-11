@@ -4,10 +4,10 @@ from __future__ import annotations
 
 import json
 import re
-from collections.abc import Mapping
+from collections.abc import Callable, Mapping
 from datetime import UTC, datetime
 from decimal import Decimal
-from typing import Any, Callable
+from typing import Any
 
 from agentscope.domain import InvalidMappingError
 
@@ -32,7 +32,9 @@ def _to_int(value: Any, args: Mapping[str, Any], context: Mapping[str, Any] | No
         raise TransformError(f"impossible de convertir {value!r} en entier") from error
 
 
-def _to_float(value: Any, args: Mapping[str, Any], context: Mapping[str, Any] | None) -> float | None:
+def _to_float(
+    value: Any, args: Mapping[str, Any], context: Mapping[str, Any] | None
+) -> float | None:
     if value is None:
         return None
     try:
@@ -41,7 +43,9 @@ def _to_float(value: Any, args: Mapping[str, Any], context: Mapping[str, Any] | 
         raise TransformError(f"impossible de convertir {value!r} en nombre") from error
 
 
-def _to_iso8601(value: Any, args: Mapping[str, Any], context: Mapping[str, Any] | None) -> str | None:
+def _to_iso8601(
+    value: Any, args: Mapping[str, Any], context: Mapping[str, Any] | None
+) -> str | None:
     if value is None:
         return None
     unit = args.get("unit")
@@ -53,7 +57,11 @@ def _to_iso8601(value: Any, args: Mapping[str, Any], context: Mapping[str, Any] 
         elif unit == "iso":
             text = str(value)
             input_format = args.get("input_format")
-            moment = datetime.strptime(text, input_format) if input_format else datetime.fromisoformat(text)
+            moment = (
+                datetime.strptime(text, input_format)
+                if input_format
+                else datetime.fromisoformat(text)
+            )
             moment = moment.replace(tzinfo=UTC) if moment.tzinfo is None else moment.astimezone(UTC)
         else:
             raise TransformError("to_iso8601 attend unit=epoch_s, epoch_ms ou iso")
@@ -84,7 +92,9 @@ def _trim(value: Any, args: Mapping[str, Any], context: Mapping[str, Any] | None
     return _string_operation(value, "strip")
 
 
-def _json_stringify(value: Any, args: Mapping[str, Any], context: Mapping[str, Any] | None) -> str | None:
+def _json_stringify(
+    value: Any, args: Mapping[str, Any], context: Mapping[str, Any] | None
+) -> str | None:
     if value is None:
         return None
     try:
@@ -140,7 +150,9 @@ def _split(value: Any, args: Mapping[str, Any], context: Mapping[str, Any] | Non
         raise TransformError(f"index {index} absent après split") from error
 
 
-def _regex_extract(value: Any, args: Mapping[str, Any], context: Mapping[str, Any] | None) -> str | None:
+def _regex_extract(
+    value: Any, args: Mapping[str, Any], context: Mapping[str, Any] | None
+) -> str | None:
     if value is None:
         return None
     if not isinstance(value, str) or not isinstance(args.get("pattern"), str):
@@ -160,7 +172,9 @@ def _regex_extract(value: Any, args: Mapping[str, Any], context: Mapping[str, An
         raise TransformError(f"groupe regex absent : {group!r}") from error
 
 
-def _cents_to_usd(value: Any, args: Mapping[str, Any], context: Mapping[str, Any] | None) -> float | None:
+def _cents_to_usd(
+    value: Any, args: Mapping[str, Any], context: Mapping[str, Any] | None
+) -> float | None:
     if value is None:
         return None
     try:
@@ -169,7 +183,9 @@ def _cents_to_usd(value: Any, args: Mapping[str, Any], context: Mapping[str, Any
         raise TransformError(f"impossible de convertir {value!r} en USD") from error
 
 
-def _ms_to_s(value: Any, args: Mapping[str, Any], context: Mapping[str, Any] | None) -> float | None:
+def _ms_to_s(
+    value: Any, args: Mapping[str, Any], context: Mapping[str, Any] | None
+) -> float | None:
     if value is None:
         return None
     try:

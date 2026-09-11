@@ -44,9 +44,7 @@ def test_bout_en_bout_swe_chat() -> None:
         ("swe-a", "Claude Code"),
         ("swe-b", "gpt-5-codex"),
     }
-    swe_a_opus = next(
-        m for m in result.model_calls if m.model_name == "claude-opus-4-6"
-    )
+    swe_a_opus = next(m for m in result.model_calls if m.model_name == "claude-opus-4-6")
     assert swe_a_opus.tokens.completion_tokens == 200
     assert swe_a_opus.tokens.cached_tokens == 5000
 

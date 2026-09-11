@@ -13,7 +13,6 @@ from __future__ import annotations
 import json
 from collections.abc import Callable
 from datetime import UTC, datetime
-
 from typing import Any
 
 from agentscope.application.ports.llm_provider import (
@@ -88,9 +87,7 @@ class _StubModelV1:
             definition=_DEFINITION_V1, explanations=[], ambiguities=[], unmapped_fields=[]
         )
 
-    def chat(
-        self, conversation_id: str, messages: list[Any], context: MappingContext
-    ) -> ChatReply:
+    def chat(self, conversation_id: str, messages: list[Any], context: MappingContext) -> ChatReply:
         raise NotImplementedError("non utilisé dans ce parcours")
 
 
@@ -109,9 +106,7 @@ class _StubModelV2:
             definition=_DEFINITION_V2, explanations=[], ambiguities=[], unmapped_fields=[]
         )
 
-    def chat(
-        self, conversation_id: str, messages: list[Any], context: MappingContext
-    ) -> ChatReply:
+    def chat(self, conversation_id: str, messages: list[Any], context: MappingContext) -> ChatReply:
         raise NotImplementedError("non utilisé dans ce parcours")
 
 
@@ -158,9 +153,11 @@ def test_mapping_enregistre_reste_utilisable_apres_changement_de_modele(
     make_uow: MakeUow,
 ) -> None:
     # Mapping v1 sauvegardé après analyse par un premier modèle.
-    proposal_v1 = AnalyzeUnknownFile(
-        profiler=DefaultFieldProfiler(), llm_provider=_StubModelV1()
-    ).execute(_raw_records(ROWS)).proposal
+    proposal_v1 = (
+        AnalyzeUnknownFile(profiler=DefaultFieldProfiler(), llm_provider=_StubModelV1())
+        .execute(_raw_records(ROWS))
+        .proposal
+    )
 
     with make_uow() as uow:
         uow.reference.add_source(Source(name="demo", display_name="Demo"))
@@ -184,9 +181,11 @@ def test_mapping_enregistre_reste_utilisable_apres_changement_de_modele(
     assert first_report.status is ImportStatus.SUCCEEDED
 
     # Changement de modèle : un second fournisseur propose une meilleure définition.
-    proposal_v2 = AnalyzeUnknownFile(
-        profiler=DefaultFieldProfiler(), llm_provider=_StubModelV2()
-    ).execute(_raw_records(ROWS)).proposal
+    proposal_v2 = (
+        AnalyzeUnknownFile(profiler=DefaultFieldProfiler(), llm_provider=_StubModelV2())
+        .execute(_raw_records(ROWS))
+        .proposal
+    )
     assert "agent_name" in proposal_v2.definition["entities"]["session"]["fields"]
 
     with make_uow() as uow:

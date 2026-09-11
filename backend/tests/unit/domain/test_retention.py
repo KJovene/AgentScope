@@ -40,7 +40,5 @@ def test_default_mode_is_full() -> None:
         (RetentionMode.MINIMAL, True, True),
     ],
 )
-def test_keep_payload_matrix(
-    mode: RetentionMode, rejected: bool, expected: bool
-) -> None:
+def test_keep_payload_matrix(mode: RetentionMode, rejected: bool, expected: bool) -> None:
     assert RetentionPolicy(mode=mode).keep_payload(rejected=rejected) is expected

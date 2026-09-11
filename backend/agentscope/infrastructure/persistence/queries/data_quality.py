@@ -16,9 +16,7 @@ class SqlDataQualityQueryService:
     def __init__(self, session: Session) -> None:
         self._s = session
 
-    def get_quality_metrics(
-        self, source_id: str | None = None
-    ) -> list[DataQualityBatchItem]:
+    def get_quality_metrics(self, source_id: str | None = None) -> list[DataQualityBatchItem]:
         sql = """
             SELECT
                 import_batch_id,
@@ -46,9 +44,7 @@ class SqlDataQualityQueryService:
                 rejected_count=int(row.rejected_count or 0),
                 missing_info_count=int(row.missing_info_count or 0),
                 completeness_rate=(
-                    float(row.completeness_ratio)
-                    if row.completeness_ratio is not None
-                    else None
+                    float(row.completeness_ratio) if row.completeness_ratio is not None else None
                 ),
                 imported_at=row.imported_at,
             )

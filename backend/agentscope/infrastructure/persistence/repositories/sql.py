@@ -66,9 +66,7 @@ class SqlReferenceRepository:
         self._s.execute(insert(SourceRow).values(**m.source_to_values(source)))
 
     def get_source(self, name: str) -> SourceEntity | None:
-        row = self._s.execute(
-            select(SourceRow).where(SourceRow.name == name)
-        ).scalar_one_or_none()
+        row = self._s.execute(select(SourceRow).where(SourceRow.name == name)).scalar_one_or_none()
         return m.row_to_source(row) if row is not None else None
 
     def list_sources(self) -> list[SourceEntity]:
@@ -82,30 +80,22 @@ class SqlReferenceRepository:
         rows = [m.repository_to_values(r, sid) for r in repositories]
         return h.bulk_insert_ignore(self._s, RepositoryRow, rows, ["source_id", "name"])
 
-    def get_code_repository(
-        self, source_name: str, name: str
-    ) -> RepositoryEntity | None:
+    def get_code_repository(self, source_name: str, name: str) -> RepositoryEntity | None:
         sid = h.source_id_or_none(self._s, source_name)
         if sid is None:
             return None
         row = self._s.execute(
-            select(RepositoryRow).where(
-                RepositoryRow.source_id == sid, RepositoryRow.name == name
-            )
+            select(RepositoryRow).where(RepositoryRow.source_id == sid, RepositoryRow.name == name)
         ).scalar_one_or_none()
         return m.row_to_repository(row, source_name) if row is not None else None
 
-    def list_code_repositories(
-        self, source_name: str | None = None
-    ) -> list[RepositoryEntity]:
+    def list_code_repositories(self, source_name: str | None = None) -> list[RepositoryEntity]:
         stmt = select(RepositoryRow, SourceRow.name).join(
             SourceRow, SourceRow.id == RepositoryRow.source_id
         )
         if source_name is not None:
             stmt = stmt.where(SourceRow.name == source_name)
-        rows = self._s.execute(
-            stmt.order_by(SourceRow.name, RepositoryRow.name)
-        ).all()
+        rows = self._s.execute(stmt.order_by(SourceRow.name, RepositoryRow.name)).all()
         return [m.row_to_repository(row, src_name) for row, src_name in rows]
 
 
@@ -122,9 +112,7 @@ class SqlMappingRepository:
         if version is not None:
             stmt = stmt.where(MappingRow.version == version)
         else:
-            stmt = stmt.where(MappingRow.is_active.is_(True)).order_by(
-                MappingRow.version.desc()
-            )
+            stmt = stmt.where(MappingRow.is_active.is_(True)).order_by(MappingRow.version.desc())
         row = self._s.execute(stmt.limit(1)).scalar_one_or_none()
         if row is None:
             return None
@@ -137,11 +125,15 @@ class SqlMappingRepository:
         sid = h.source_id_or_none(self._s, source_name)
         if sid is None:
             return []
-        rows = self._s.execute(
-            select(MappingRow)
-            .where(MappingRow.source_id == sid)
-            .order_by(MappingRow.name, MappingRow.version)
-        ).scalars().all()
+        rows = (
+            self._s.execute(
+                select(MappingRow)
+                .where(MappingRow.source_id == sid)
+                .order_by(MappingRow.name, MappingRow.version)
+            )
+            .scalars()
+            .all()
+        )
         return [m.row_to_mapping(r, source_name) for r in rows]
 
     def list_all(self) -> list[SourceMapping]:
@@ -169,9 +161,7 @@ class SqlImportRepository:
                 f"mapping actif introuvable pour l'import : {batch.mapping_name!r}"
             )
         self._s.execute(
-            insert(ImportBatchRow).values(
-                **m.import_batch_to_values(batch, sid, mapping_id)
-            )
+            insert(ImportBatchRow).values(**m.import_batch_to_values(batch, sid, mapping_id))
         )
 
     def update(self, batch: ImportBatch) -> None:
@@ -238,9 +228,7 @@ class SqlRawRecordRepository:
     def __init__(self, session: Session) -> None:
         self._s = session
 
-    def upsert_many(
-        self, batch: ImportBatch, records: Iterable[RawRecordEntity]
-    ) -> UpsertOutcome:
+    def upsert_many(self, batch: ImportBatch, records: Iterable[RawRecordEntity]) -> UpsertOutcome:
         records = list(records)
         if not records:
             return UpsertOutcome.empty()
@@ -256,9 +244,7 @@ class SqlSessionRepository:
     def __init__(self, session: Session) -> None:
         self._s = session
 
-    def upsert_many(
-        self, batch: ImportBatch, sessions: Iterable[SessionEntity]
-    ) -> UpsertOutcome:
+    def upsert_many(self, batch: ImportBatch, sessions: Iterable[SessionEntity]) -> UpsertOutcome:
         sessions = list(sessions)
         if not sessions:
             return UpsertOutcome.empty()
@@ -273,25 +259,19 @@ class SqlSessionRepository:
                 import_batch_id=bid,
                 raw_record_id=raw_ids.get(s.provenance.record_index),
                 repository_id=(
-                    repo_ids.get(s.repository_name)
-                    if s.repository_name is not None
-                    else None
+                    repo_ids.get(s.repository_name) if s.repository_name is not None else None
                 ),
             )
             for s in sessions
         ]
-        return h.bulk_insert_ignore(
-            self._s, SessionRow, rows, ["source_id", "external_id"]
-        )
+        return h.bulk_insert_ignore(self._s, SessionRow, rows, ["source_id", "external_id"])
 
 
 class SqlModelCallRepository:
     def __init__(self, session: Session) -> None:
         self._s = session
 
-    def upsert_many(
-        self, batch: ImportBatch, calls: Iterable[ModelCallEntity]
-    ) -> UpsertOutcome:
+    def upsert_many(self, batch: ImportBatch, calls: Iterable[ModelCallEntity]) -> UpsertOutcome:
         calls = list(calls)
         if not calls:
             return UpsertOutcome.empty()
@@ -308,18 +288,14 @@ class SqlModelCallRepository:
             )
             for c in calls
         ]
-        return h.bulk_insert_ignore(
-            self._s, ModelCallRow, rows, ["session_id", "sequence"]
-        )
+        return h.bulk_insert_ignore(self._s, ModelCallRow, rows, ["session_id", "sequence"])
 
 
 class SqlToolCallRepository:
     def __init__(self, session: Session) -> None:
         self._s = session
 
-    def upsert_many(
-        self, batch: ImportBatch, calls: Iterable[ToolCall]
-    ) -> UpsertOutcome:
+    def upsert_many(self, batch: ImportBatch, calls: Iterable[ToolCall]) -> UpsertOutcome:
         calls = list(calls)
         if not calls:
             return UpsertOutcome.empty()
@@ -327,9 +303,7 @@ class SqlToolCallRepository:
         bid = h.import_batch_id(self._s, sid, batch.file_sha256)
         session_ids = h.session_ids_by_external_id(self._s, sid)
         raw_ids = h.raw_record_ids_by_index(self._s, bid)
-        resolved = [
-            (c, _require_session(session_ids, c.session_external_id)) for c in calls
-        ]
+        resolved = [(c, _require_session(session_ids, c.session_external_id)) for c in calls]
         model_call_ids = h.model_call_ids_by_key(
             self._s, [session_id for _, session_id in resolved]
         )
@@ -347,9 +321,7 @@ class SqlToolCallRepository:
             )
             for c, session_id in resolved
         ]
-        return h.bulk_insert_ignore(
-            self._s, ToolCallRow, rows, ["session_id", "sequence"]
-        )
+        return h.bulk_insert_ignore(self._s, ToolCallRow, rows, ["session_id", "sequence"])
 
 
 class SqlRejectRepository:
@@ -374,13 +346,17 @@ class SqlRejectRepository:
         bid = self._batch_id_or_none(source_name, file_sha256)
         if bid is None:
             return []
-        rows = self._s.execute(
-            select(ImportRejectRow)
-            .where(ImportRejectRow.import_batch_id == bid)
-            .order_by(ImportRejectRow.record_index, ImportRejectRow.id)
-            .limit(limit)
-            .offset(offset)
-        ).scalars().all()
+        rows = (
+            self._s.execute(
+                select(ImportRejectRow)
+                .where(ImportRejectRow.import_batch_id == bid)
+                .order_by(ImportRejectRow.record_index, ImportRejectRow.id)
+                .limit(limit)
+                .offset(offset)
+            )
+            .scalars()
+            .all()
+        )
         return [m.row_to_import_reject(r) for r in rows]
 
     def count_for_import(self, source_name: str, file_sha256: str) -> int:
@@ -418,9 +394,7 @@ class SqlFieldProfileRepository:
         sid = h.source_id(self._s, batch.source_name)
         bid = h.import_batch_id(self._s, sid, batch.file_sha256)
         rows = [m.field_profile_to_values(p, bid) for p in profiles]
-        return h.bulk_insert_ignore(
-            self._s, FieldProfileRow, rows, ["import_batch_id", "path"]
-        )
+        return h.bulk_insert_ignore(self._s, FieldProfileRow, rows, ["import_batch_id", "path"])
 
 
 def _require_session(session_ids: dict[str, int], external_id: str) -> int:

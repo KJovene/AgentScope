@@ -87,7 +87,12 @@ export function BreakdownBarChart({
             offset={8}
             fill={CHART_COLORS.foregroundMuted}
             fontSize={11}
-            formatter={(share: number) => `${(share * 100).toFixed(1)} %`}
+            formatter={(share) => {
+              const numericShare = Number(share);
+              return Number.isFinite(numericShare)
+                ? `${(numericShare * 100).toFixed(1)} %`
+                : '';
+            }}
           />
         </Bar>
       </BarChart>

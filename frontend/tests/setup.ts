@@ -81,7 +81,14 @@ function patchFetchSignal() {
 // jsdom doesn't implement scrollIntoView either; chat-style views call it to follow new messages.
 window.HTMLElement.prototype.scrollIntoView = () => {};
 
-
+function patchFetchSignal(): void {
+  const originalFetch = globalThis.fetch;
+  globalThis.fetch = (input, init) => {
+    if (!init?.signal) return originalFetch(input, init);
+    const { signal: _signal, ...rest } = init;
+    return originalFetch(input, rest);
+  };
+}
 
 // The machine running CI-less coverage can be slow; give async utils room.
 configure({ asyncUtilTimeout: 3000 });

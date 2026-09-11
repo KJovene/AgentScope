@@ -1,8 +1,8 @@
 from __future__ import annotations
 
+import pytest
 from fastapi import HTTPException
 from fastapi.testclient import TestClient
-import pytest
 
 from agentscope.domain.errors import DomainError
 from agentscope.interfaces.api.app import create_app

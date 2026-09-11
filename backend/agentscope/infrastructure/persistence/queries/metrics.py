@@ -111,9 +111,7 @@ class SqlMetricsQueryService:
 
     def _execute(self, sql: str, params: dict[str, Any]) -> list[Row[Any]]:
         stmt = text(sql)
-        expanding: list[Any] = [
-            bindparam(k, expanding=True) for k in _LIST_KEYS if k in params
-        ]
+        expanding: list[Any] = [bindparam(k, expanding=True) for k in _LIST_KEYS if k in params]
         if expanding:
             stmt = stmt.bindparams(*expanding)
         return list(self._s.execute(stmt, params))
@@ -168,9 +166,7 @@ class SqlMetricsQueryService:
             cost_is_estimated=bool(row.cost_is_estimated),
             error_rate=_ratio(errors, total_calls) if total_calls else None,
             cache_hit_ratio=_ratio(cached, prompt),
-            median_session_duration_ms=(
-                float(statistics.median(durations)) if durations else None
-            ),
+            median_session_duration_ms=(float(statistics.median(durations)) if durations else None),
         )
 
     # -- série temporelle ----------------------------------------------------
@@ -205,13 +201,11 @@ class SqlMetricsQueryService:
 
     # -- liste des sessions -------------------------------------------------
 
-    def sessions(
-        self, filters: MetricFilter, page: Page
-    ) -> Paginated[SessionListItem]:
+    def sessions(self, filters: MetricFilter, page: Page) -> Paginated[SessionListItem]:
         where, params = self._where(filters)
-        total = self._execute(
-            f"SELECT COUNT(*) AS n FROM v_session_metrics WHERE {where}", params
-        )[0].n
+        total = self._execute(f"SELECT COUNT(*) AS n FROM v_session_metrics WHERE {where}", params)[
+            0
+        ].n
 
         rows = self._execute(
             f"""
@@ -241,9 +235,7 @@ class SqlMetricsQueryService:
             )
             for r in rows
         )
-        return Paginated(
-            items=items, total=_int(total), limit=page.limit, offset=page.offset
-        )
+        return Paginated(items=items, total=_int(total), limit=page.limit, offset=page.offset)
 
     # -- détail d'une session -----------------------------------------------
 

@@ -3,7 +3,7 @@ from __future__ import annotations
 import dataclasses
 from typing import Annotated, Any
 
-from fastapi import APIRouter, Depends, File, Form, HTTPException, Query, UploadFile, status
+from fastapi import APIRouter, File, Form, HTTPException, Query, UploadFile, status
 
 from agentscope.application.ports.metrics import Page
 from agentscope.interfaces.api.dependencies import ImportServiceDep

@@ -14,7 +14,6 @@ from agentscope.application.ports.llm_provider import (
     MappingProposal,
 )
 from agentscope.application.use_cases.analyze_unknown_file import AnalysisFailedError
-from agentscope.application.use_cases.preview_mapping import PreviewFailedError
 from agentscope.domain import DomainError
 from agentscope.infrastructure.llm.fake_provider import FakeLLMProvider
 from agentscope.infrastructure.profiling.field_profiler import DefaultFieldProfiler

@@ -21,8 +21,12 @@ VALID_MAPPING = {
             "iterate": {"path": "", "where": []},
             "identity": {"key_fields": ["session_id"]},
             "fields": {
-                "external_id": {"from": "session_id", "transform": "identity", "required": True,
-                                "on_error": "reject"},
+                "external_id": {
+                    "from": "session_id",
+                    "transform": "identity",
+                    "required": True,
+                    "on_error": "reject",
+                },
                 "agent_name": {"from": "provider", "transform": "lower"},
             },
         },
@@ -31,8 +35,12 @@ VALID_MAPPING = {
             "parent": {"entity": "session", "key_from": "session_id"},
             "identity": {"key_fields": ["session_id", "seq"]},
             "fields": {
-                "model_name": {"from": "model", "transform": "identity", "required": True,
-                               "on_error": "reject"},
+                "model_name": {
+                    "from": "model",
+                    "transform": "identity",
+                    "required": True,
+                    "on_error": "reject",
+                },
             },
         },
     },

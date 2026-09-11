@@ -122,30 +122,22 @@ class ImportRepository(Protocol):
 
 @runtime_checkable
 class RawRecordRepository(Protocol):
-    def upsert_many(
-        self, batch: ImportBatch, records: Iterable[RawRecord]
-    ) -> UpsertOutcome: ...
+    def upsert_many(self, batch: ImportBatch, records: Iterable[RawRecord]) -> UpsertOutcome: ...
 
 
 @runtime_checkable
 class SessionRepository(Protocol):
-    def upsert_many(
-        self, batch: ImportBatch, sessions: Iterable[Session]
-    ) -> UpsertOutcome: ...
+    def upsert_many(self, batch: ImportBatch, sessions: Iterable[Session]) -> UpsertOutcome: ...
 
 
 @runtime_checkable
 class ModelCallRepository(Protocol):
-    def upsert_many(
-        self, batch: ImportBatch, calls: Iterable[ModelCall]
-    ) -> UpsertOutcome: ...
+    def upsert_many(self, batch: ImportBatch, calls: Iterable[ModelCall]) -> UpsertOutcome: ...
 
 
 @runtime_checkable
 class ToolCallRepository(Protocol):
-    def upsert_many(
-        self, batch: ImportBatch, calls: Iterable[ToolCall]
-    ) -> UpsertOutcome: ...
+    def upsert_many(self, batch: ImportBatch, calls: Iterable[ToolCall]) -> UpsertOutcome: ...
 
 
 @runtime_checkable
