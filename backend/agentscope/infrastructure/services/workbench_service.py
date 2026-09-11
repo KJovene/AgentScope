@@ -9,6 +9,7 @@ from __future__ import annotations
 
 from collections.abc import Sequence
 from io import BytesIO
+from typing import Any
 
 from agentscope.application.mapping.file_format import detect_format
 from agentscope.application.mapping.validator import parse_and_validate
@@ -60,7 +61,7 @@ class MappingWorkbenchAdapter:
         self,
         filename: str,
         content: bytes,
-        definition: dict,
+        definition: dict[str, Any],
         sample_size: int = 50,
     ) -> PreviewReport:
         fmt = detect_format(filename)

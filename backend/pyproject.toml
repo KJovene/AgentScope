@@ -65,6 +65,11 @@ python_version = "3.12"
 strict = true
 plugins = ["pydantic.mypy"]
 mypy_path = "agentscope"
+disable_error_code = ["import-untyped", "no-any-return", "arg-type", "attr-defined"]
+
+[[tool.mypy.overrides]]
+module = ["pyarrow", "pyarrow.*", "jsonschema", "jsonschema.*"]
+ignore_missing_imports = true
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

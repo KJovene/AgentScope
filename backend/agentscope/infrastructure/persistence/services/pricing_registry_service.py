@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import builtins
+
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
@@ -14,7 +16,7 @@ class SqlPricingRegistryService:
     def __init__(self, session: Session) -> None:
         self._s = session
 
-    def list(self) -> list[ModelPrice]:
+    def list(self) -> builtins.list[ModelPrice]:
         rows = (
             self._s.execute(select(ModelPricingRow).order_by(ModelPricingRow.model_name))
             .scalars()
@@ -30,7 +32,7 @@ class SqlPricingRegistryService:
             for r in rows
         ]
 
-    def upsert(self, prices: list[ModelPrice]) -> PricingOutcome:
+    def upsert(self, prices: builtins.list[ModelPrice]) -> PricingOutcome:
         if not prices:
             return PricingOutcome(upserted=0)
         insert = _dialect_insert(self._s)

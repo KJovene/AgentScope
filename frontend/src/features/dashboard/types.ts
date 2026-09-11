@@ -6,6 +6,24 @@ export interface MetricDefinition {
   nullMeaning: string;
 }
 
+export interface DataQualityMetrics {
+  globalCompleteness: number;
+  globalRejectionRate: number;
+  sources: Array<{
+    id: string;
+    sourceName: string;
+    totalRows: number;
+    validRows: number;
+    rejectedRows: number;
+    completeness: number;
+    missingFields: Array<{
+      field: string;
+      emptyCount: number;
+      percentage: number;
+    }>;
+  }>;
+}
+
 export const METRIC_DEFINITIONS: Record<string, MetricDefinition> = {
   sessions: {
     label: "Sessions totales",

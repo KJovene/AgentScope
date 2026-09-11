@@ -6,6 +6,8 @@ commit explicite après écriture.
 
 from __future__ import annotations
 
+import builtins
+
 from sqlalchemy.orm import Session
 
 from agentscope.application.ports.repository_registry import (
@@ -25,14 +27,16 @@ class SqlRepositoryRegistryService:
         if self._ref.get_source(source_name) is None:
             raise LookupError(f"source inconnue : {source_name!r}")
 
-    def list(self, source_name: str) -> list[RepositoryEntry]:
+    def list(self, source_name: str) -> builtins.list[RepositoryEntry]:
         self._require_source(source_name)
         return [
             RepositoryEntry(name=r.name, url=r.url, language=r.language)
             for r in self._ref.list_code_repositories(source_name)
         ]
 
-    def register(self, source_name: str, repositories: list[RepositoryEntry]) -> RegisterOutcome:
+    def register(
+        self, source_name: str, repositories: builtins.list[RepositoryEntry]
+    ) -> RegisterOutcome:
         self._require_source(source_name)
         outcome = self._ref.upsert_code_repositories(
             source_name,
