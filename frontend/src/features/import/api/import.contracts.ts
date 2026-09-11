@@ -8,19 +8,21 @@ import { paginated, paginationParamsSchema } from '@shared/types/pagination';
  * (Later these can be generated from the backend OpenAPI via `npm run api:generate`.)
  */
 
-export const importStatusSchema = z.enum(['pending', 'running', 'succeeded', 'failed']);
+/** Backend `status` is a free string (see `ImportReport.status`); no fixed enum. */
+export const importStatusSchema = z.string();
 
+/** Mirrors `ImportReport` (backend/agentscope/interfaces/api/schemas/imports.py) exactly. */
 export const importBatchSchema = z.object({
   id: z.string(),
-  sourceName: z.string(),
-  originalFilename: z.string(),
-  fileFormat: z.enum(['jsonl', 'csv', 'parquet']),
+  source_id: z.string().nullable().optional(),
+  mapping_id: z.string(),
   status: importStatusSchema,
-  importedAt: z.string().datetime(),
-  importedCount: z.number().int().nonnegative(),
-  duplicateCount: z.number().int().nonnegative(),
-  rejectedCount: z.number().int().nonnegative(),
-  missingInfoCount: z.number().int().nonnegative(),
+  imported_at: z.string().datetime().nullable().optional(),
+  imported_count: z.number().int().nonnegative(),
+  duplicate_count: z.number().int().nonnegative(),
+  rejected_count: z.number().int().nonnegative(),
+  // The backend may return either a total or a per-field breakdown.
+  missing_info_count: z.union([z.number().int().nonnegative(), z.record(z.string(), z.number())]),
 });
 export type ImportBatch = z.infer<typeof importBatchSchema>;
 
@@ -32,20 +34,12 @@ export type ImportListParams = z.infer<typeof importListParamsSchema>;
 
 export const importListResponseSchema = paginated(importBatchSchema);
 
-export const rejectReasonCodeSchema = z.enum([
-  'unparseable_record',
-  'missing_required_field',
-  'transform_failed',
-  'unknown_target_field',
-  'duplicate_in_file',
-  'schema_violation',
-]);
-
+/** Mirrors `RejectRecord` (backend/agentscope/interfaces/api/schemas/imports.py). */
 export const importRejectSchema = z.object({
-  id: z.string(),
-  recordIndex: z.number().int(),
-  reasonCode: rejectReasonCodeSchema,
-  reasonDetail: z.string(),
+  record_index: z.number().int(),
+  reason_code: z.string(),
+  reason_detail: z.string(),
+  payload: z.record(z.string(), z.unknown()).default({}),
 });
 export type ImportReject = z.infer<typeof importRejectSchema>;
 

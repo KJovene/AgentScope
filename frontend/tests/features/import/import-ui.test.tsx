@@ -39,11 +39,10 @@ import { ImportReportPage } from '@features/import/ui/ImportReportPage';
 
 const row: ImportRow = {
   id: 'sha-1',
-  source: 'TraceLab',
-  filename: 'trace.jsonl',
-  format: 'JSONL',
-  status: 'succeeded',
-  statusLabel: 'Terminé',
+  mappingId: 'tracelab-jsonl',
+  sourceId: 'src-tracelab',
+  status: 'completed',
+  statusLabel: 'Réussi',
   importedAt: '2 janv. 2026',
   imported: '10',
   duplicates: '1',
@@ -54,23 +53,22 @@ const row: ImportRow = {
 
 const batch = {
   id: 'sha-1',
-  sourceName: 'TraceLab',
-  originalFilename: 'trace.jsonl',
-  fileFormat: 'jsonl',
-  status: 'succeeded',
-  importedAt: '2026-01-02T10:00:00Z',
-  importedCount: 10,
-  duplicateCount: 1,
-  rejectedCount: 2,
-  missingInfoCount: 0,
+  source_id: 'src-tracelab',
+  mapping_id: 'tracelab-jsonl',
+  status: 'completed',
+  imported_at: '2026-01-02T10:00:00Z',
+  imported_count: 10,
+  duplicate_count: 1,
+  rejected_count: 2,
+  missing_info_count: 0,
 };
 
 describe('ImportHistoryTable', () => {
   it('renders one row per import with a link to its report', () => {
     render(<ImportHistoryTable rows={[row]} />);
-    expect(screen.getByText('TraceLab')).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: 'trace.jsonl' })).toBeInTheDocument();
-    expect(screen.getByText('Terminé')).toBeInTheDocument();
+    expect(screen.getByText('tracelab-jsonl')).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'sha-1' })).toBeInTheDocument();
+    expect(screen.getByText('Réussi')).toBeInTheDocument();
   });
 });
 
@@ -90,7 +88,7 @@ describe('ImportHistoryScreen', () => {
   it('renders the table once imports load', () => {
     Object.assign(historyState, { isLoading: false, isError: false, rows: [row] });
     render(<ImportHistoryScreen />);
-    expect(screen.getByRole('link', { name: 'trace.jsonl' })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'sha-1' })).toBeInTheDocument();
   });
 
   it('renders the error state on failure', () => {
@@ -115,7 +113,7 @@ describe('ImportReportPage', () => {
   it('renders the four metric cards from the loaded batch', () => {
     Object.assign(reportQuery, { isLoading: false, isError: false, data: batch });
     render(<ImportReportPage importId="sha-1" />);
-    expect(screen.getByRole('heading', { name: 'trace.jsonl' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Lot sha-1' })).toBeInTheDocument();
     expect(screen.getByText('Importés')).toBeInTheDocument();
     expect(screen.getByText('Rejets')).toBeInTheDocument();
   });

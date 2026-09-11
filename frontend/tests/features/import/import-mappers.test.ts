@@ -5,26 +5,24 @@ import { rejectReasonLabel, toImportRow } from '@features/import/model/import.ma
 
 const batch: ImportBatch = {
   id: 'sha1',
-  sourceName: 'TraceLab',
-  originalFilename: 'trace.jsonl',
-  fileFormat: 'jsonl',
-  status: 'succeeded',
-  importedAt: '2026-01-02T10:00:00Z',
-  importedCount: 1200,
-  duplicateCount: 0,
-  rejectedCount: 3,
-  missingInfoCount: 2,
+  source_id: 'src-tracelab',
+  mapping_id: 'tracelab-jsonl',
+  status: 'completed',
+  imported_at: '2026-01-02T10:00:00Z',
+  imported_count: 1200,
+  duplicate_count: 0,
+  rejected_count: 3,
+  missing_info_count: 2,
 };
 
 describe('toImportRow', () => {
   it('maps and formats a batch into a table row', () => {
     const row = toImportRow(batch);
     expect(row.id).toBe('sha1');
-    expect(row.source).toBe('TraceLab');
-    expect(row.filename).toBe('trace.jsonl');
-    expect(row.format).toBe('JSONL');
-    expect(row.status).toBe('succeeded');
-    expect(row.statusLabel).toBe('Terminé');
+    expect(row.sourceId).toBe('src-tracelab');
+    expect(row.mappingId).toBe('tracelab-jsonl');
+    expect(row.status).toBe('completed');
+    expect(row.statusLabel).toBe('Réussi');
     expect(row.imported).toMatch(/1[\s ]?200/);
     expect(row.rejected).toBe('3');
     expect(row.missingInfo).toBe('2');
@@ -32,26 +30,31 @@ describe('toImportRow', () => {
     expect(row.hasRejects).toBe(true);
   });
 
-  it('hasRejects is false when rejectedCount is 0', () => {
-    expect(toImportRow({ ...batch, rejectedCount: 0 }).hasRejects).toBe(false);
+  it('hasRejects is false when rejected_count is 0', () => {
+    expect(toImportRow({ ...batch, rejected_count: 0 }).hasRejects).toBe(false);
+  });
+
+  it('sums missing_info_count when the backend returns a per-field breakdown', () => {
+    expect(
+      toImportRow({ ...batch, missing_info_count: { session_id: 2, tool_name: 3 } }).missingInfo,
+    ).toBe('5');
   });
 
   it.each([
-    ['pending', 'En attente'],
-    ['running', 'En cours'],
+    ['completed', 'Réussi'],
+    ['partial', 'Partiel'],
     ['failed', 'Échoué'],
   ] as const)('status %s -> label %s', (status, label) => {
     expect(toImportRow({ ...batch, status }).statusLabel).toBe(label);
   });
+
+  it('falls back to the raw status when unknown', () => {
+    expect(toImportRow({ ...batch, status: 'weird' }).statusLabel).toBe('weird');
+  });
 });
 
 describe('rejectReasonLabel', () => {
-  it('translates every controlled code', () => {
-    expect(rejectReasonLabel('unparseable_record')).toBe('Enregistrement illisible');
-    expect(rejectReasonLabel('missing_required_field')).toBe('Champ requis manquant');
-    expect(rejectReasonLabel('transform_failed')).toBe('Échec de transformation');
-    expect(rejectReasonLabel('unknown_target_field')).toBe('Champ cible inconnu');
-    expect(rejectReasonLabel('duplicate_in_file')).toBe('Doublon dans le fichier');
-    expect(rejectReasonLabel('schema_violation')).toBe('Violation du schéma');
+  it('returns the backend reason code as-is', () => {
+    expect(rejectReasonLabel('unparseable_record')).toBe('unparseable_record');
   });
 });

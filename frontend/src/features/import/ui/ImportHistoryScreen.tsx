@@ -8,7 +8,7 @@ export function ImportHistoryScreen() {
   const { rows, isLoading, isError, error, refetch } = useImportHistory();
 
   return (
-    <>
+    <div className="space-y-4">
       <PageHeader
         title="Historique des imports"
         description="Consultez l'ensemble des lots téléversés et le détail des rejets d'importation."
@@ -22,6 +22,6 @@ export function ImportHistoryScreen() {
       ) : (
         <ImportHistoryTable rows={rows} />
       )}
-    </>
+    </div>
   );
 }
