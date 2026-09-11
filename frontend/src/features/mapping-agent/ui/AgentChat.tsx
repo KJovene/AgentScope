@@ -6,6 +6,8 @@ import { ErrorState } from '@shared/ui';
 import { type ChatRequest } from '../api/chat.contracts';
 import { useChatMutation } from '../api/chat.queries';
 import { toWireMessages, useWorkbenchStore } from '../model/workbench-store';
+import { ChatBackdrop } from './ChatBackdrop';
+import { RobotAvatar } from './RobotAvatar';
 
 /**
  * I5.6 — the conversation with the agent.
@@ -62,17 +64,32 @@ export function AgentChat({ className }: { className?: string }) {
   };
 
   return (
-    <div className={cn('flex min-h-0 w-full flex-col border border-border bg-surface', className)}>
-      <div className="flex items-center justify-between border-b border-border bg-surface-raised px-4 py-3">
-        <div className="min-w-0">
-          <h2 className="cyber-heading text-sm text-neon-cyan neon-text-cyan">
-            Assistant AgentScope
-          </h2>
-          <p className="truncate text-[11px] text-foreground-muted">
-            {fileRef && proposal
-              ? `${fileRef} — ${proposal.explanations.length} correspondance(s), ${proposal.unmapped_fields.length} non mappé(s)`
-              : 'Discussion libre — aucun fichier analysé'}
-          </p>
+    <div
+      className={cn(
+        'relative flex min-h-0 w-full flex-col overflow-hidden border border-border bg-surface',
+        className,
+      )}
+    >
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-0 z-0 overflow-hidden"
+      >
+        <ChatBackdrop className="absolute left-1/2 top-1/2 h-[125%] w-[125%] -translate-x-1/2 -translate-y-1/2 opacity-[0.16]" />
+      </div>
+
+      <div className="relative z-10 flex items-center justify-between gap-3 border-b border-border bg-surface-raised px-4 py-3">
+        <div className="flex min-w-0 items-center gap-3">
+          <RobotAvatar className="h-9 w-9" />
+          <div className="min-w-0">
+            <h2 className="cyber-heading text-sm text-neon-cyan neon-text-cyan">
+              Assistant AgentScope
+            </h2>
+            <p className="truncate text-[11px] text-foreground-muted">
+              {fileRef && proposal
+                ? `${fileRef} — ${proposal.explanations.length} correspondance(s), ${proposal.unmapped_fields.length} non mappé(s)`
+                : 'Discussion libre — aucun fichier analysé'}
+            </p>
+          </div>
         </div>
         <span className="shrink-0 border border-neon-green/60 px-2 py-0.5 text-[10px] uppercase tracking-widest text-neon-green">
           online
@@ -83,7 +100,7 @@ export function AgentChat({ className }: { className?: string }) {
         role="log"
         aria-live="polite"
         aria-label="Conversation avec l'assistant"
-        className="flex-1 space-y-5 overflow-y-auto p-4"
+        className="relative z-10 flex-1 space-y-5 overflow-y-auto p-4"
       >
         {turns.map((turn) => (
           <div
