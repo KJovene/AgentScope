@@ -42,6 +42,8 @@ erDiagram
   SESSION       ||--o{ MODEL_CALL    : "contient"
   SESSION       ||--o{ TOOL_CALL     : "contient"
   MODEL_CALL    ||--o{ TOOL_CALL     : "déclenche"
+  %% `model_pricing` est une table de référence : rapprochée de `model_call.model_name`
+  %% par jointure dans les vues, sans clé étrangère (un modèle peut être absent de la grille).
 
   SOURCE {
     int id PK
@@ -338,6 +340,26 @@ Clé naturelle : `(import_batch_id, path)` **UNIQUE**.
 > Le flux « analyser un fichier inconnu » (`POST /analyze`, PLAN §5.3) est **éphémère** : il
 > renvoie un profil sans rien persister. `field_profile` n'est écrit que lors d'un import réel.
 
+### `model_pricing`
+**Une ligne = le tarif catalogue d'un modèle**, en USD par million de tokens. Donnée de
+**référence**, éditable, indépendante de tout import : elle sert à *estimer* `model_call.cost_usd`
+quand la source ne déclare pas de coût ([`indicators.md`](indicators.md) §3.4). Un coût déclaré
+par la source **prime toujours** sur l'estimation.
+
+| Colonne | Type | Null | Notes |
+| --- | --- | --- | --- |
+| `model_name` | TEXT | non | **PK** — identifiant du modèle, tel qu'il apparaît dans `model_call.model_name` |
+| `input_usd_per_mtok` | REAL | non | `CHECK >= 0` |
+| `output_usd_per_mtok` | REAL | non | `CHECK >= 0` |
+| `cached_usd_per_mtok` | REAL | **oui** | `CHECK NULL OR >= 0` — tarif de lecture de cache, absent chez les fournisseurs qui n'en facturent pas |
+
+Pas de clé étrangère vers `model_call` : la grille est rapprochée par `LEFT JOIN` sur le nom du
+modèle dans `v_session_metrics`. **Un modèle absent de la grille laisse le coût à `NULL`** — il
+n'est jamais estimé à `0`.
+
+Chargement : [`docs/data/model-pricing.json`](model-pricing.json) via `POST /api/v1/model-pricing`
+(upsert idempotent), soit `make seed-pricing`. Migration : `0004_model_pricing`.
+
 ## 4. Vues agrégées (couche dashboard)
 
 Ne remettent pas en cause la 3NF des tables de base ; recalculées à la volée.
@@ -348,6 +370,11 @@ Ne remettent pas en cause la 3NF des tables de base ; recalculées à la volée.
 | `v_daily_activity` | un couple (source, jour) | `n_sessions`, `n_model_calls`, `n_tool_calls`, `total_tokens` — jour = `date_trunc('day', session.started_at)` ; sessions sans `started_at` exclues (et comptées à part côté qualité) |
 | `v_tool_usage` | un couple (source, `tool_name`) | `n_calls`, `n_errors`, `error_rate`, `avg_duration_ms` |
 | `v_data_quality` | un `import_batch` | `source_name`, `record_count`, `imported_count`, `duplicate_count`, `rejected_count`, `missing_info_count`, `completeness_ratio` (= `imported_count / record_count`), `n_profiled_fields`, `avg_null_ratio` |
+
+`v_session_metrics.total_cost_usd` agrège, par appel,
+`COALESCE(model_call.cost_usd, (prompt·in + completion·out + cached·cached) / 1e6)` via un
+`LEFT JOIN model_pricing`, et expose `cost_is_estimated` pour signaler qu'une partie du total
+n'est pas déclarée par la source.
 
 Règle transverse des vues : les `NULL` sont **exclus** des sommes/moyennes, jamais convertis
 en `0`. Les métriques non comparables entre sources (ex. coût absent) restent nullables et
@@ -411,6 +438,7 @@ Pour chaque table :
 | `tool_call` | ✅ | ✅ | dénorm. | E4 |
 | `import_reject` | E1 | ✅ | ✅ | `payload_json` (pas de clé naturelle, index seul) |
 | `field_profile` | ✅ | ✅ | ✅ | — (`null_ratio`, `distinct_count` : faits mesurés, non redondants) |
+| `model_pricing` | ✅ | ✅ | ✅ | — table de référence, clé `model_name` |
 
 Aucune dépendance transitive **non intentionnelle**. Les écarts sont des dénormalisations
 décidées ; chacune est justifiée ci-dessous avec le coût évité et son garde-fou.
@@ -536,6 +564,7 @@ aucune donnée du dashboard n'est stockée en double de façon persistante.
 | `ImportReject` | `import_reject` | — (index `(import_batch, record_index)`) |
 | `FieldProfile` | `field_profile` | `(import_batch, path)` |
 | `FieldProfileSet` | *(non persistée)* | agrégat en mémoire ; `record_count` vit sur `import_batch` |
+| *(aucune entité)* | `model_pricing` | `model_name` — donnée de référence, hors domaine métier |
 
 Le domaine calcule (`TokenUsage.total_tokens`, `Interval.duration_ms` en propriétés) ; l'ORM
 persiste la valeur calculée quand la colonne existe (`model_call.total_tokens`) — pour les
@@ -669,5 +698,13 @@ Table field_profile {
   distinct_count int [not null]
   sample_values_json json [not null, default: '[]']
   Indexes { (import_batch_id, path) [unique] }
+}
+
+Table model_pricing {
+  model_name text [pk]
+  input_usd_per_mtok real [not null, note: 'CHECK >= 0']
+  output_usd_per_mtok real [not null, note: 'CHECK >= 0']
+  cached_usd_per_mtok real [note: 'CHECK null or >= 0']
+  Note: 'Table de référence : rapprochée de model_call.model_name par jointure, sans FK.'
 }
 ```

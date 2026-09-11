@@ -260,12 +260,23 @@ filtrage ») : une valeur calculée à la main, comparée à la réponse de l'AP
 
 ## 9. État actuel
 
+À jour au **2026-09-11**.
+
 | Élément | État |
 | --- | --- |
 | Vue `v_session_metrics` + `SqlMetricsQueryService` (indicateurs, séries, sessions, détail) | ✅ implémentés et testés |
-| Vues `v_daily_activity`, `v_tool_usage`, `v_data_quality` | 🟡 créées par la migration `0002`, **aucun service de lecture ne les interroge encore** |
-| Endpoints `/metrics/*`, `/sessions/*` | 🟡 exposés, mais ils renvoient les fixtures de `interfaces/api/fixtures.py` (I4.1) — le câblage arrive avec I4.6 / I4.7 |
-| Chiffres sur données réelles | ⬜ nécessite un mapping de source importé (I2.11) |
+| Vues `v_daily_activity`, `v_tool_usage`, `v_data_quality` | ✅ lues par `SqlMetricsQueryService` et `SqlDataQualityQueryService` |
+| Endpoints `/metrics/*`, `/sessions/*`, `/data-quality` | ✅ branchés sur la base — plus aucune fixture |
+| Table `model_pricing` + `POST /model-pricing` (estimation du coût) | ✅ livrés ; chargement par `make seed-pricing` |
+| Chiffres sur données réelles | ✅ vérifiés sur l'extrait TraceLab — voir [`../findings.md`](../findings.md) |
 
-Les formules ci-dessus décrivent le code réellement écrit ; ce qui manque, c'est le fil entre la
-route HTTP et ce code.
+Les formules ci-dessus décrivent le code réellement exécuté. Pour les rejouer soi-même :
+
+```bash
+make up && make migrate && make seed      # stack + schéma + données
+make db-shell                             # puis coller la requête de la fiche
+```
+
+Les trois observations de [`../findings.md`](../findings.md) ont été recalculées à la fois par
+`scripts/findings_tracelab.py` (directement sur le fichier source) et par ces vues après import :
+les valeurs coïncident.

@@ -7,7 +7,7 @@ tire, et comment chaque source y entre.
 | --- | --- | --- |
 | [`relational-model.md`](relational-model.md) | schéma relationnel v1 : diagramme, table par table, clés naturelles, contraintes, vues, justification 3NF | ✅ |
 | [`indicators.md`](indicators.md) | une fiche par indicateur : calcul à la ligne près, unité, périmètre, traitement des `NULL`, comparabilité inter-sources | ✅ |
-| [`mappings/`](mappings/) | une fiche par source intégrée : correspondances, champs non mappés, résultat du test bout-en-bout | 🟡 gabarit prêt, les deux fiches attendent les mappings (I2.11, I2.12) |
+| [`mappings/`](mappings/) | une fiche par source intégrée : correspondances, champs non mappés, résultat du test bout-en-bout | ✅ TraceLab et SWE-chat, avec leur définition JSON exécutable |
 
 Ailleurs dans le dépôt :
 

@@ -50,13 +50,13 @@ le champ n'existe pas dans leurs enregistrements. C'est exactement le cas que le
 serait faux ; AgentScope affiche « non disponible » et l'indicateur reste **non comparable** entre
 les deux fournisseurs.
 
-**Reproduire** — dans le dashboard, une fois l'import câblé : filtre `source = tracelab`,
+**Reproduire** — dans le dashboard : filtre `source = TraceLab`,
 `agent = claude`, aucune borne de date, carte « Taux d'utilisation du cache ». En SQL :
 
 ```sql
 SELECT SUM(cached_tokens) * 1.0 / NULLIF(SUM(prompt_tokens), 0) AS cache_hit_ratio
 FROM v_session_metrics
-WHERE source_name = 'tracelab' AND agent_name = 'claude';
+WHERE source_name = 'TraceLab' AND agent_name = 'claude';
 ```
 
 ---
@@ -79,7 +79,7 @@ tableau de bord qui n'afficherait qu'un « total de tokens » masquerait cette s
 pourquoi l'indicateur est **ventilé** entrée / sortie / cache
 ([`data/indicators.md`](data/indicators.md) §3.3).
 
-**Reproduire** — filtre `source = tracelab`, sans autre filtre ; comparer les cartes
+**Reproduire** — filtre `source = TraceLab`, sans autre filtre ; comparer les cartes
 « tokens d'entrée » et « tokens de sortie ». En SQL :
 
 ```sql
@@ -87,7 +87,7 @@ SELECT SUM(prompt_tokens) AS entree,
        SUM(completion_tokens) AS sortie,
        SUM(prompt_tokens) * 1.0 / NULLIF(SUM(completion_tokens), 0) AS ratio
 FROM v_session_metrics
-WHERE source_name = 'tracelab';
+WHERE source_name = 'TraceLab';
 ```
 
 ---
@@ -126,12 +126,12 @@ unique. Attention à la comparaison : les noms d'outils ne sont pas normalisés 
 (`Bash` chez l'un, `shell` / `exec_command` chez l'autre) — les rapprocher relèverait d'un choix
 de mapping, pas de la vue.
 
-**Reproduire** — écran « Répartition des outils », filtre `source = tracelab`. En SQL :
+**Reproduire** — écran « Répartition des outils », filtre `source = TraceLab`. En SQL :
 
 ```sql
 SELECT tool_name, n_calls, n_errors, error_rate
 FROM v_tool_usage
-WHERE source_name = 'tracelab' AND n_calls >= 100
+WHERE source_name = 'TraceLab' AND n_calls >= 100
 ORDER BY error_rate DESC;
 ```
 
@@ -154,20 +154,43 @@ du dashboard est une **distribution** et non une valeur unique.
 
 ---
 
+## Vérification croisée — script vs. base
+
+Ces trois observations ont été recalculées des **deux** façons, et les valeurs coïncident :
+`scripts/findings_tracelab.py` lit le fichier source, les requêtes SQL ci-dessus lisent la base
+après import. Contrôle rejoué le **2026-09-11** sur `data/tracelab/extract-dev.jsonl` importé
+par `make seed-tracelab-dev` :
+
+| Mesure | Document | Base (`v_session_metrics` / `v_tool_usage`) |
+| --- | --- | --- |
+| Taux de cache, sessions Claude | 91,7 % | `0.9171` |
+| Tokens d'entrée / sortie | 2 515 865 816 / 6 658 475 | identiques |
+| Ratio entrée : sortie | 378 : 1 | `377.8` |
+| `shell` — appels / erreurs | 274 / 67 → 24,5 % | `274 / 67 → 0.2445` |
+| `apply_patch` — appels / erreurs | 651 / 4 → 0,6 % | `651 / 4 → 0.0061` |
+
+Reproduire :
+
+```bash
+make data-tracelab && make seed-tracelab-dev   # extrait + import
+python scripts/findings_tracelab.py            # chiffres depuis le fichier
+make db-shell                                  # puis la requête SQL de chaque observation
+```
+
+Un écart entre les deux colonnes signalerait un défaut de mapping : c'est précisément ce que ce
+contrôle sert à détecter.
+
+---
+
 ## Limites
 
 - Ces chiffres portent sur l'**extrait** (1 session sur 32), pas sur le jeu complet
   (357 161 rounds scannés). L'échantillonnage retient des sessions entières et déterministes, mais
   reste un échantillon.
-- Ils sont calculés **directement sur le fichier source**, par le script ci-dessus, et non par le
-  parcours d'import de l'application : le câblage API ↔ base est en cours (I4.2 / I4.6) et le
-  mapping TraceLab n'est pas encore écrit (I2.11). Les requêtes SQL données dans chaque
-  observation sont donc la **vérification à faire** une fois ces deux issues fusionnées — les
-  valeurs doivent alors coïncider avec celles de ce document. Un écart signifierait un défaut de
-  mapping, et c'est précisément ce qu'on veut pouvoir détecter.
-- Les noms de colonnes cibles (`prompt_tokens`, `cached_tokens`, `agent_name`…) supposent le
-  mapping TraceLab décrit dans [`data/mappings/`](data/mappings/) — à confirmer quand la fiche
-  sera écrite.
+- Les noms de colonnes cibles (`prompt_tokens`, `cached_tokens`, `agent_name`…) sont ceux que
+  produit le mapping TraceLab décrit dans [`data/mappings/tracelab.md`](data/mappings/tracelab.md).
+- Le script lit le fichier source **avant** tout import ; les requêtes SQL de chaque observation
+  lisent la base **après** import. C'est justement l'intérêt de donner les deux.
 
 ---
 

@@ -9,13 +9,22 @@ cible est celui de [`relational-model.md`](../relational-model.md).
 
 ## État
 
-| Source | Fiche | Mapping | Issue |
+| Source | Fiche | Définition exécutable | Test bout-en-bout |
 | --- | --- | --- | --- |
-| TraceLab | ⬜ `tracelab.md` | ⬜ à écrire | I2.11 |
-| SWE-chat | ⬜ `swe-chat.md` | ⬜ à écrire | I2.12 |
+| TraceLab | ✅ [`tracelab.md`](tracelab.md) | ✅ [`tracelab.json`](tracelab.json) | ✅ `backend/tests/unit/test_normalizer.py`, `test_tracelab_fixture.py` |
+| SWE-chat | ✅ [`swe-chat.md`](swe-chat.md) | ✅ [`swe-chat.json`](swe-chat.json) | ✅ `backend/tests/unit/test_swe_chat_mapping.py`, `tests/integration/test_cost_estimation.py` |
 | Trace Commons | — | test « structure inconnue », pas d'intégration | I6.11 |
 
-Deux sources distinctes sont **exigées** pour la release (`docs/PLAN.md` §11).
+Deux sources distinctes sont **exigées** pour la release (`docs/PLAN.md` §11) : c'est fait.
+
+Le schéma JSON que doit respecter toute définition est
+[`mapping.schema.json`](mapping.schema.json) — il est lu par `application/mapping/validator.py`
+(monté sur `/docs` dans le conteneur backend). Importer une source déjà mappée ne demande aucun
+code et aucun appel à l'agent IA :
+
+```bash
+python scripts/seed_import.py --mapping docs/data/mappings/tracelab.json <fichier.jsonl>
+```
 
 ## Ce que contient une fiche
 

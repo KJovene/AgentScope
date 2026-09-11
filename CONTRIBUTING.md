@@ -30,15 +30,27 @@ Toute participation est soumise au [Code de conduite](CODE_OF_CONDUCT.md).
 
 ## 1 — Mettre en place son environnement
 
-Tout est décrit dans le [README](README.md#prise-en-main) : `git clone`, `cp .env.example .env`,
-`make up`, `make migrate`. Aucune clé n'est nécessaire pour développer ni pour lancer les tests
-(le fournisseur IA par défaut est `fake`, hors réseau).
+Tout est décrit dans le [README](README.md#installation) : `git clone`, `cp .env.example .env`,
+`make up`, `make migrate`, `make seed`. La dernière commande charge un jeu de traces réelles —
+sans elle, le dashboard affiche « non disponible » partout, ce qui est le comportement attendu
+mais complique le développement. Aucune clé n'est nécessaire pour développer ni pour lancer les
+tests (le fournisseur IA par défaut est `fake`, hors réseau).
 
 Avant de pousser :
 
 ```bash
 make ci      # lint + typecheck + import-linter + tests back & front
 ```
+
+> **Attention.** `make ci` n'est pas vert de bout en bout aujourd'hui : le backend l'est
+> (355 tests, `import-linter` vert), le frontend non (35 tests rouges, `npm run typecheck` bloqué
+> par du code mort dans `src/features/chat/`). Ne pas prendre un rouge préexistant pour un rouge
+> causé par sa PR : lancer `make ci` **avant** de commencer permet de faire la différence. Si une
+> PR répare une de ces deux dettes, le dire explicitement dans sa description.
+>
+> Aucun workflow GitHub Actions n'est actif : `.github/workflows/e2e.yml` est entièrement
+> commenté. La vérification avant fusion est donc **manuelle** — c'est au relecteur de demander
+> le résultat de `make ci`.
 
 ---
 
@@ -123,6 +135,11 @@ resynchroniser sur `dev` (`git merge origin/dev`) plutôt que de laisser diverge
   (`mypy --strict`, `tsc`). `make format` avant de committer évite les allers-retours en revue.
 - **Documenter quand le comportement observable change** : README, `docs/…` ou ADR selon la portée.
   Une décision structurante mérite un ADR dans [`docs/architecture/adr/`](docs/architecture/adr/).
+  Repères : un nouvel endpoint → le tableau « L'API REST » du README ; une table ou une vue →
+  [`docs/data/relational-model.md`](docs/data/relational-model.md) **dans la même PR que la
+  migration** ; un indicateur → [`docs/data/indicators.md`](docs/data/indicators.md) ; une source
+  → une fiche dans [`docs/data/mappings/`](docs/data/mappings/) et une ligne dans
+  [`data/README.md`](data/README.md) ; un fournisseur IA → [`docs/ai/`](docs/ai/).
 
 ---
 

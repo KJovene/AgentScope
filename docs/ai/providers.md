@@ -74,7 +74,7 @@ Les implémentations vivent dans
 | --- | --- | --- | --- |
 | `fake` **(défaut)** | `FakeLLMProvider` | tests, CI, développement hors ligne | ✅ livré |
 | `anthropic` | `AnthropicProvider` | API Anthropic | ✅ livré |
-| `openai` | `OpenAIProvider` | API OpenAI, **et** tout serveur compatible (Ollama, LM Studio) via `AGENTSCOPE_LLM_BASE_URL` — même code, aucune valeur `AGENTSCOPE_LLM_PROVIDER` dédiée | ✅ livré |
+| `openai` | `OpenAIProvider` | API OpenAI, **et** tout serveur compatible (Ollama, LM Studio, OpenRouter) via `AGENTSCOPE_LLM_BASE_URL` — même code, aucune valeur `AGENTSCOPE_LLM_PROVIDER` dédiée | ✅ livré |
 
 Un seul adaptateur est actif à la fois, choisi au démarrage par la factory pilotée par la
 configuration ([I3.5](../../backend/agentscope/infrastructure/llm/factory.py), ✅ livrée).
@@ -193,7 +193,14 @@ et 3 d'`import-linter` échouent sinon.
 | Use case `AnalyzeUnknownFile` | ✅ livré et testé (I3.7) |
 | Use case `ChatAboutMapping` | ✅ livré et testé (I3.8) |
 | Use case `PreviewMapping` | ✅ livré et testé (I3.9) |
+| Routes `POST /analyze`, `POST /chat`, `POST /mappings/{id}/preview` | ✅ branchées sur `MappingWorkbenchService` |
 | Vérification avec 2 modèles réels | ⬜ I3.13 — [`verification-report.md`](verification-report.md) |
 
-Ce document décrit le contrat figé au cadrage : il est ce que les adaptateurs doivent respecter,
-et il ne bougera pas quand ils arriveront.
+Ce document décrit le contrat figé au cadrage, et c'est celui que les adaptateurs livrés
+respectent.
+
+> **Avec le fournisseur `fake`, `POST /analyze` répond `400` sur un fichier réel.** Ce n'est pas
+> une panne : la proposition identité du fournisseur factice n'est pas un mapping valide pour une
+> structure quelconque, et l'application **refuse une proposition non conforme** plutôt que de
+> l'écrire. Pour exercer le parcours complet, configurer un fournisseur réel
+> ([`model-switch.md`](model-switch.md)).

@@ -67,6 +67,23 @@ Deux configurations distinctes (un modèle distant, un modèle local) produisent
 mapping valide sur le même fichier ; un mapping enregistré reste applicable après changement de
 modèle (I3.14, I6.9).
 
+### Mise en œuvre — écarts de nommage (constaté le 2026-09-11)
+
+La décision est appliquée telle quelle ; seuls deux noms diffèrent de ce qui était écrit ici au
+cadrage, et la décision n'est pas réécrite pour autant :
+
+- l'adaptateur compatible OpenAI s'appelle **`OpenAIProvider`** (et non
+  `OpenAICompatibleProvider`), dans `infrastructure/llm/openai_provider.py` ;
+- la factory est **`create_llm_provider(settings)`**, dans `infrastructure/llm/factory.py`. Elle
+  accepte exactement trois valeurs — `fake`, `anthropic`, `openai` — et lève
+  `LLMProviderConfigError` sur un nom inconnu ou une configuration incomplète. **Il n'existe pas
+  de valeur `ollama`** : Ollama, LM Studio et OpenRouter passent par `openai` + `base_url`, ce qui
+  est précisément ce que cette ADR prévoyait.
+
+`DefaultSensitiveFilter` a été déplacé de `infrastructure/profiling/` vers
+`application/mapping/` pour ne pas faire dépendre deux adaptateurs l'un de l'autre (contrat 5
+d'`import-linter`) — voir [`../review-i7.6.md`](../review-i7.6.md).
+
 ## Références
 
 `docs/PLAN.md` §2, §5.2 · `docs/ai/providers.md` · `docs/ai/model-switch.md` ·
