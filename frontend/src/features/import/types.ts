@@ -23,3 +23,11 @@ export interface PaginatedResponse<T> {
   limit: number;
   offset: number;
 }
+
+export interface MappingSummary {
+  mapping_id: string;
+  name: string;
+  source_name: string;
+  source_format: string;
+  is_active: boolean;
+}

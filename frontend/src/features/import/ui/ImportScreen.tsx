@@ -1,9 +1,9 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { apiClient } from "@shared/api/client";
 import { ApiError } from "@shared/api/types";
 import type { ProblemDetails } from "@shared/api/types";
 import { ApiErrorBanner } from "@shared/components/ApiErrorBanner";
-import type { ImportReport } from "../types";
+import type { ImportReport, MappingSummary, PaginatedResponse } from "../types";
 
 interface ImportScreenProps {
   onImportCompleted?: (report: ImportReport) => void;
@@ -17,11 +17,40 @@ const METRIC_TONES = {
 } as const;
 
 export const ImportScreen: React.FC<ImportScreenProps> = ({ onImportCompleted }) => {
-  const [mappingId, setMappingId] = useState<string>("tracelab-jsonl");
+  const [mappingId, setMappingId] = useState<string>("");
+  const [mappings, setMappings] = useState<MappingSummary[]>([]);
+  const [mappingsLoading, setMappingsLoading] = useState<boolean>(true);
+  const [mappingsError, setMappingsError] = useState<ProblemDetails | null>(null);
   const [files, setFiles] = useState<File[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<ProblemDetails | null>(null);
   const [report, setReport] = useState<ImportReport | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const data = await apiClient.get<PaginatedResponse<MappingSummary>>(
+          "/mappings?limit=200&offset=0"
+        );
+        if (cancelled) return;
+        setMappings(data.items);
+        setMappingId((current) => current || data.items[0]?.mapping_id || "");
+      } catch (err) {
+        if (cancelled) return;
+        setMappingsError(
+          err instanceof ApiError
+            ? err.problem
+            : { title: "Erreur de chargement", status: 500, detail: "Impossible de récupérer la liste des mappings." }
+        );
+      } finally {
+        if (!cancelled) setMappingsLoading(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
@@ -88,15 +117,30 @@ export const ImportScreen: React.FC<ImportScreenProps> = ({ onImportCompleted })
           <label htmlFor="mapping-id" className="block text-sm font-medium">
             Identifiant du mapping <span className="text-danger">*</span>
           </label>
-          <input
-            id="mapping-id"
-            type="text"
-            value={mappingId}
-            onChange={(e) => setMappingId(e.target.value)}
-            placeholder="ex. tracelab-jsonl"
-            required
-            className="cyber-field mt-1"
-          />
+          {mappingsError ? (
+            <p className="mt-1 text-xs text-danger">
+              Impossible de charger la liste des mappings. Réessayez plus tard.
+            </p>
+          ) : (
+            <select
+              id="mapping-id"
+              value={mappingId}
+              onChange={(e) => setMappingId(e.target.value)}
+              disabled={mappingsLoading || mappings.length === 0}
+              required
+              className="cyber-field mt-1"
+            >
+              {mappingsLoading && <option value="">Chargement des mappings…</option>}
+              {!mappingsLoading && mappings.length === 0 && (
+                <option value="">Aucun mapping disponible</option>
+              )}
+              {mappings.map((mapping) => (
+                <option key={mapping.mapping_id} value={mapping.mapping_id}>
+                  {mapping.name} — {mapping.source_name} ({mapping.source_format})
+                </option>
+              ))}
+            </select>
+          )}
         </div>
 
         {/* Dépôt de fichiers */}
@@ -114,9 +158,12 @@ export const ImportScreen: React.FC<ImportScreenProps> = ({ onImportCompleted })
                 onChange={handleFileChange}
                 className="hidden"
               />
-              <span className="inline-block cursor-pointer border border-neon-cyan bg-neon-cyan/10 px-4 py-2 text-sm font-semibold uppercase tracking-wider text-neon-cyan transition hover:bg-neon-cyan/20">
+              <label
+                htmlFor="file-upload"
+                className="inline-block cursor-pointer border border-neon-cyan bg-neon-cyan/10 px-4 py-2 text-sm font-semibold uppercase tracking-wider text-neon-cyan transition hover:bg-neon-cyan/20"
+              >
                 Parcourir les fichiers
-              </span>
+              </label>
               <p className="text-xs text-foreground-muted">Formats supportés : JSONL, CSV, Parquet</p>
             </div>
           </div>

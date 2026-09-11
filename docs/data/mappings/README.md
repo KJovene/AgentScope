@@ -13,6 +13,7 @@ cible est celui de [`relational-model.md`](../relational-model.md).
 | --- | --- | --- | --- |
 | TraceLab | ✅ [`tracelab.md`](tracelab.md) | ✅ [`tracelab.json`](tracelab.json) | ✅ `backend/tests/unit/test_normalizer.py`, `test_tracelab_fixture.py` |
 | SWE-chat | ✅ [`swe-chat.md`](swe-chat.md) | ✅ [`swe-chat.json`](swe-chat.json) | ✅ `backend/tests/unit/test_swe_chat_mapping.py`, `tests/integration/test_cost_estimation.py` |
+| pi-coding-agent | ✅ [`pi-session.md`](pi-session.md) | ✅ [`pi-session.json`](pi-session.json) | vérifié manuellement (voir la fiche) — pas encore de fixture/test automatisé |
 | Trace Commons | — | test « structure inconnue », pas d'intégration | I6.11 |
 
 Deux sources distinctes sont **exigées** pour la release (`docs/PLAN.md` §11) : c'est fait.

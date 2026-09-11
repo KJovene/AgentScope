@@ -22,6 +22,11 @@ from datetime import UTC, datetime
 from sqlalchemy.orm import Session
 
 from agentscope.application.mapping.file_format import detect_format as _format_for
+from agentscope.application.mapping.pi_session_preprocessor import (
+    PI_SESSION_MAPPING_ID,
+    convert_pi_session_bytes,
+    is_pi_session_export,
+)
 from agentscope.application.ports.imports import ImportBatchItem, ImportRejectItem
 from agentscope.application.ports.metrics import Page, Paginated
 from agentscope.application.ports.source_reader import SourceReader
@@ -80,6 +85,14 @@ class SqlImportService:
     ) -> ImportBatchItem:
         if not files:
             raise DomainError("Au moins un fichier est requis pour l'import.")
+
+        if mapping_id == PI_SESSION_MAPPING_ID:
+            files = [
+                (filename, convert_pi_session_bytes(content))
+                if is_pi_session_export(content)
+                else (filename, content)
+                for filename, content in files
+            ]
 
         importer = ImportFile(self._uow_factory, self._readers, clock=self._clock)
         reports: list[ImportReport] = [
