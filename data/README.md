@@ -4,17 +4,24 @@ Ce dossier **ne contient pas** d'extraits de datasets par défaut : `.gitignore`
 ce fichier. N'ajouter un extrait au dépôt que si ses conditions de redistribution le permettent
 explicitement.
 
-Le seul extrait commité est la fixture de test `backend/tests/fixtures/tracelab/sample.jsonl`
-(2 sessions, 185 Kio) : le jeu TraceLab est sous **CC BY 4.0**, qui autorise la
-redistribution avec attribution — voir le `NOTICE.md` qui l'accompagne.
+Deux fichiers de test seulement sont commités, et pour des raisons différentes :
+
+| Fichier | Nature | Pourquoi il peut être commité |
+| --- | --- | --- |
+| `backend/tests/fixtures/tracelab/sample.jsonl` (2 sessions, 185 Kio) | **données réelles** extraites de TraceLab | TraceLab est sous **CC BY 4.0**, qui autorise la redistribution avec attribution — voir le [`NOTICE.md`](../backend/tests/fixtures/tracelab/NOTICE.md) qui l'accompagne |
+| `backend/tests/fixtures/swe_chat/sample.jsonl` (2 sessions, 9 lignes) | **données fictives**, écrites à la main | reproduit le *schéma* réel de SWE-chat (noms de champs, `turn_type`, jointures) sans aucune donnée du dataset gated. Aucune licence tierce, donc aucun `NOTICE.md` |
+
+C'est la fixture TraceLab que charge `make seed` — c'est-à-dire l'étape d'installation du
+[README](../README.md#installation). Aucun téléchargement n'est nécessaire pour voir
+l'application fonctionner.
 
 ## Sources
 
 | Source | Référence | Format(s) | Version / date de récupération | Méthode de récupération | Sélection de l'extrait |
 | --- | --- | --- | --- | --- | --- |
 | TraceLab | https://github.com/uw-syfi/TraceLab | JSONL (`.jsonl.gz`) | release **`v0.0.1`**, publiée le 2026-06-22 · récupérée le **2026-09-07** | `make data-tracelab` → `scripts/tracelab_extract.py --fetch`, SHA256 vérifié contre l'empreinte publiée | 1 session sur 32, sessions entières, par provider (voir ci-dessous) |
-| SWE-chat | https://huggingface.co/datasets/SALT-NLP/SWE-chat | _à renseigner_ | _à renseigner (I2.12)_ | _à renseigner_ | _à renseigner_ |
-| Trace Commons | https://huggingface.co/datasets/trace-commons/agent-traces | formats natifs variés | _à renseigner (I6.11)_ | _à renseigner_ | test « structure inconnue » (I6.11) |
+| SWE-chat | https://huggingface.co/datasets/SALT-NLP/SWE-chat | Parquet multi-tables (`conversations` 1,3 Gio, `sessions`, `repositories`, `checkpoints`, `commits`) + transcripts bruts `transcripts/{session_id}.jsonl` | dataset **gated** (accès à accepter) · licence **ODC-BY** | `make data-swe-chat` → `scripts/swe_chat_extract.py` : `urllib` + `pyarrow`, petites tables en entier, `conversations` lu row-group par row-group en HTTP Range ; nécessite `$HF_TOKEN` | 1 session sur 64, session entière, par agent, **hors fragments dégénérés** (sessions sans aucun tour `assistant_response` ni `tool_use`) — aplati en JSONL (1 ligne = 1 tour de `conversations`) |
+| Trace Commons | https://huggingface.co/datasets/trace-commons/agent-traces | `sessions/{harness}/*.jsonl` (formats natifs Claude Code / Codex / …), vue Parquet « 1 ligne = 1 session » avec `trace[]` jusqu'à ~2 500 éléments | _n/a_ | **pas d'intégration** : sert le test « structure inconnue » (I6.11) | _n/a_ |
 
 ---
 
@@ -106,6 +113,24 @@ Le script refuse d'aller plus loin si l'empreinte ne correspond pas.
 
 - Utiliser le **fichier JSONL publié** de TraceLab, pas la base DuckDB ni l'app fournie.
 - Extraits de **taille raisonnable**, représentatifs, sélection documentée.
-- Données fictives autorisées **uniquement** pour les tests, jamais dans les dashboards.
+- Données fictives autorisées **uniquement** pour les tests, jamais dans les dashboards. Une
+  fixture fictive dit explicitement qu'elle l'est (cf. SWE-chat ci-dessus).
 - Aucune donnée sensible ni secret dans le dépôt.
-- Tout extrait commité s'accompagne d'un `NOTICE.md` portant sa licence et son attribution.
+- Tout extrait de **données réelles** commité s'accompagne d'un `NOTICE.md` portant sa licence et
+  son attribution.
+
+## Brancher un extrait sur la stack
+
+Les extraits ne servent à rien tant qu'ils ne sont pas importés. Une fois la stack levée
+(`make up && make migrate`) :
+
+| Commande | Ce qu'elle importe |
+| --- | --- |
+| `make seed` | grille tarifaire + fixture TraceLab commitée — hors ligne |
+| `make seed-tracelab-dev` | `data/tracelab/extract-dev.jsonl` (après `make data-tracelab`) |
+| `make seed-swe-chat` | `data/swe_chat/extract-dev.jsonl` (après `make data-swe-chat`) |
+| `make seed-reset` | vide les données importées puis recharge ce qui est présent |
+
+Chaque cible passe par `scripts/seed_import.py`, donc par l'API REST : mapping enregistré via
+`POST /api/v1/mappings`, fichier envoyé à `POST /api/v1/imports`. Réimporter le même fichier ne
+crée aucune ligne en double.

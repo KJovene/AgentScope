@@ -22,18 +22,14 @@ from agentscope.infrastructure.persistence.repositories.errors import UnknownRef
 
 
 def source_id(session: Session, name: str) -> int:
-    value = session.execute(
-        select(SourceRow.id).where(SourceRow.name == name)
-    ).scalar_one_or_none()
+    value = session.execute(select(SourceRow.id).where(SourceRow.name == name)).scalar_one_or_none()
     if value is None:
         raise UnknownReferenceError(f"source inconnue : {name!r}")
     return value
 
 
 def source_id_or_none(session: Session, name: str) -> int | None:
-    return session.execute(
-        select(SourceRow.id).where(SourceRow.name == name)
-    ).scalar_one_or_none()
+    return session.execute(select(SourceRow.id).where(SourceRow.name == name)).scalar_one_or_none()
 
 
 def latest_mapping_id(session: Session, name: str) -> int | None:
@@ -71,18 +67,14 @@ def raw_record_ids_by_index(session: Session, batch_id: int) -> dict[int, int]:
 
 def code_repository_ids_by_name(session: Session, source_id_: int) -> dict[str, int]:
     rows = session.execute(
-        select(RepositoryRow.name, RepositoryRow.id).where(
-            RepositoryRow.source_id == source_id_
-        )
+        select(RepositoryRow.name, RepositoryRow.id).where(RepositoryRow.source_id == source_id_)
     ).all()
     return {name: rid for name, rid in rows}
 
 
 def session_ids_by_external_id(session: Session, source_id_: int) -> dict[str, int]:
     rows = session.execute(
-        select(SessionRow.external_id, SessionRow.id).where(
-            SessionRow.source_id == source_id_
-        )
+        select(SessionRow.external_id, SessionRow.id).where(SessionRow.source_id == source_id_)
     ).all()
     return {external_id: sid for external_id, sid in rows}
 
@@ -117,6 +109,17 @@ def _dialect_insert(session: Session) -> Any:
     raise RuntimeError(f"dialecte sans upsert supporté : {name!r}")
 
 
+# Un INSERT multi-lignes envoie un paramètre par colonne et par ligne. Postgres en
+# accepte 65 535 au maximum (SQLite : 32 766 depuis la 3.32) : au-delà, le driver
+# échoue avant même d'atteindre la base. On découpe donc les lots sur le plus strict
+# des deux, calculé à partir du nombre réel de colonnes écrites.
+MAX_BIND_PARAMS = 32_766
+
+
+def _chunk_size(columns: int) -> int:
+    return max(1, MAX_BIND_PARAMS // max(1, columns))
+
+
 def bulk_insert_ignore(
     session: Session,
     model: Any,
@@ -124,15 +127,19 @@ def bulk_insert_ignore(
     conflict_columns: list[str],
 ) -> UpsertOutcome:
     """INSERT ... ON CONFLICT DO NOTHING. `inserted` = lignes réellement écrites,
-    `skipped` = conflits ignorés (doublons)."""
+    `skipped` = conflits ignorés (doublons). Les gros volumes sont découpés en lots
+    pour rester sous la limite de paramètres liés du driver."""
     if not rows:
         return UpsertOutcome.empty()
     insert = _dialect_insert(session)
-    stmt = (
-        insert(model)
-        .values(rows)
-        .on_conflict_do_nothing(index_elements=conflict_columns)
-        .returning(model.id)
-    )
-    inserted = len(session.execute(stmt).scalars().all())
+    size = _chunk_size(len(rows[0]))
+    inserted = 0
+    for start in range(0, len(rows), size):
+        stmt = (
+            insert(model)
+            .values(rows[start : start + size])
+            .on_conflict_do_nothing(index_elements=conflict_columns)
+            .returning(model.id)
+        )
+        inserted += len(session.execute(stmt).scalars().all())
     return UpsertOutcome(inserted=inserted, skipped=len(rows) - inserted)

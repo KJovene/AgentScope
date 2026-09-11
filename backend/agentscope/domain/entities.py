@@ -78,6 +78,7 @@ class RawRecord:
     index: int
     payload: dict[str, Any]
     sha256: str
+    parse_error: str | None = None
 
     def __post_init__(self) -> None:
         ensure(self.index >= 0, "RawRecord.index doit être >= 0")
@@ -308,6 +309,7 @@ class FieldProfileSet:
 
 
 # ---------------------------------------------------------------------------
+
 
 def _check_status_consistency(
     entity: str, status: CallStatus, error_type: ErrorType | None

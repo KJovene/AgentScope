@@ -134,9 +134,7 @@ def seed_full(uow: SqlAlchemyUnitOfWork) -> None:
 def row_counts(database: Database) -> dict[str, int]:
     tables = ["source", "session", "model_call", "tool_call", "raw_record", "import_batch"]
     with database.engine.connect() as conn:
-        return {
-            t: conn.execute(text(f"SELECT count(*) FROM {t}")).scalar_one() for t in tables
-        }
+        return {t: conn.execute(text(f"SELECT count(*) FROM {t}")).scalar_one() for t in tables}
 
 
 # --- référence & mapping --------------------------------------------------------
@@ -387,9 +385,7 @@ def test_field_profiles_upsert_idempotent(make_uow: MakeUow) -> None:
 # --- UnitOfWork ---------------------------------------------------------------------
 
 
-def test_uow_rollback_on_exception_leaves_db_empty(
-    make_uow: MakeUow, database: Database
-) -> None:
+def test_uow_rollback_on_exception_leaves_db_empty(make_uow: MakeUow, database: Database) -> None:
     with pytest.raises(RuntimeError, match="boom"), make_uow() as uow:
         uow.reference.add_source(Source(name="tracelab"))
         raise RuntimeError("boom")
@@ -397,9 +393,7 @@ def test_uow_rollback_on_exception_leaves_db_empty(
     assert row_counts(database)["source"] == 0
 
 
-def test_uow_without_commit_does_not_persist(
-    make_uow: MakeUow, database: Database
-) -> None:
+def test_uow_without_commit_does_not_persist(make_uow: MakeUow, database: Database) -> None:
     with make_uow() as uow:
         uow.reference.add_source(Source(name="tracelab"))
         # pas de commit

@@ -5,6 +5,11 @@ COMPOSE := docker compose
 BACKEND := backend
 FRONTEND := frontend
 
+# Interpréteur de l'hôte pour les scripts de `scripts/` (stdlib seule, Python 3.12+).
+# `python3` n'existe pas sous Windows/Git Bash, `python` pas toujours sous Linux :
+# on prend le premier des deux qui répond. Surchargeable : make seed PYTHON=py.
+PYTHON ?= $(shell python3 -c "" >/dev/null 2>&1 && echo python3 || echo python)
+
 .DEFAULT_GOAL := help
 
 .PHONY: help
@@ -94,6 +99,21 @@ test-backend: ## Tests backend (pytest)
 test-frontend: ## Tests frontend (vitest)
 	$(COMPOSE) run --rm $(FRONTEND) npm run test
 
+# --- Couverture (exécution locale, hors Docker : nécessite `make install`) ---
+# Seuil minimal : 80 % back et front. Chaque cible est indépendante.
+
+.PHONY: coverage
+coverage: coverage-backend coverage-frontend ## Couverture back + front (seuil 80 %)
+
+.PHONY: coverage-backend
+coverage-backend: ## Couverture backend seule — pytest-cov, rapport HTML dans backend/htmlcov/
+	cd $(BACKEND) && ./.venv/bin/python -m pytest \
+		--cov=agentscope --cov-report=term-missing --cov-report=html --cov-fail-under=80
+
+.PHONY: coverage-frontend
+coverage-frontend: ## Couverture frontend seule — vitest v8, rapport HTML dans frontend/coverage/
+	cd $(FRONTEND) && npm run test:coverage
+
 .PHONY: lint
 lint: ## Lint backend (ruff) + frontend (eslint)
 	$(COMPOSE) run --rm $(BACKEND) ruff check .
@@ -128,11 +148,54 @@ ci: lint typecheck arch test ## Ce que la CI exécute à chaque PR
 
 .PHONY: data-tracelab
 data-tracelab: ## Télécharge l'extrait TraceLab épinglé (SHA256 vérifié) + échantillon de dev
-	python scripts/tracelab_extract.py --fetch --modulo 32 --out data/tracelab/extract-dev.jsonl
+	$(PYTHON) scripts/tracelab_extract.py --fetch --modulo 32 --out data/tracelab/extract-dev.jsonl
+
+.PHONY: data-swe-chat
+data-swe-chat: ## Échantillon SWE-chat via hf:// (dataset gated — nécessite $$HF_TOKEN)
+	backend/.venv/bin/python scripts/swe_chat_extract.py --modulo 64 \
+		--max-sessions-per-agent 2 --out data/swe_chat/extract-dev.jsonl
+
+.PHONY: findings
+findings: ## Recalcule les chiffres de docs/findings.md depuis l'extrait TraceLab (I6.7)
+	$(PYTHON) scripts/findings_tracelab.py
 
 .PHONY: fixtures
 fixtures: ## Régénère la fixture de test TraceLab commitée
-	python scripts/tracelab_extract.py --fetch --modulo 32 --max-sessions-per-provider 1 --out backend/tests/fixtures/tracelab/sample.jsonl
+	$(PYTHON) scripts/tracelab_extract.py --fetch --modulo 32 --max-sessions-per-provider 1 --out backend/tests/fixtures/tracelab/sample.jsonl
+
+# --- Branchement des données : mapping + import via l'API REST (stack `make up`) ---
+# Surcharger l'API : make seed-tracelab API=http://localhost:8000
+API ?= http://localhost:8000
+
+.PHONY: seed-tracelab
+seed-tracelab: ## Importe TraceLab dans la stack en marche (fixture commitée, hors-ligne)
+	$(PYTHON) scripts/seed_import.py --api $(API) --mapping docs/data/mappings/tracelab.json \
+		backend/tests/fixtures/tracelab/sample.jsonl
+
+.PHONY: seed-tracelab-dev
+seed-tracelab-dev: ## Importe l'extrait TraceLab de dev (nécessite `make data-tracelab`)
+	$(PYTHON) scripts/seed_import.py --api $(API) --mapping docs/data/mappings/tracelab.json \
+		data/tracelab/extract-dev.jsonl
+
+.PHONY: seed-swe-chat
+seed-swe-chat: ## Importe l'extrait SWE-chat (nécessite `make data-swe-chat`)
+	$(PYTHON) scripts/seed_import.py --api $(API) --mapping docs/data/mappings/swe-chat.json \
+		data/swe_chat/extract-dev.jsonl
+
+.PHONY: seed-pricing
+seed-pricing: ## Charge docs/data/model-pricing.json (coût estimé quand la source n'en fournit pas)
+	$(PYTHON) scripts/seed_pricing.py --api $(API)
+
+.PHONY: seed
+seed: seed-pricing seed-tracelab ## Peuple la base avec les sources intégrées
+
+.PHONY: seed-reset
+seed-reset: ## Vide les données importées (garde le schéma) puis re-seed les sources présentes
+	$(COMPOSE) exec -T db psql -U $${POSTGRES_USER:-agentscope} -d $${POSTGRES_DB:-agentscope} -c \
+		"TRUNCATE source, mapping, import_batch, raw_record, import_reject, session, model_call, tool_call, field_profile, repository, model_pricing RESTART IDENTITY CASCADE;"
+	$(MAKE) seed-pricing
+	$(MAKE) seed-tracelab
+	@[ -f data/swe_chat/extract-dev.jsonl ] && $(MAKE) seed-swe-chat || echo "  (pas d'extrait SWE-chat — make data-swe-chat pour l'ajouter)"
 
 # ---------------------------------------------------------------------------
 # Installation locale (hors Docker)

@@ -6,6 +6,7 @@ dans le conteneur de composition.
 """
 
 from agentscope.application.ports.metrics import (
+    FilterDimensions,
     Granularity,
     Indicators,
     MetricFilter,
@@ -18,6 +19,7 @@ from agentscope.application.ports.metrics import (
     TimeseriesMetric,
     TimeseriesPoint,
 )
+from agentscope.application.ports.profiler import FieldProfiler, SensitiveFilter
 from agentscope.application.ports.provenance import ProvenanceRepository
 from agentscope.application.ports.repositories import (
     FieldProfileRepository,
@@ -31,6 +33,7 @@ from agentscope.application.ports.repositories import (
     ToolCallRepository,
     UpsertOutcome,
 )
+from agentscope.application.ports.source_reader import SourceReader
 from agentscope.application.ports.unit_of_work import UnitOfWork
 
 __all__ = [
@@ -52,10 +55,14 @@ __all__ = [
     "Page",
     "Paginated",
     "Indicators",
+    "FilterDimensions",
     "TimeseriesPoint",
     "TimeseriesMetric",
     "Granularity",
     "SessionListItem",
     "SessionDetail",
     "TimelineEntry",
+    "SourceReader",
+    "FieldProfiler",
+    "SensitiveFilter",
 ]

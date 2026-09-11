@@ -1,0 +1,143 @@
+{
+  "name": "swe-chat-jsonl",
+  "version": 1,
+  "source_format": "jsonl",
+  "constants": {
+    "source_name": "SWE-chat"
+  },
+  "unmapped_fields": [
+    "turn_id",
+    "checkpoint_pk",
+    "user_id",
+    "conversation_turn_number",
+    "is_conversational",
+    "content",
+    "is_continuation",
+    "is_first_turn",
+    "word_count",
+    "char_count",
+    "tool_call_id",
+    "file_path",
+    "command",
+    "pattern",
+    "tool_input_json",
+    "category",
+    "bash_category",
+    "queue_op_subtype",
+    "strategy",
+    "language",
+    "prompt_intent",
+    "prompt_pushback",
+    "input_tokens",
+    "cache_creation_input_tokens",
+    "session_input_tokens",
+    "session_output_tokens"
+  ],
+  "entities": {
+    "session": {
+      "iterate": {
+        "path": ""
+      },
+      "identity": {
+        "key_fields": [
+          "session_id"
+        ]
+      },
+      "fields": {
+        "external_id": {
+          "from": "session_id",
+          "required": true,
+          "on_error": "reject"
+        },
+        "agent_name": {
+          "from": "agent"
+        },
+        "repository_name": {
+          "from": "repository"
+        }
+      }
+    },
+    "model_call": {
+      "iterate": {
+        "path": "",
+        "where": [
+          ["turn_type", "eq", "assistant_response"]
+        ]
+      },
+      "parent": {
+        "entity": "session",
+        "key_from": "session_id"
+      },
+      "identity": {
+        "key_fields": [
+          "session_id",
+          "turn_number"
+        ]
+      },
+      "fields": {
+        "sequence": {
+          "from": "turn_number",
+          "transform": "to_int"
+        },
+        "model_name": {
+          "from": "model",
+          "transform": "coalesce",
+          "args": {
+            "fields": ["model", "agent"]
+          },
+          "required": true,
+          "on_error": "reject"
+        },
+        "completion_tokens": {
+          "from": "output_tokens",
+          "transform": "to_int"
+        },
+        "cached_tokens": {
+          "from": "cache_read_input_tokens",
+          "transform": "to_int"
+        },
+        "started_at": {
+          "from": "timestamp"
+        },
+        "ended_at": {
+          "from": "timestamp"
+        }
+      }
+    },
+    "tool_call": {
+      "iterate": {
+        "path": "",
+        "where": [
+          ["turn_type", "eq", "tool_use"]
+        ]
+      },
+      "parent": {
+        "entity": "session",
+        "key_from": "session_id"
+      },
+      "identity": {
+        "key_fields": [
+          "session_id",
+          "turn_number"
+        ]
+      },
+      "fields": {
+        "tool_name": {
+          "from": "tool_name",
+          "required": true,
+          "on_error": "reject"
+        },
+        "model_call_sequence": {
+          "from": "turn_number",
+          "transform": "to_int"
+        },
+        "started_at": {
+          "from": "timestamp"
+        },
+        "ended_at": {
+          "from": "timestamp"
+        }
+      }
+    }
+  }
+}

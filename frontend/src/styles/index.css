@@ -1,37 +1,606 @@
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 /*
+ * ─────────────────────────────────────────────────────────────────────────────
+ * CYBERPUNK-ACCESSIBLE DESIGN SYSTEM  ·  BLUE + VIOLET
  * Semantic color tokens as HSL channels (see tailwind.config.ts).
- * Light is the default; [data-theme="dark"] on <html> flips them.
+ * Light is the default; :root[data-theme="dark"] flips them.
+ * No pure black (#000) / pure white (#fff) anywhere. Target WCAG AA.
+ *
+ * Corners are NOT clipped on bordered surfaces (clip-path also clips the
+ * border and it disappears). Instead surfaces get real 1px borders + L-shaped
+ * neon corner brackets via `.hud`. `.clip-*` utilities remain for solidly
+ * filled elements only (their border is the same colour as the fill).
+ * ─────────────────────────────────────────────────────────────────────────────
  */
 :root {
-  --surface: 0 0% 100%;
-  --surface-muted: 220 14% 96%;
-  --border: 220 13% 88%;
+  color-scheme: light;
+
+  /* Light Mode — acier / béton clair, encre foncée */
+  --surface: 210 40% 97%;
+  --surface-muted: 214 30% 89%;
+  --surface-raised: 0 0% 99%;
+  --border: 214 20% 68%;
+  --border-strong: 216 20% 44%;
   --foreground: 222 47% 11%;
-  --foreground-muted: 220 9% 46%;
-  --primary: 221 83% 53%;
-  --primary-foreground: 0 0% 100%;
-  --success: 142 71% 35%;
-  --warning: 38 92% 45%;
-  --danger: 0 72% 46%;
+  --foreground-muted: 216 22% 32%;
+  --primary: 214 90% 40%; /* Bleu — AA sur surface */
+  --primary-foreground: 0 0% 99%;
+  --success: 162 92% 22%;
+  --warning: 27 92% 32%;
+  --danger: 349 82% 42%;
+
+  --accent-1: 214 92% 38%; /* Bleu électrique (contours/texte) */
+  --accent-2: 268 74% 45%; /* Violet — AA sur surface */
+  --accent-3: 162 92% 20%; /* Émeraude */
+
+  --shadow: 218 45% 22%;
+  --glow: 0.4;
+
+  /* Séries dataviz — Okabe-Ito adapté (sûr daltonisme), assombri pour le clair */
+  --chart-1: 214 92% 36%;
+  --chart-2: 27 100% 35%;
+  --chart-3: 165 90% 22%;
+  --chart-4: 285 60% 44%;
+  --chart-5: 200 90% 30%;
+  --chart-6: 12 82% 42%;
+
+  --font-scale: 1;
 }
 
-[data-theme='dark'] {
-  --surface: 222 47% 11%;
-  --surface-muted: 222 40% 8%;
-  --border: 220 17% 24%;
-  --foreground: 210 20% 96%;
-  --foreground-muted: 218 11% 65%;
-  --primary: 217 91% 60%;
-  --primary-foreground: 222 47% 11%;
-  --success: 142 60% 45%;
-  --warning: 38 92% 55%;
-  --danger: 0 72% 60%;
+:root[data-theme='dark'] {
+  color-scheme: dark;
+
+  /* Dark Mode — bleu nuit très sombre, surfaces gris-bleu, néons Bleu/Violet */
+  --surface: 222 40% 12%;
+  --surface-muted: 224 44% 6%;
+  --surface-raised: 221 36% 16%;
+  --border: 220 26% 26%;
+  --border-strong: 216 24% 44%;
+  --foreground: 210 33% 95%;
+  --foreground-muted: 214 20% 70%;
+  --primary: 205 100% 56%; /* Bleu néon */
+  --primary-foreground: 222 47% 8%;
+  --success: 152 85% 52%;
+  --warning: 40 100% 60%;
+  --danger: 344 100% 68%;
+
+  --accent-1: 202 100% 58%; /* Bleu néon */
+  --accent-2: 266 100% 72%; /* Violet néon */
+  --accent-3: 152 85% 55%;
+
+  --shadow: 224 70% 2%;
+  --glow: 1;
+
+  --chart-1: 202 100% 62%;
+  --chart-2: 40 100% 62%;
+  --chart-3: 152 82% 58%;
+  --chart-4: 276 100% 76%;
+  --chart-5: 190 95% 60%;
+  --chart-6: 18 100% 66%;
+}
+
+/* ── Accessibilité : échelle typographique ─────────────────────────────────── */
+:root[data-font-scale='large'] {
+  --font-scale: 1.15;
+}
+:root[data-font-scale='xl'] {
+  --font-scale: 1.32;
+}
+
+html {
+  font-size: calc(16px * var(--font-scale, 1));
 }
 
 body {
-  @apply bg-surface-muted text-foreground antialiased;
+  @apply bg-surface-muted font-mono text-foreground antialiased;
+  letter-spacing: 0.01em;
+}
+
+/* ── Cyberpunk cursors ─────────────────────────────────────────────────────
+ * Neon angular pointer + a violet targeting reticle over interactive elements.
+ * Reverts to the system cursors under "Mode contraste pur" ([data-fx="off"]).
+ * Text fields keep the I-beam; disabled controls keep not-allowed. */
+:root:not([data-fx='off']) {
+  cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpath d='M3 2 3 18 7.5 14 10.5 21 13.5 19.6 10.5 13 16.5 13Z' fill='%2334e0ff' stroke='%230a0e17' stroke-width='1.6' stroke-linejoin='round'/%3E%3C/svg%3E") 3 2, auto;
+}
+:root:not([data-fx='off'])
+  :is(a[href], button, [role='button'], summary, label, select, [type='checkbox'], [type='radio'], .cursor-pointer):not(
+    :disabled
+  ):not([aria-disabled='true']) {
+  cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='28' height='28' viewBox='0 0 28 28'%3E%3Cg fill='none' stroke='%23b98cff' stroke-width='2'%3E%3Cpath d='M4 9V4h5M19 4h5v5M24 19v5h-5M9 24H4v-5'/%3E%3C/g%3E%3Ccircle cx='14' cy='14' r='2.2' fill='%23b98cff'/%3E%3C/svg%3E") 14 14, pointer;
+}
+:root:not([data-fx='off'])
+  :is(input:not([type='checkbox']):not([type='radio']):not([type='button']):not([type='submit']), textarea, [contenteditable='true']) {
+  cursor: text;
+}
+:root:not([data-fx='off']) :is(button, a, input, select, textarea):disabled,
+:root:not([data-fx='off']) [aria-disabled='true'] {
+  cursor: not-allowed;
+}
+
+/* Ambient backdrop — blueprint grid + a blue/violet glow that drifts slowly */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background-image:
+    radial-gradient(60% 55% at 82% -5%, hsl(var(--accent-2) / calc(0.16 * var(--glow))), transparent 70%),
+    radial-gradient(55% 50% at 0% 8%, hsl(var(--accent-1) / calc(0.14 * var(--glow))), transparent 70%),
+    linear-gradient(hsl(var(--border) / 0.22) 1px, transparent 1px),
+    linear-gradient(90deg, hsl(var(--border) / 0.22) 1px, transparent 1px);
+  background-size:
+    100% 100%,
+    100% 100%,
+    46px 46px,
+    46px 46px;
+  mask-image: linear-gradient(180deg, #000 0%, #000 35%, transparent 78%);
+  animation: grid-drift 60s linear infinite;
+}
+
+/* Always-moving aurora — soft blue/violet blobs drifting behind every page.
+ * Alphas are fixed (not scaled by --glow) so it stays visible in light mode;
+ * "Mode contraste pur" hides it via display:none below. */
+body::after {
+  content: '';
+  position: fixed;
+  inset: -30%;
+  z-index: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(38% 46% at 18% 26%, hsl(var(--accent-1) / 0.22), transparent 60%),
+    radial-gradient(34% 42% at 84% 16%, hsl(var(--accent-2) / 0.22), transparent 60%),
+    radial-gradient(48% 46% at 64% 90%, hsl(var(--accent-2) / 0.18), transparent 60%),
+    radial-gradient(32% 36% at 40% 58%, hsl(var(--accent-1) / 0.16), transparent 60%);
+  filter: blur(34px);
+  animation: aurora 34s ease-in-out infinite alternate;
+}
+
+#root {
+  position: relative;
+  z-index: 1;
+}
+
+@keyframes aurora {
+  0% {
+    transform: translate3d(-3%, -2%, 0) scale(1.05) rotate(0deg);
+  }
+  50% {
+    transform: translate3d(3%, 2%, 0) scale(1.16) rotate(4deg);
+  }
+  100% {
+    transform: translate3d(-2%, 3%, 0) scale(1.08) rotate(-3deg);
+  }
+}
+
+/* Recharts inherits the monospace stack on axes / tooltips / legends */
+.recharts-wrapper text,
+.recharts-cartesian-axis-tick-value,
+.recharts-default-tooltip {
+  font-family: inherit !important;
+}
+
+/* ── Focus — always visible, neon ring ────────────────────────────────────── */
+:where(a, button, input, select, textarea, [tabindex]):focus-visible {
+  outline: 2px solid hsl(var(--accent-1));
+  outline-offset: 2px;
+}
+
+@layer components {
+  /* ── HUD surface: real border + L-shaped neon corner brackets ───────────────
+   * `.hud` / `.cyber-card` / `.cyber-panel` / `.hero-cyber` all get the same
+   * corner brackets. (@apply cannot carry ::before/::after, so every surface
+   * class is listed explicitly in the pseudo-element rules below.) */
+  .hud,
+  .cyber-card,
+  .cyber-panel,
+  .hero-cyber {
+    position: relative;
+    border: 1px solid hsl(var(--border));
+    background-color: hsl(var(--surface));
+  }
+  .hud::before,
+  .hud::after,
+  .cyber-card::before,
+  .cyber-card::after,
+  .cyber-panel::before,
+  .cyber-panel::after,
+  .hero-cyber::before,
+  .hero-cyber::after {
+    content: '';
+    position: absolute;
+    width: 12px;
+    height: 12px;
+    pointer-events: none;
+    border: 0 solid hsl(var(--accent-1) / calc(0.8 * var(--glow, 1)));
+    transition: border-color 0.2s ease;
+  }
+  .hud::before,
+  .cyber-card::before,
+  .cyber-panel::before,
+  .hero-cyber::before {
+    top: 0;
+    left: 0;
+    border-top-width: 2px;
+    border-left-width: 2px;
+  }
+  .hud::after,
+  .cyber-card::after,
+  .cyber-panel::after,
+  .hero-cyber::after {
+    right: 0;
+    bottom: 0;
+    border-right-width: 2px;
+    border-bottom-width: 2px;
+  }
+  .hud-violet::before,
+  .hud-violet::after {
+    border-color: hsl(var(--accent-2) / calc(0.85 * var(--glow, 1)));
+  }
+  .hud-green::before,
+  .hud-green::after {
+    border-color: hsl(var(--accent-3) / calc(0.85 * var(--glow, 1)));
+  }
+
+  .cyber-panel {
+    @apply shadow-elev;
+  }
+  .cyber-card {
+    @apply p-5 shadow-elev;
+    transition:
+      transform 0.2s cubic-bezier(0.16, 1, 0.3, 1),
+      box-shadow 0.2s ease,
+      border-color 0.2s ease;
+  }
+  .cyber-card:hover {
+    @apply border-border-strong;
+    transform: translateY(-2px);
+  }
+  .cyber-card:hover::before,
+  .cyber-card:hover::after {
+    border-color: hsl(var(--accent-1));
+  }
+  .cyber-inset {
+    @apply border border-border bg-surface-muted;
+  }
+
+  /* Field controls — square, real border, blue focus ring */
+  .cyber-field {
+    @apply w-full border border-border bg-surface-raised px-3 py-2 text-sm text-foreground transition;
+  }
+  .cyber-field::placeholder {
+    @apply text-foreground-muted;
+  }
+  .cyber-field:focus {
+    @apply border-neon-cyan outline-none;
+    box-shadow: 0 0 0 1px hsl(var(--accent-1) / 0.6);
+  }
+
+  .cyber-heading {
+    @apply font-semibold uppercase tracking-[0.18em] text-foreground-muted;
+  }
+  .cyber-title {
+    @apply text-sm font-semibold uppercase tracking-[0.16em];
+  }
+  .cyber-title::before {
+    content: '// ';
+    @apply text-neon-cyan;
+  }
+
+  /* Hero band — blue→violet wash + corner brackets (from the rule above) */
+  .hero-cyber {
+    background:
+      radial-gradient(120% 160% at 100% 0%, hsl(var(--accent-2) / calc(0.24 * var(--glow))), transparent 60%),
+      radial-gradient(120% 160% at 0% 100%, hsl(var(--accent-1) / calc(0.2 * var(--glow))), transparent 55%),
+      hsl(var(--surface));
+  }
+  .hero-cyber::after {
+    border-color: hsl(var(--accent-2) / calc(0.9 * var(--glow, 1)));
+  }
+  .hero-cyber::before {
+    border-color: hsl(var(--accent-2) / calc(0.9 * var(--glow, 1)));
+  }
+
+  /* Loading skeleton — shimmer sweep */
+  .skeleton {
+    @apply border border-border bg-surface-muted;
+    position: relative;
+    overflow: hidden;
+  }
+  .skeleton::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+      90deg,
+      transparent,
+      hsl(var(--accent-1) / calc(0.14 * var(--glow, 1))) 45%,
+      hsl(var(--accent-2) / calc(0.14 * var(--glow, 1))) 55%,
+      transparent
+    );
+    transform: translateX(-100%);
+    animation: shimmer 1.6s ease-in-out infinite;
+  }
+}
+
+@layer utilities {
+  /* ── Neon glow — subtle, radius-limited, scaled by --glow (light dims it) ── */
+  .neon-cyan {
+    border-color: hsl(var(--accent-1));
+    box-shadow:
+      0 0 0 1px hsl(var(--accent-1) / calc(0.55 * var(--glow, 1))),
+      0 0 14px -2px hsl(var(--accent-1) / calc(0.5 * var(--glow, 1)));
+  }
+  .neon-magenta,
+  .neon-violet {
+    border-color: hsl(var(--accent-2));
+    box-shadow:
+      0 0 0 1px hsl(var(--accent-2) / calc(0.55 * var(--glow, 1))),
+      0 0 14px -2px hsl(var(--accent-2) / calc(0.5 * var(--glow, 1)));
+  }
+  .neon-green {
+    border-color: hsl(var(--accent-3));
+    box-shadow:
+      0 0 0 1px hsl(var(--accent-3) / calc(0.55 * var(--glow, 1))),
+      0 0 14px -2px hsl(var(--accent-3) / calc(0.5 * var(--glow, 1)));
+  }
+
+  .neon-text-cyan {
+    color: hsl(var(--accent-1));
+    text-shadow: 0 0 10px hsl(var(--accent-1) / calc(0.5 * var(--glow, 1)));
+  }
+  .neon-text-magenta,
+  .neon-text-violet {
+    color: hsl(var(--accent-2));
+    text-shadow: 0 0 10px hsl(var(--accent-2) / calc(0.5 * var(--glow, 1)));
+  }
+  .neon-text-green {
+    color: hsl(var(--accent-3));
+    text-shadow: 0 0 10px hsl(var(--accent-3) / calc(0.5 * var(--glow, 1)));
+  }
+
+  /* Gradient text — blue → violet */
+  .text-gradient {
+    background: linear-gradient(100deg, hsl(var(--accent-1)), hsl(var(--accent-2)));
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+
+  .chart-glow {
+    filter: drop-shadow(0 0 4px hsl(var(--accent-1) / calc(0.45 * var(--glow, 1))));
+  }
+
+  .edge-top-cyan {
+    border-top: 2px solid hsl(var(--accent-1));
+  }
+  .edge-top-violet {
+    border-top: 2px solid hsl(var(--accent-2));
+  }
+
+  /* Animated scanline overlay — thin, slow, sits behind content */
+  .cyber-scanline {
+    position: relative;
+    overflow: hidden;
+  }
+  .cyber-scanline::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    height: 20%;
+    pointer-events: none;
+    z-index: 0;
+    background: linear-gradient(
+      180deg,
+      transparent,
+      hsl(var(--accent-1) / calc(0.05 * var(--glow, 1))) 50%,
+      transparent
+    );
+    animation: scan 6s linear infinite;
+  }
+  .cyber-scanline > * {
+    position: relative;
+    z-index: 1;
+  }
+
+  /* ── Entrance animations ────────────────────────────────────────────────── */
+  .stagger > * {
+    opacity: 0;
+    animation: fade-in 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  }
+  .stagger > *:nth-child(1) {
+    animation-delay: 0.04s;
+  }
+  .stagger > *:nth-child(2) {
+    animation-delay: 0.09s;
+  }
+  .stagger > *:nth-child(3) {
+    animation-delay: 0.14s;
+  }
+  .stagger > *:nth-child(4) {
+    animation-delay: 0.19s;
+  }
+  .stagger > *:nth-child(5) {
+    animation-delay: 0.24s;
+  }
+  .stagger > *:nth-child(6) {
+    animation-delay: 0.29s;
+  }
+  .stagger > *:nth-child(7) {
+    animation-delay: 0.34s;
+  }
+  .stagger > *:nth-child(8) {
+    animation-delay: 0.39s;
+  }
+  .stagger > *:nth-child(n + 9) {
+    animation-delay: 0.44s;
+  }
+
+  .chart-reveal {
+    animation: chart-reveal 0.6s cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+}
+
+@keyframes grid-drift {
+  from {
+    background-position:
+      0 0,
+      0 0,
+      0 0,
+      0 0;
+  }
+  to {
+    background-position:
+      0 0,
+      0 0,
+      46px 46px,
+      46px 46px;
+  }
+}
+
+@keyframes chart-reveal {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.99);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes shimmer {
+  0% {
+    transform: translateX(-100%);
+  }
+  60%,
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+/* ── Assistant mascot : bar-eyes on the FloatingChat button ─────────────────── */
+.robot-eyes {
+  color: currentColor;
+  filter: drop-shadow(0 0 4px hsl(var(--accent-1) / calc(0.7 * var(--glow, 1))));
+}
+.robot-eye {
+  animation: robot-blink 5.2s ease-in-out infinite;
+}
+.robot-eye:nth-child(2) {
+  animation-delay: 0.06s;
+}
+@keyframes robot-blink {
+  0%,
+  92%,
+  100% {
+    transform: scaleY(1);
+  }
+  95% {
+    transform: scaleY(0.12);
+  }
+}
+
+/* ── Jarvis HUD behind the assistant conversation ──────────────────────────── */
+.chat-hud-spin-slow {
+  animation: hud-spin 46s linear infinite reverse;
+}
+.chat-hud-spin-mid {
+  animation: hud-spin 18s linear infinite;
+}
+.chat-hud-spin-rev {
+  animation: hud-spin 30s linear infinite;
+}
+.chat-hud-core {
+  animation: hud-core 3.4s ease-in-out infinite;
+  transform-origin: 100px 100px;
+}
+@keyframes hud-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+@keyframes hud-core {
+  0%,
+  100% {
+    opacity: 0.4;
+    transform: scale(0.9);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.25);
+  }
+}
+
+/*
+ * ─────────────────────────────────────────────────────────────────────────────
+ * ACCESSIBILITY MODES (driven by <html data-*> from the AccessibilityPanel)
+ * ─────────────────────────────────────────────────────────────────────────────
+ */
+[data-fx='off'] {
+  --glow: 0;
+  --border: var(--border-strong);
+}
+[data-fx='off'] .neon-cyan,
+[data-fx='off'] .neon-magenta,
+[data-fx='off'] .neon-violet,
+[data-fx='off'] .neon-green,
+[data-fx='off'] [class*='shadow-neon-'] {
+  box-shadow: 0 0 0 1px hsl(var(--border-strong)) !important;
+}
+[data-fx='off'] [class*='neon-text-'] {
+  text-shadow: none !important;
+}
+[data-fx='off'] .text-gradient {
+  background: none;
+  -webkit-background-clip: border-box;
+  background-clip: border-box;
+  color: hsl(var(--foreground));
+}
+[data-fx='off'] .hud::before,
+[data-fx='off'] .hud::after {
+  border-color: hsl(var(--border-strong)) !important;
+}
+[data-fx='off'] .cyber-scanline::after,
+[data-fx='off'] .skeleton::after,
+[data-fx='off'] body::before,
+[data-fx='off'] body::after {
+  display: none !important;
+}
+[data-fx='off'] .chart-glow,
+[data-fx='off'] .recharts-wrapper * {
+  filter: none !important;
+}
+[data-fx='off'] .animate-pulse-neon,
+[data-fx='off'] .animate-flicker,
+[data-fx='off'] .animate-sheen {
+  animation: none !important;
+}
+
+[data-motion='reduced'] *,
+[data-motion='reduced'] *::before,
+[data-motion='reduced'] *::after {
+  animation-duration: 0.001ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.001ms !important;
+  scroll-behavior: auto !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
 }

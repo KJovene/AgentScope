@@ -2,29 +2,18 @@ import { formatDateTime, formatNumber } from '@shared/lib/format';
 
 import { type ImportBatch, type ImportReject } from '../api/import.contracts';
 
-const REJECT_REASON_LABELS: Record<ImportReject['reasonCode'], string> = {
-  unparseable_record: 'Enregistrement illisible',
-  missing_required_field: 'Champ requis manquant',
-  transform_failed: 'Échec de transformation',
-  unknown_target_field: 'Champ cible inconnu',
-  duplicate_in_file: 'Doublon dans le fichier',
-  schema_violation: 'Violation du schéma',
-};
-
-const STATUS_LABELS: Record<ImportBatch['status'], string> = {
-  pending: 'En attente',
-  running: 'En cours',
-  succeeded: 'Terminé',
+const STATUS_LABELS: Record<string, string> = {
+  completed: 'Réussi',
+  partial: 'Partiel',
   failed: 'Échoué',
 };
 
 export interface ImportRow {
   id: string;
-  source: string;
-  filename: string;
-  format: string;
+  mappingId: string;
+  sourceId: string | null;
+  status: string;
   statusLabel: string;
-  status: ImportBatch['status'];
   importedAt: string;
   imported: string;
   duplicates: string;
@@ -33,24 +22,29 @@ export interface ImportRow {
   hasRejects: boolean;
 }
 
+/** `missing_info_count` is either a total or a per-field breakdown. */
+function missingInfoTotal(missing: number | Record<string, number>): number {
+  if (typeof missing === 'number') return missing;
+  return Object.values(missing).reduce((acc, count) => acc + count, 0);
+}
+
 /** DTO -> table row. One place to map/format import batches (DRY). */
 export function toImportRow(batch: ImportBatch): ImportRow {
   return {
     id: batch.id,
-    source: batch.sourceName,
-    filename: batch.originalFilename,
-    format: batch.fileFormat.toUpperCase(),
+    mappingId: batch.mapping_id,
+    sourceId: batch.source_id ?? null,
     status: batch.status,
-    statusLabel: STATUS_LABELS[batch.status],
-    importedAt: formatDateTime(batch.importedAt),
-    imported: formatNumber(batch.importedCount),
-    duplicates: formatNumber(batch.duplicateCount),
-    rejected: formatNumber(batch.rejectedCount),
-    missingInfo: formatNumber(batch.missingInfoCount),
-    hasRejects: batch.rejectedCount > 0,
+    statusLabel: STATUS_LABELS[batch.status] ?? batch.status,
+    importedAt: batch.imported_at ? formatDateTime(batch.imported_at) : '—',
+    imported: formatNumber(batch.imported_count),
+    duplicates: formatNumber(batch.duplicate_count),
+    rejected: formatNumber(batch.rejected_count),
+    missingInfo: formatNumber(missingInfoTotal(batch.missing_info_count)),
+    hasRejects: batch.rejected_count > 0,
   };
 }
 
-export function rejectReasonLabel(code: ImportReject['reasonCode']): string {
-  return REJECT_REASON_LABELS[code];
+export function rejectReasonLabel(code: ImportReject['reason_code']): string {
+  return code;
 }

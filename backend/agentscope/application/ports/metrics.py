@@ -13,7 +13,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from datetime import datetime
 from enum import StrEnum
-from typing import Protocol, runtime_checkable
+from typing import Any, Protocol, runtime_checkable
 
 
 class TimeseriesMetric(StrEnum):
@@ -66,9 +66,21 @@ class Indicators:
     completion_tokens: int | None
     cached_tokens: int | None
     total_cost_usd: float | None
+    cost_is_estimated: bool  # un coût du périmètre a été estimé (pas déclaré par la source)
     error_rate: float | None
     cache_hit_ratio: float | None
     median_session_duration_ms: float | None
+
+
+@dataclass(frozen=True, slots=True)
+class FilterDimensions:
+    """Valeurs distinctes réellement présentes en base, pour alimenter les menus
+    déroulants du dashboard. Sans portée : la liste reste complète quels que
+    soient les filtres actifs, sinon une valeur sélectionnée pourrait disparaître
+    de son propre menu."""
+
+    agents: tuple[str, ...] = ()
+    models: tuple[str, ...] = ()
 
 
 @dataclass(frozen=True, slots=True)
@@ -136,8 +148,10 @@ class MetricsQueryService(Protocol):
         granularity: Granularity = Granularity.DAY,
     ) -> list[TimeseriesPoint]: ...
 
-    def sessions(
-        self, filters: MetricFilter, page: Page
-    ) -> Paginated[SessionListItem]: ...
+    def sessions(self, filters: MetricFilter, page: Page) -> Paginated[SessionListItem]: ...
 
     def session_detail(self, session_id: int) -> SessionDetail | None: ...
+
+    def tool_usage(self, f: MetricFilter) -> list[dict[str, Any]]: ...
+
+    def dimensions(self) -> FilterDimensions: ...

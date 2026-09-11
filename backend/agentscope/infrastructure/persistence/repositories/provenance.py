@@ -20,9 +20,7 @@ class SqlProvenanceRepository:
     def __init__(self, session: Session) -> None:
         self._s = session
 
-    def raw_record_for_session(
-        self, source_name: str, external_id: str
-    ) -> RawRecord | None:
+    def raw_record_for_session(self, source_name: str, external_id: str) -> RawRecord | None:
         row = self._s.execute(
             select(RawRecordRow)
             .join(SessionRow, SessionRow.raw_record_id == RawRecordRow.id)

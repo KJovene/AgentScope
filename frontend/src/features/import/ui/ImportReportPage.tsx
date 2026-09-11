@@ -15,7 +15,10 @@ export function ImportReportPage({ importId }: { importId: string }) {
 
   return (
     <>
-      <PageHeader title={row.filename} description={`${row.source} · ${row.format} · ${row.importedAt}`} />
+      <PageHeader
+        title={`Lot ${row.id}`}
+        description={`Mapping : ${row.mappingId} · ${row.importedAt}`}
+      />
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         <MetricCard label="Importés" value={row.imported} />
         <MetricCard label="Doublons" value={row.duplicates} />

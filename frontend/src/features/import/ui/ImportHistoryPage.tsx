@@ -1,25 +1,16 @@
-import { PageHeader } from '@shared/components/PageHeader';
-import { EmptyState, ErrorState, Spinner } from '@shared/ui';
+import { ErrorState, EmptyState, Spinner } from '@shared/ui';
 
 import { useImportHistory } from '../hooks/use-import-history';
 import { ImportHistoryTable } from './ImportHistoryTable';
 
 export function ImportHistoryPage() {
-  const { rows, isLoading, isError, error, refetch } = useImportHistory();
+  const history = useImportHistory();
 
-  return (
-    <>
-      <PageHeader
-        title="Historique des imports"
-        description="Chaque import affiche son bilan : importés, doublons, rejets, informations manquantes."
-      />
+  if (history.isLoading) return <Spinner />;
+  if (history.isError) return <ErrorState error={history.error} onRetry={() => void history.refetch()} />;
+  if (history.rows.length === 0) {
+    return <EmptyState title="Aucun import" description="Aucun import n'est disponible." />;
+  }
 
-      {isLoading && <Spinner />}
-      {isError && <ErrorState error={error} onRetry={() => void refetch()} />}
-      {!isLoading && !isError && rows.length === 0 && (
-        <EmptyState title="Aucun import" description="Importez un fichier pour commencer." />
-      )}
-      {!isLoading && !isError && rows.length > 0 && <ImportHistoryTable rows={rows} />}
-    </>
-  );
+  return <ImportHistoryTable rows={history.rows} />;
 }

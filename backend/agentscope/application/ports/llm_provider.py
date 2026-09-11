@@ -6,16 +6,22 @@ Fake) implementent ce Protocol dans agentscope.infrastructure.llm.*.
 
 from __future__ import annotations
 
+from collections.abc import Mapping
 from dataclasses import dataclass
 from typing import Any, Protocol, runtime_checkable
 
-# Types fournis par d'autres ports pas encore codes (WS-B pour le profileur,
-# I3.6/I3.8 pour le chat). A remplacer par le vrai import des qu'ils existent :
-#   from agentscope.application.ports.profiler import FieldProfileSet
-FieldProfileSet = Any
-TargetSchema = Any
-ChatMessage = Any
-MappingContext = Any
+from agentscope.application.mapping.target_schema import TargetEntity
+from agentscope.domain import FieldProfileSet
+
+TargetSchema = Mapping[str, TargetEntity]
+
+
+@dataclass(frozen=True)
+class ChatMessage:
+    """Un tour de la conversation avec l'agent."""
+
+    role: str  # "user" | "assistant"
+    text: str
 
 
 @dataclass(frozen=True)
@@ -36,6 +42,14 @@ class MappingProposal:
     explanations: list[FieldExplanation]
     ambiguities: list[str]  # points que l'agent signale comme incertains
     unmapped_fields: list[str]
+
+
+@dataclass(frozen=True)
+class MappingContext:
+    """Contexte donne a l'agent pour discuter d'une proposition en cours."""
+
+    proposal: MappingProposal
+    target_schema: TargetSchema
 
 
 @dataclass(frozen=True)

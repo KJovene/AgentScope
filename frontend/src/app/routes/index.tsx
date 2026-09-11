@@ -1,10 +1,10 @@
 import { createFileRoute } from '@tanstack/react-router';
 
 import { metricFiltersSchema } from '@shared/lib/metric-filters';
-import { DashboardPage } from '@features/dashboard';
+import { DashboardScreen } from '@features/dashboard';
 
 export const Route = createFileRoute('/')({
   // Dashboard filters are URL search params so a filtered view is shareable.
   validateSearch: metricFiltersSchema,
-  component: DashboardPage,
+  component: DashboardScreen,
 });

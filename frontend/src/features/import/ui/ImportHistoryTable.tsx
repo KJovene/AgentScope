@@ -9,9 +9,8 @@ export function ImportHistoryTable({ rows }: { rows: ImportRow[] }) {
       <table className="w-full text-sm">
         <thead className="bg-surface-muted text-left text-xs uppercase text-foreground-muted">
           <tr>
-            <th className="px-3 py-2">Source</th>
-            <th className="px-3 py-2">Fichier</th>
-            <th className="px-3 py-2">Format</th>
+            <th className="px-3 py-2">Lot</th>
+            <th className="px-3 py-2">Mapping</th>
             <th className="px-3 py-2">Statut</th>
             <th className="px-3 py-2 text-right">Importés</th>
             <th className="px-3 py-2 text-right">Doublons</th>
@@ -23,17 +22,16 @@ export function ImportHistoryTable({ rows }: { rows: ImportRow[] }) {
         <tbody>
           {rows.map((row) => (
             <tr key={row.id} className="border-t border-border hover:bg-surface-muted/50">
-              <td className="px-3 py-2">{row.source}</td>
               <td className="px-3 py-2">
                 <Link
                   to="/imports/$importId"
                   params={{ importId: row.id }}
-                  className="text-primary hover:underline"
+                  className="font-mono text-primary hover:underline"
                 >
-                  {row.filename}
+                  {row.id}
                 </Link>
               </td>
-              <td className="px-3 py-2">{row.format}</td>
+              <td className="px-3 py-2">{row.mappingId}</td>
               <td className="px-3 py-2">{row.statusLabel}</td>
               <td className="px-3 py-2 text-right tabular-nums">{row.imported}</td>
               <td className="px-3 py-2 text-right tabular-nums">{row.duplicates}</td>

@@ -32,7 +32,33 @@ export default defineConfig({
   test: {
     globals: true,
     environment: 'jsdom',
-    setupFiles: ['./src/test/setup.ts'],
+    // Every test lives under tests/ (not colocated with source).
+    include: ['tests/**/*.test.{ts,tsx}'],
+    setupFiles: ['./tests/setup.ts'],
     css: false,
+    coverage: {
+      provider: 'v8',
+      reporter: ['text', 'json-summary', 'html'],
+      // Unit-test surface only. Bootstrap, generated code, router file-route
+      // wrappers and pure type modules carry no logic worth asserting.
+      include: ['src/**/*.{ts,tsx}'],
+      exclude: [
+        'src/main.tsx',
+        'src/vite-env.d.ts',
+        'src/**/*.d.ts',
+        'src/**/*.gen.ts',
+        'src/api/generated/**',
+        'src/app/routes/**',
+        'src/app/router.tsx',
+        'src/app/providers.tsx',
+        'src/**/index.ts',
+      ],
+      thresholds: {
+        lines: 80,
+        statements: 80,
+        functions: 80,
+        branches: 80,
+      },
+    },
   },
 });

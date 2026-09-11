@@ -180,8 +180,7 @@ class ModelCallRow(Base):
             name="error_type_vocab",
         ),
         CheckConstraint(
-            "cached_tokens IS NULL OR prompt_tokens IS NULL "
-            "OR cached_tokens <= prompt_tokens",
+            "cached_tokens IS NULL OR prompt_tokens IS NULL OR cached_tokens <= prompt_tokens",
             name="cached_le_prompt",
         ),
         CheckConstraint(
@@ -294,6 +293,30 @@ class FieldProfileRow(Base):
     )
 
 
+class ModelPricingRow(Base):
+    """Grille tarifaire par modèle (USD par million de tokens).
+
+    Donnée de référence, éditable : sert à **estimer** ``cost_usd`` quand la
+    source ne le fournit pas (cf. ``docs/data/indicators.md`` §3.4). Un coût
+    déclaré par la source prime toujours sur l'estimation.
+    """
+
+    __tablename__ = "model_pricing"
+    __table_args__ = (
+        CheckConstraint("input_usd_per_mtok >= 0", name="input_price_non_negative"),
+        CheckConstraint("output_usd_per_mtok >= 0", name="output_price_non_negative"),
+        CheckConstraint(
+            "cached_usd_per_mtok IS NULL OR cached_usd_per_mtok >= 0",
+            name="cached_price_non_negative",
+        ),
+    )
+
+    model_name: Mapped[str] = mapped_column(Text, primary_key=True)
+    input_usd_per_mtok: Mapped[float] = mapped_column(Float, nullable=False)
+    output_usd_per_mtok: Mapped[float] = mapped_column(Float, nullable=False)
+    cached_usd_per_mtok: Mapped[float | None] = mapped_column(Float)
+
+
 ALL_TABLES = (
     SourceRow,
     RepositoryRow,
@@ -305,4 +328,5 @@ ALL_TABLES = (
     ToolCallRow,
     ImportRejectRow,
     FieldProfileRow,
+    ModelPricingRow,
 )

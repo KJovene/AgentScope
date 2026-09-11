@@ -60,9 +60,7 @@ def test_structural_conformance_with_a_fake() -> None:
         def __init__(self) -> None:
             self.saved: list[Session] = []
 
-        def upsert_many(
-            self, batch: ImportBatch, sessions: Iterable[Session]
-        ) -> UpsertOutcome:
+        def upsert_many(self, batch: ImportBatch, sessions: Iterable[Session]) -> UpsertOutcome:
             new = [s for s in sessions if s not in self.saved]
             self.saved.extend(new)
             return UpsertOutcome(inserted=len(new), skipped=0)

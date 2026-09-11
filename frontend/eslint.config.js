@@ -61,4 +61,24 @@ export default tseslint.config(
       ],
     },
   },
+  {
+    // Node-executed codegen script (not part of the browser bundle).
+    files: ['scripts/**/*.mjs'],
+    languageOptions: {
+      globals: { process: 'readonly' },
+    },
+  },
+  {
+    // Tests deliberately reach into internal modules and shared test helpers.
+    files: ['tests/**/*.{ts,tsx}'],
+    rules: {
+      'no-restricted-imports': 'off',
+      'boundaries/element-types': 'off',
+      'boundaries/no-private': 'off',
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        { argsIgnorePattern: '^_', ignoreRestSiblings: true },
+      ],
+    },
+  },
 );

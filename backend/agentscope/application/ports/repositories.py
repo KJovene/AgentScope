@@ -107,6 +107,14 @@ class ImportRepository(Protocol):
         """Cœur de l'idempotence niveau fichier : `None` → import inédit."""
         ...
 
+    def get_by_sha256(self, file_sha256: str) -> ImportBatch | None:
+        """Lecture API : un import adressé par son seul `file_sha256`.
+
+        `file_sha256` est l'identifiant public d'un import (§5.3). Unique par
+        source ; en cas de collision inter-sources, renvoie le plus récent.
+        """
+        ...
+
     def list_recent(self, limit: int, offset: int) -> list[ImportBatch]: ...
 
     def count(self) -> int: ...
@@ -114,30 +122,22 @@ class ImportRepository(Protocol):
 
 @runtime_checkable
 class RawRecordRepository(Protocol):
-    def upsert_many(
-        self, batch: ImportBatch, records: Iterable[RawRecord]
-    ) -> UpsertOutcome: ...
+    def upsert_many(self, batch: ImportBatch, records: Iterable[RawRecord]) -> UpsertOutcome: ...
 
 
 @runtime_checkable
 class SessionRepository(Protocol):
-    def upsert_many(
-        self, batch: ImportBatch, sessions: Iterable[Session]
-    ) -> UpsertOutcome: ...
+    def upsert_many(self, batch: ImportBatch, sessions: Iterable[Session]) -> UpsertOutcome: ...
 
 
 @runtime_checkable
 class ModelCallRepository(Protocol):
-    def upsert_many(
-        self, batch: ImportBatch, calls: Iterable[ModelCall]
-    ) -> UpsertOutcome: ...
+    def upsert_many(self, batch: ImportBatch, calls: Iterable[ModelCall]) -> UpsertOutcome: ...
 
 
 @runtime_checkable
 class ToolCallRepository(Protocol):
-    def upsert_many(
-        self, batch: ImportBatch, calls: Iterable[ToolCall]
-    ) -> UpsertOutcome: ...
+    def upsert_many(self, batch: ImportBatch, calls: Iterable[ToolCall]) -> UpsertOutcome: ...
 
 
 @runtime_checkable

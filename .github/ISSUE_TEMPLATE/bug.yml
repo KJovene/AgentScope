@@ -1,0 +1,68 @@
+name: Rapport de bug
+description: Un comportement incorrect, reproductible
+title: "bug: "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Merci de ne **pas** inclure de clé d'API, de secret ni de donnée personnelle dans les logs
+        collés ci-dessous. Pour une vulnérabilité de sécurité, ne pas ouvrir d'issue publique :
+        contacter directement les mainteneurs.
+
+  - type: textarea
+    id: description
+    attributes:
+      label: Ce qui se passe
+      description: Le comportement observé, en une ou deux phrases.
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Étapes de reproduction
+      value: |
+        1.
+        2.
+        3.
+    validations:
+      required: true
+
+  - type: textarea
+    id: attendu
+    attributes:
+      label: Comportement attendu
+    validations:
+      required: true
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs / message d'erreur
+      description: Sortie de `make logs`, trace Python, console du navigateur… (sera formaté en code)
+      render: shell
+
+  - type: dropdown
+    id: zone
+    attributes:
+      label: Zone concernée
+      options:
+        - Backend / API
+        - Frontend / Dashboard
+        - Ingestion / import
+        - Agent IA & mapping
+        - Base de données / migrations
+        - Docker, Makefile, outillage
+        - Je ne sais pas
+    validations:
+      required: true
+
+  - type: input
+    id: environnement
+    attributes:
+      label: Environnement
+      description: OS, mode d'exécution (Docker ou local), branche ou commit.
+      placeholder: "Windows 11 · Docker Compose · dev @ 0adb945"
+    validations:
+      required: true

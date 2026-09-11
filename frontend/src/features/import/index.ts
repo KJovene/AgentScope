@@ -2,7 +2,8 @@
  * Public surface of the `import` feature. Routes and other features import ONLY
  * from here — deep imports are blocked by ESLint (see eslint.config.js).
  */
-export { ImportHistoryPage } from './ui/ImportHistoryPage';
+export { ImportHistoryScreen } from './ui/ImportHistoryScreen';
+export { ImportScreen } from './ui/ImportScreen';
 export { ImportReportPage } from './ui/ImportReportPage';
 
 // Reusable pieces other features may legitimately need:

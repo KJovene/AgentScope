@@ -46,18 +46,32 @@ def build_view_statements(dialect: str) -> dict[str, str]:
     day = day_expr(dialect, "s.started_at")
     err = _ERROR_STATUSES
 
+    # `cost_usd` déclaré par la source ; sinon estimé depuis `model_pricing`
+    # (USD / million de tokens). Sans ligne de tarif, l'estimation reste NULL —
+    # « un coût absent le reste » (docs/data/indicators.md §3.4).
+    estimated_cost = """
+        (COALESCE(mc.prompt_tokens, 0) * mp.input_usd_per_mtok
+         + COALESCE(mc.completion_tokens, 0) * mp.output_usd_per_mtok
+         + COALESCE(mc.cached_tokens, 0) * COALESCE(mp.cached_usd_per_mtok, 0))
+        / 1000000.0
+    """
     model_agg = f"""
         SELECT
-            session_id,
+            mc.session_id AS session_id,
             COUNT(*) AS n_model_calls,
-            SUM(total_tokens) AS total_tokens,
-            SUM(prompt_tokens) AS prompt_tokens,
-            SUM(completion_tokens) AS completion_tokens,
-            SUM(cached_tokens) AS cached_tokens,
-            SUM(cost_usd) AS total_cost_usd,
-            SUM(CASE WHEN status IN {err} THEN 1 ELSE 0 END) AS n_model_errors
-        FROM model_call
-        GROUP BY session_id
+            SUM(mc.total_tokens) AS total_tokens,
+            SUM(mc.prompt_tokens) AS prompt_tokens,
+            SUM(mc.completion_tokens) AS completion_tokens,
+            SUM(mc.cached_tokens) AS cached_tokens,
+            SUM(COALESCE(mc.cost_usd, {estimated_cost})) AS total_cost_usd,
+            SUM(
+                CASE WHEN mc.cost_usd IS NULL AND mp.model_name IS NOT NULL
+                     THEN 1 ELSE 0 END
+            ) AS n_estimated_cost,
+            SUM(CASE WHEN mc.status IN {err} THEN 1 ELSE 0 END) AS n_model_errors
+        FROM model_call mc
+        LEFT JOIN model_pricing mp ON mp.model_name = mc.model_name
+        GROUP BY mc.session_id
     """
     tool_agg = f"""
         SELECT
@@ -91,6 +105,8 @@ def build_view_statements(dialect: str) -> dict[str, str]:
                 m.cached_tokens AS cached_tokens,
                 CAST(m.cached_tokens AS REAL) / NULLIF(m.prompt_tokens, 0) AS cache_hit_ratio,
                 m.total_cost_usd AS total_cost_usd,
+                CASE WHEN COALESCE(m.n_estimated_cost, 0) > 0 THEN 1 ELSE 0 END
+                    AS cost_is_estimated,
                 COALESCE(m.n_model_errors, 0) + COALESCE(t.n_tool_errors, 0) AS n_errors
             FROM session s
             JOIN source src ON src.id = s.source_id

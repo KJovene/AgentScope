@@ -15,6 +15,7 @@ from sqlalchemy.engine import Row
 from sqlalchemy.orm import Session
 
 from agentscope.application.ports import (
+    FilterDimensions,
     Granularity,
     Indicators,
     MetricFilter,
@@ -110,9 +111,7 @@ class SqlMetricsQueryService:
 
     def _execute(self, sql: str, params: dict[str, Any]) -> list[Row[Any]]:
         stmt = text(sql)
-        expanding: list[Any] = [
-            bindparam(k, expanding=True) for k in _LIST_KEYS if k in params
-        ]
+        expanding: list[Any] = [bindparam(k, expanding=True) for k in _LIST_KEYS if k in params]
         if expanding:
             stmt = stmt.bindparams(*expanding)
         return list(self._s.execute(stmt, params))
@@ -132,7 +131,8 @@ class SqlMetricsQueryService:
                 SUM(prompt_tokens)       AS prompt_tokens,
                 SUM(completion_tokens)   AS completion_tokens,
                 SUM(cached_tokens)       AS cached_tokens,
-                SUM(total_cost_usd)      AS total_cost_usd
+                SUM(total_cost_usd)      AS total_cost_usd,
+                COALESCE(MAX(cost_is_estimated), 0) AS cost_is_estimated
             FROM v_session_metrics
             WHERE {where}
             """,
@@ -163,11 +163,10 @@ class SqlMetricsQueryService:
             completion_tokens=_opt_int(row.completion_tokens),
             cached_tokens=cached,
             total_cost_usd=_opt_float(row.total_cost_usd),
+            cost_is_estimated=bool(row.cost_is_estimated),
             error_rate=_ratio(errors, total_calls) if total_calls else None,
             cache_hit_ratio=_ratio(cached, prompt),
-            median_session_duration_ms=(
-                float(statistics.median(durations)) if durations else None
-            ),
+            median_session_duration_ms=(float(statistics.median(durations)) if durations else None),
         )
 
     # -- série temporelle ----------------------------------------------------
@@ -202,13 +201,11 @@ class SqlMetricsQueryService:
 
     # -- liste des sessions -------------------------------------------------
 
-    def sessions(
-        self, filters: MetricFilter, page: Page
-    ) -> Paginated[SessionListItem]:
+    def sessions(self, filters: MetricFilter, page: Page) -> Paginated[SessionListItem]:
         where, params = self._where(filters)
-        total = self._execute(
-            f"SELECT COUNT(*) AS n FROM v_session_metrics WHERE {where}", params
-        )[0].n
+        total = self._execute(f"SELECT COUNT(*) AS n FROM v_session_metrics WHERE {where}", params)[
+            0
+        ].n
 
         rows = self._execute(
             f"""
@@ -238,9 +235,7 @@ class SqlMetricsQueryService:
             )
             for r in rows
         )
-        return Paginated(
-            items=items, total=_int(total), limit=page.limit, offset=page.offset
-        )
+        return Paginated(items=items, total=_int(total), limit=page.limit, offset=page.offset)
 
     # -- détail d'une session -----------------------------------------------
 
@@ -295,6 +290,71 @@ class SqlMetricsQueryService:
             error_count=sum(1 for e in timeline if e.status in _ERROR_STATUSES),
             has_raw_record=h.raw_record_id is not None,
             timeline=timeline,
+        )
+
+    # -- répartition des outils --------------------------------------------------
+
+    def tool_usage(self, f: MetricFilter) -> list[dict[str, Any]]:
+        conds: list[str] = []
+        params: dict[str, Any] = {}
+        if f.sources:
+            conds.append("source_name IN :sources")
+            params["sources"] = list(f.sources)
+        where = " AND ".join(conds) if conds else "1 = 1"
+        rows = self._execute(
+            f"""
+            SELECT
+                tool_name,
+                SUM(n_calls)         AS n_calls,
+                SUM(n_errors)        AS n_errors,
+                AVG(avg_duration_ms) AS avg_duration_ms
+            FROM v_tool_usage
+            WHERE {where}
+            GROUP BY tool_name
+            ORDER BY n_calls DESC, tool_name
+            """,
+            params,
+        )
+        return [
+            {
+                "tool_name": r.tool_name,
+                "n_calls": _int(r.n_calls),
+                "n_errors": _int(r.n_errors),
+                "avg_duration_ms": _opt_float(r.avg_duration_ms),
+            }
+            for r in rows
+        ]
+
+    # -- valeurs de filtre disponibles -------------------------------------------
+
+    def dimensions(self) -> FilterDimensions:
+        """Agents et modèles distincts réellement présents en base.
+
+        Volontairement non filtré : ces listes alimentent les menus déroulants du
+        dashboard, et une valeur sélectionnée doit rester proposable même quand
+        les autres filtres actifs excluent toutes ses sessions.
+        """
+        agents = self._execute(
+            """
+            SELECT DISTINCT agent_name AS value
+            FROM v_session_metrics
+            WHERE agent_name IS NOT NULL AND agent_name <> ''
+            ORDER BY value
+            """,
+            {},
+        )
+        models = self._execute(
+            """
+            SELECT DISTINCT model_name AS value
+            FROM model_call
+            WHERE model_name IS NOT NULL AND model_name <> ''
+            ORDER BY value
+            """,
+            {},
+        )
+        return FilterDimensions(
+            agents=tuple(r.value for r in agents),
+            models=tuple(r.value for r in models),
         )
 
 
