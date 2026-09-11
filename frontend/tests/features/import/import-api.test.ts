@@ -7,15 +7,14 @@ import { server } from '../../msw/server';
 
 const batch = {
   id: 'sha-1',
-  sourceName: 'TraceLab',
-  originalFilename: 'trace.jsonl',
-  fileFormat: 'jsonl',
-  status: 'succeeded',
-  importedAt: '2026-01-02T10:00:00Z',
-  importedCount: 10,
-  duplicateCount: 1,
-  rejectedCount: 2,
-  missingInfoCount: 0,
+  source_id: 'src-tracelab',
+  mapping_id: 'tracelab-jsonl',
+  status: 'completed',
+  imported_at: '2026-01-02T10:00:00Z',
+  imported_count: 10,
+  duplicate_count: 1,
+  rejected_count: 2,
+  missing_info_count: 0,
 };
 
 describe('importApi transport', () => {
@@ -35,7 +34,7 @@ describe('importApi transport', () => {
 
   it('getById() calls GET /imports/:id', async () => {
     server.use(mswHttp.get('/api/imports/sha-1', () => HttpResponse.json(batch)));
-    expect((await importApi.getById('sha-1')).originalFilename).toBe('trace.jsonl');
+    expect((await importApi.getById('sha-1')).mapping_id).toBe('tracelab-jsonl');
   });
 
   it('getById() raises an http ApiError on a 404', async () => {
@@ -52,7 +51,7 @@ describe('importApi transport', () => {
       mswHttp.get('/api/imports/sha-1/rejects', () =>
         HttpResponse.json({
           items: [
-            { id: 'r1', recordIndex: 3, reasonCode: 'missing_required_field', reasonDetail: 'x' },
+            { record_index: 3, reason_code: 'missing_required_field', reason_detail: 'x' },
           ],
           total: 1,
           limit: 50,
@@ -61,7 +60,7 @@ describe('importApi transport', () => {
       ),
     );
     const res = await importApi.listRejects('sha-1', { limit: 50, offset: 0 });
-    expect(res.items[0]?.reasonCode).toBe('missing_required_field');
+    expect(res.items[0]?.reason_code).toBe('missing_required_field');
   });
 
   it('create() POSTs to /imports and returns the parsed batch', async () => {

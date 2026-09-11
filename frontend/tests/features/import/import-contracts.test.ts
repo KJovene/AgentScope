@@ -11,30 +11,38 @@ import {
 
 const validBatch = {
   id: 'sha',
-  sourceName: 'demo',
-  originalFilename: 'demo.jsonl',
-  fileFormat: 'jsonl' as const,
-  status: 'succeeded' as const,
-  importedAt: '2026-01-01T00:00:00Z',
-  importedCount: 3,
-  duplicateCount: 0,
-  rejectedCount: 1,
-  missingInfoCount: 0,
+  source_id: 'src-tracelab',
+  mapping_id: 'demo',
+  status: 'completed',
+  imported_at: '2026-01-01T00:00:00Z',
+  imported_count: 3,
+  duplicate_count: 0,
+  rejected_count: 1,
+  missing_info_count: 0,
 };
 
 describe('import.contracts', () => {
-  it('importStatusSchema', () => {
-    expect(importStatusSchema.options).toEqual(['pending', 'running', 'succeeded', 'failed']);
-    expect(importStatusSchema.safeParse('done').success).toBe(false);
+  it('importStatusSchema accepts any backend status string', () => {
+    expect(importStatusSchema.safeParse('completed').success).toBe(true);
+    expect(importStatusSchema.safeParse('partial').success).toBe(true);
   });
 
   it('importBatchSchema accepts a well-formed batch', () => {
     expect(importBatchSchema.parse(validBatch)).toEqual(validBatch);
   });
 
+  it('importBatchSchema accepts a per-field missing_info_count breakdown', () => {
+    expect(
+      importBatchSchema.safeParse({ ...validBatch, missing_info_count: { session_id: 2 } })
+        .success,
+    ).toBe(true);
+  });
+
   it('importBatchSchema rejects a negative count and a bad datetime', () => {
-    expect(importBatchSchema.safeParse({ ...validBatch, importedCount: -1 }).success).toBe(false);
-    expect(importBatchSchema.safeParse({ ...validBatch, importedAt: 'nope' }).success).toBe(false);
+    expect(importBatchSchema.safeParse({ ...validBatch, imported_count: -1 }).success).toBe(false);
+    expect(importBatchSchema.safeParse({ ...validBatch, imported_at: 'nope' }).success).toBe(
+      false,
+    );
   });
 
   it('importListParamsSchema merges pagination defaults with optional filters', () => {
@@ -55,23 +63,14 @@ describe('import.contracts', () => {
     expect(parsed.items).toHaveLength(1);
   });
 
-  it('importRejectSchema enforces the controlled reason vocabulary', () => {
+  it('importRejectSchema mirrors the backend RejectRecord shape', () => {
     expect(
       importRejectSchema.parse({
-        id: 'r1',
-        recordIndex: 2,
-        reasonCode: 'missing_required_field',
-        reasonDetail: 'no sid',
-      }).reasonCode,
+        record_index: 2,
+        reason_code: 'missing_required_field',
+        reason_detail: 'no sid',
+      }).reason_code,
     ).toBe('missing_required_field');
-    expect(
-      importRejectSchema.safeParse({
-        id: 'r1',
-        recordIndex: 2,
-        reasonCode: 'banana',
-        reasonDetail: 'x',
-      }).success,
-    ).toBe(false);
   });
 
   it('createImportInputSchema requires a mappingId and at least one File', () => {
