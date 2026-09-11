@@ -16,11 +16,15 @@
     "preview": "vite preview",
     "lint": "eslint .",
     "format": "prettier --write .",
+    "routes:generate": "node scripts/generate-routes.mjs",
+    "pretypecheck": "npm run routes:generate",
     "typecheck": "tsc -b --noEmit",
+    "pretest": "npm run routes:generate",
     "test": "vitest run",
     "test:e2e": "playwright test",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
+    "prebuild": "npm run routes:generate",
     "api:generate": "orval --config ./orval.config.ts"
   },
   "dependencies": {
@@ -41,6 +45,7 @@
     "@playwright/test": "^1.55.0",
     "@tanstack/react-query-devtools": "^5.62.7",
     "@tanstack/router-devtools": "^1.87.0",
+    "@tanstack/router-generator": "^1.87.0",
     "@tanstack/router-plugin": "^1.87.0",
     "@testing-library/jest-dom": "^6.6.3",
     "@testing-library/react": "^16.1.0",
