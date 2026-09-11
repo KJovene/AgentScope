@@ -5,6 +5,7 @@ import { cn } from '@shared/lib/cn';
 import { useWorkbenchStore } from '../model/workbench-store';
 
 import { AgentChat } from './AgentChat';
+import { RobotEyes } from './RobotEyes';
 
 /**
  * The mapping agent as a fixed floating widget, bottom-right. Collapsed it is a
@@ -62,7 +63,11 @@ export function FloatingAssistant() {
           !open && hasFile && 'animate-pulse-neon',
         )}
       >
-        <span aria-hidden="true">{open ? '×' : '▮▮'}</span>
+        {open ? (
+          <span aria-hidden="true">×</span>
+        ) : (
+          <RobotEyes className="h-6 w-6" />
+        )}
         {hasFile && !open && (
           <span
             aria-hidden="true"
