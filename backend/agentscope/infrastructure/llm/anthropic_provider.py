@@ -33,7 +33,13 @@ _RETRYABLE_STATUS_CODES = {429, 500, 502, 503, 504}
 
 
 class AnthropicProvider:
-    """Fournisseur IA Anthropic (Claude) : propose un mapping, discute dessus."""
+    """Fournisseur IA Anthropic (Claude) : propose un mapping, discute dessus.
+
+    ``max_tokens`` par défaut généreux — cf. la même constante dans
+    ``openai_provider.py`` : un modèle « raisonneur » peut épuiser un budget
+    trop bas sur son raisonnement avant d'écrire la réponse finale, sur un
+    prompt de proposition de mapping déjà volumineux.
+    """
 
     name = "anthropic"
 
@@ -46,7 +52,7 @@ class AnthropicProvider:
         base_url: str = "https://api.anthropic.com",
         timeout: float = 30.0,
         max_retries: int = 2,
-        max_tokens: int = 4096,
+        max_tokens: int = 16000,
         client: httpx.Client | None = None,
     ) -> None:
         self._model = model

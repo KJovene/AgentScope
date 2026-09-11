@@ -39,6 +39,13 @@ class OpenAIProvider:
     ``base_url`` swappable (ex. ``http://localhost:11434/v1`` pour Ollama,
     un serveur LM Studio, ...) sans changer une ligne de code : seule la
     configuration change (contrat ADR-0005).
+
+    ``max_tokens`` par défaut généreux : un modèle « raisonneur » (populaire
+    parmi les modèles gratuits d'OpenRouter) consomme son raisonnement caché
+    sur ce même budget avant d'écrire la réponse finale — avec une limite
+    trop basse, il s'arrête (``finish_reason: "length"``) avant tout contenu
+    utile (``message.content`` vide), sur le prompt de proposition de mapping
+    qui est déjà volumineux (schéma cible + profil + échantillon).
     """
 
     name = "openai"
@@ -52,7 +59,7 @@ class OpenAIProvider:
         base_url: str = "https://api.openai.com/v1",
         timeout: float = 30.0,
         max_retries: int = 2,
-        max_tokens: int = 4096,
+        max_tokens: int = 16000,
         client: httpx.Client | None = None,
     ) -> None:
         self._model = model

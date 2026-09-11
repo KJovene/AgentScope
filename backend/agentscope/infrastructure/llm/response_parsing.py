@@ -37,6 +37,7 @@ _DEFINITION_SKELETON = """{
   "name": "...",
   "version": 1,
   "source_format": "jsonl",
+  "constants": {"source_name": "..."},
   "entities": {
     "session": {
       "iterate": {"path": "...", "where": [["type", "eq", "session"]]},
@@ -79,8 +80,31 @@ RESPONSE_FORMAT_INSTRUCTION = (
     '"ignore" ni une autre valeur.\n'
     "- Omets entièrement une entrée de `fields` si l'entité n'a pas de champ "
     "source correspondant dans l'échantillon : n'écris jamais `\"from\": null`.\n"
+    '- `parent.entity` vaut TOUJOURS `"session"`, y compris pour `tool_call` — '
+    "il n'y a pas de rattachement structurel `tool_call` → `model_call` ; pour "
+    "l'exprimer, mappe `tool_call.fields.model_call_sequence` au lieu de `parent`.\n"
     '- `parent.key_from` est une chaîne unique (ex. `"parentId"`), jamais un '
-    "tableau.\n\n"
+    "tableau.\n"
+    '- `constants.source_name` est **obligatoire** : un nom court identifiant '
+    "la source (ex. son nom de fichier ou de format), jamais absent ni vide.\n"
+    "- Une entité (`session`/`model_call`/`tool_call`) n'a QUE les clés `iterate`, "
+    "`identity`, `parent` et `fields` — jamais d'autre clé (ex. pas de `derive`) : "
+    "toute logique de champ passe par `transform`/`args` d'une entrée de `fields`.\n"
+    "- `transform` est un des noms whitelistés ci-dessous — jamais un objet "
+    "condition inventé (ex. jamais `{\"champ\": {\"eq\": ..., \"then\": ..., "
+    '"else": ...}}`) :\n'
+    '  - `identity` (défaut, aucun `args`) ; `to_int`, `to_float` (aucun `args`) ; '
+    '`to_iso8601` (`args: {"unit": "epoch_s" | "epoch_ms" | "iso"}`)\n'
+    '  - `const` (`args: {"value": ...}`, pas de `from`) ; `coalesce` '
+    '(`args: {"fields": ["...", "..."]}`, pas de `from`, lit plusieurs champs de '
+    "la ligne)\n"
+    '  - `map_enum` (`args: {"mapping": {"valeur_source": "valeur_cible", ...}, '
+    '"default": ...}`) — pour dériver un champ (ex. `status` depuis un booléen '
+    "`isError` : `mapping: {\"true\": \"error\", \"false\": \"success\"}`)\n"
+    '  - `lower`, `upper`, `trim`, `json_stringify` (aucun `args`) ; `split` '
+    '(`args: {"sep": "...", "index": 0}`) ; `regex_extract` '
+    '(`args: {"pattern": "...", "group": 1}`) ; `cents_to_usd`, `ms_to_s` '
+    "(aucun `args`)\n\n"
     f"{_DEFINITION_SKELETON}"
 )
 
@@ -92,6 +116,9 @@ def extract_json_object(text: str) -> Any:
 
     Tolère un bloc encadré par des triples-backticks (```` ```json ... ``` ````),
     fréquent chez certains modèles malgré la consigne de réponse « JSON seul ».
+    Tolère aussi du texte à la suite de l'objet JSON (un commentaire ajouté par
+    le modèle malgré la même consigne) : seul le premier objet JSON valide en
+    tête de la réponse est retenu, le reste est ignoré.
     """
     candidate = text.strip()
     fence_match = _JSON_FENCE_RE.search(candidate)
@@ -99,7 +126,8 @@ def extract_json_object(text: str) -> Any:
         candidate = fence_match.group(1).strip()
 
     try:
-        return json.loads(candidate)
+        obj, _ = json.JSONDecoder().raw_decode(candidate)
+        return obj
     except json.JSONDecodeError as exc:
         raise LLMError(f"Réponse du modèle invalide : JSON illisible ({exc}).") from exc
 
@@ -123,6 +151,8 @@ def parse_mapping_response(raw: object) -> MappingProposal:
     ambiguities = _require_str_list(raw, "ambiguities")
     unmapped_fields = _require_str_list(raw, "unmapped_fields")
 
+    definition = _drop_unfulfillable_fields(definition)
+
     try:
         parse_and_validate(definition)
     except InvalidMappingError as exc:
@@ -137,6 +167,48 @@ def parse_mapping_response(raw: object) -> MappingProposal:
 
 
 # ---------------------------------------------------------------------------
+
+# Transformations qui ne lisent pas un champ source unique (cf. la même liste
+# dans `validator.py`/`normalizer.py` — un `from` y est alors sans objet).
+_NO_SOURCE_TRANSFORMS = {"const", "coalesce"}
+
+
+def _drop_unfulfillable_fields(definition: dict[str, Any]) -> dict[str, Any]:
+    """Retire les entrées `fields` que le modèle a laissées sans source.
+
+    Malgré la consigne du prompt, un modèle (surtout un petit) répond parfois
+    `"from": null` pour un champ cible qu'il ne sait pas mapper sur cet
+    échantillon, au lieu d'omettre l'entrée. Le contrat de mapping exige `from`
+    (sauf transformations sans source) : plutôt que de rejeter toute la
+    proposition pour ça, on retire silencieusement ces entrées inexploitables
+    — un champ cible non mappé est une situation normale (`missing_info` s'en
+    charge à l'exécution), pas une erreur.
+    """
+    entities = definition.get("entities")
+    if not isinstance(entities, dict):
+        return definition
+
+    cleaned_entities = {}
+    for entity_name, entity in entities.items():
+        if not isinstance(entity, dict):
+            cleaned_entities[entity_name] = entity
+            continue
+        fields = entity.get("fields")
+        if not isinstance(fields, dict):
+            cleaned_entities[entity_name] = entity
+            continue
+        cleaned_fields = {
+            field_name: spec
+            for field_name, spec in fields.items()
+            if not (
+                isinstance(spec, dict)
+                and spec.get("from") is None
+                and spec.get("transform") not in _NO_SOURCE_TRANSFORMS
+            )
+        }
+        cleaned_entities[entity_name] = {**entity, "fields": cleaned_fields}
+
+    return {**definition, "entities": cleaned_entities}
 
 
 def _require_dict(raw: dict[str, Any], key: str) -> dict[str, Any]:
