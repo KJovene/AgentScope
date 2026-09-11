@@ -3,7 +3,7 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { ImportScreen } from "../../../src/features/import/ui/ImportScreen";
 import { apiClient } from "../../../src/shared/api/client";
 
-vi.mock("../../shared/api/client", () => ({
+vi.mock("../../../src/shared/api/client", () => ({
   apiClient: {
     post: vi.fn(),
   },

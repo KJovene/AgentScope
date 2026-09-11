@@ -33,7 +33,7 @@ vi.mock('@features/import/api/import.queries', () => ({
   useImportQuery: () => reportQuery,
 }));
 
-import { ImportHistoryPage } from '@features/import/ui/ImportHistoryPage';
+import { ImportHistoryScreen } from '@features/import/ui/ImportHistoryScreen';
 import { ImportHistoryTable } from '@features/import/ui/ImportHistoryTable';
 import { ImportReportPage } from '@features/import/ui/ImportReportPage';
 
@@ -74,22 +74,22 @@ describe('ImportHistoryTable', () => {
   });
 });
 
-describe('ImportHistoryPage', () => {
+describe('ImportHistoryScreen', () => {
   it('shows the loading spinner', () => {
     Object.assign(historyState, { isLoading: true, isError: false, rows: [] });
-    render(<ImportHistoryPage />);
+    render(<ImportHistoryScreen />);
     expect(screen.getByRole('status', { name: 'Chargement' })).toBeInTheDocument();
   });
 
   it('shows the empty state when there is no import', () => {
     Object.assign(historyState, { isLoading: false, isError: false, rows: [] });
-    render(<ImportHistoryPage />);
+    render(<ImportHistoryScreen />);
     expect(screen.getByText('Aucun import')).toBeInTheDocument();
   });
 
   it('renders the table once imports load', () => {
     Object.assign(historyState, { isLoading: false, isError: false, rows: [row] });
-    render(<ImportHistoryPage />);
+    render(<ImportHistoryScreen />);
     expect(screen.getByRole('link', { name: 'trace.jsonl' })).toBeInTheDocument();
   });
 
@@ -100,7 +100,7 @@ describe('ImportHistoryPage', () => {
       rows: [],
       error: new Error('ko'),
     });
-    render(<ImportHistoryPage />);
+    render(<ImportHistoryScreen />);
     expect(screen.getByText('Erreur')).toBeInTheDocument();
   });
 });
